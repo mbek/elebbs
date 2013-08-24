@@ -1,0 +1,188 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML>
+  <HEAD>
+
+  <TITLE> EleWEB - |YA - </TITLE>
+  <link rel="Stylesheet" TYPE="text/css" HREF="/eleweb.css">
+</HEAD>
+
+<BODY>
+
+<!-- --------------------------------------------------------------------- -->
+
+ <!-- Design the form -->
+ <FORM ACTION="/cgi-bin/eleweb.exe?action=3&script=new_two" METHOD="POST">
+
+
+ <!-- --------------------------------------------------------------------- -->
+ <TABLE cellSpacing=1 cellPadding=4 width="50%" border=0 align=center class="tab_border">
+   <TBODY>
+
+     <TR>
+       <TD colSpan=2 align="center" class="tab_header">
+         New user form
+       </TD>
+     </TR>
+
+     <TR>
+       <TD ALIGN=LEFT CLASS="tab_contents">
+         Username <FONT class="tab_required">*</FONT>
+       </TD>
+ 
+        <TD class="tab_contents2">
+           <INPUT NAME="username" TYPE="text" value="">
+        </TD>
+     </TR>
+
+
+     <TR>
+       <TD ALIGN=LEFT class="tab_contents">
+        Pseudonym (alias) <FONT class="tab_required">*</FONT>
+       </TD>
+
+      <TD class="tab_contents2">
+          <INPUT NAME="handle" TYPE="text" value="">
+       </TD>
+
+     </TR>
+
+     <TR>
+       <TD ALIGN=LEFT class="tab_contents">
+          Email address
+       </TD>
+
+        <TD class="tab_contents2">
+          <INPUT NAME="email" TYPE="text" value="">
+       </TD>
+     </TR>
+
+
+     <TR>
+       <TD align=LEFT class="tab_contents">
+         Password  <FONT class="tab_required">*</FONT>
+       </TD>
+
+       <TD class="tab_contents2">
+          <INPUT NAME="password1" TYPE="password" value="">
+       </TD>
+
+     </TR>
+
+     <TR>
+       <TD align=LEFT class="tab_contents">
+         Password (confirm)  <FONT class="tab_required">*</FONT>
+       </TD>
+
+       <TD class="tab_contents2">
+          <INPUT NAME="password2" TYPE="password" value="">
+       </TD>
+
+     </TR>
+     <TR>
+       <TD align=LEFT class="tab_contents">
+         City and Country <FONT class="tab_required">*</FONT>
+       </TD>
+
+       <TD class="tab_contents2">
+          <INPUT NAME="location" TYPE="text" value="">
+       </TD>
+
+     </TR>
+
+     <TR>
+       <TD align=LEFT class="tab_contents">
+         Sex  <FONT class="tab_required">*</FONT>
+       </TD>
+
+       <TD class="tab_contents2">
+          <INPUT TYPE="radio" VALUE="Male" NAME="sex">Male
+          <INPUT TYPE="radio" VALUE="Female" NAME="sex">Female
+       </TD>
+
+     </TR>
+
+     <TR>
+       <TD align=LEFT class="tab_contents">
+         Birthdate <FONT class="tab_required">*</FONT>
+       </TD>
+
+       <TD class="tab_contents2">
+          <INPUT NAME="bd_day" TYPE="text" value="" maxsize="2" size="2">
+
+          <SELECT NAME="bd_month" SIZE=1>
+            <OPTION VALUE="1">January
+            <OPTION VALUE="2">February
+            <OPTION VALUE="3">March
+            <OPTION VALUE="4">April
+            <OPTION VALUE="5">May
+            <OPTION VALUE="6">June
+            <OPTION VALUE="7">July
+            <OPTION VALUE="8">August
+            <OPTION VALUE="9">September
+            <OPTION VALUE="10">October
+            <OPTION VALUE="11">November
+            <OPTION VALUE="12">December
+          </SELECT>
+
+          <INPUT NAME="bd_year" TYPE="text" value="" maxsize="4" size="4">
+       </TD>
+
+     </TR>
+
+      <TD align=LEFT class="tab_contents">
+        ICQ number
+       </TD>
+
+     <TD class="tab_contents2">
+        <INPUT NAME="icqnr" TYPE="text" value="">
+     </TD>
+     </TR>
+
+     <TR>
+       <TD align=LEFT class="tab_contents">
+         Homepage
+       </TD>
+
+     <TD class="tab_contents2">
+          <INPUT NAME="homepage" TYPE="text" value="">
+     </TD>
+     </TR>
+
+     <TR>
+       <TD align=LEFT class="tab_contents">
+         Usericon
+       </TD>
+
+       <TD class="tab_contents2">
+          <INPUT NAME="usericon" TYPE="text" value="">
+       </TD>
+     </TR>
+
+
+     <!-- Set the submit / clear buttons -->
+     <TR>
+       <TD ALIGN=CENTER COLSPAN="2" CLASS="tab_contents">
+         <FONT face="verdana, arial, helvetica" size=2>
+           <INPUT TYPE="submit" value="Submit">
+           <INPUT TYPE="reset" value="Reset">
+         </FONT>
+       </TD>
+
+     </TR>
+
+     <TR>
+       <TD colSpan=2 CLASS="tab_footer">
+         <FONT SIZE="1">
+           &nbsp;
+         </FONT>
+       </TD>
+     </TR>
+
+
+   </TBODY>
+ </TABLE>
+
+ <!-- --------------------------------------------------------------------- -->
+</BODY>
+</HTML>
+

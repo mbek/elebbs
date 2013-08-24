@@ -1,0 +1,1006 @@
+{***************************************************}
+{*               OOINI.PA0  1.00                   *}
+{*     Copyright (c) TurboPower Software 1995      *}
+{***************************************************}
+
+(*
+    Originally written by Steve Sneed, TurboPower Software
+    Modified by Jason Leveille, TurboPower Software
+*)
+
+interface
+
+{$ifdef UseOPro}
+uses
+  OpRoot;
+{$endif}
+
+type
+{$IFNDEF UseOPro}
+  DoubleNodePtr = ^DoubleListNode;
+  DoubleListNode =
+    object
+      dlNext : DoubleNodePtr;
+      dlPrev : DoubleNodePtr;
+
+      constructor Init;
+      destructor Done; virtual;
+    end;
+
+  DoubleListPtr = ^DoubleList;
+  DoubleList =
+    object
+      dlHead : DoubleNodePtr;
+      dlTail : DoubleNodePtr;
+
+      constructor Init;
+      destructor Done; virtual;
+      procedure Place(P, ExistNode : DoubleNodePtr);
+      procedure Append(P : DoubleNodePtr);
+      procedure Insert(P : DoubleNodePtr);
+      procedure Delete(P : DoubleNodePtr);
+      function Next(P : DoubleNodePtr) : DoubleNodePtr;
+      function Prev(P : DoubleNodePtr) : DoubleNodePtr;
+    end;
+{$ENDIF}
+
+  StrPtr = ^String;
+  IniLinePtr = ^IniLine;
+  IniLine =
+    object(DoubleListNode)
+      PL : StrPtr;
+
+      constructor Init(S : String);
+      destructor Done; virtual;
+      function Update(S : String) : Boolean;
+    end;
+
+
+  IniMgrPtr = ^IniMgr;
+  IniMgr =
+    object(DoubleList)
+      IniName   : String;
+      IniF      : Text;
+      NeedUpd   : Boolean;
+      AlwaysUpd : Boolean;
+      IsSparse  : Boolean;
+
+      constructor Init(FN : String; Sparse : Boolean);
+        {-Construct our INI file object.  if Sparse=True, load only "active"
+          lines (file is considered read-only.)  if Sparse=False, File always
+          updates on changes; use SetFlushMode to control.}
+
+      destructor Done; virtual;
+        {-Destroy object when done}
+
+      procedure FlushFile;
+        {-Force an update of the physical file from the current list}
+
+      procedure SetFlushMode(Always : Boolean);
+        {-Turn off/on auto-updating of file when an item is modified}
+
+      procedure ChangeFileName(NewIniName : String);
+        {-Associates database with file NewIniName}
+
+      function GetFileName : String;
+        {-Returns file name associated with the database}
+
+      procedure ForceUpd;
+        {-Writes data to disk even if changes haven't been made.}
+
+      function GetProfileString(Title, Group, Default : String) : String;
+        {-Return String item "Title" in "[Group]", or default if not found}
+
+      function GetProfileBool(Title, Group : String; Default : Boolean) : Boolean;
+        {-Return boolean item "Title" in "[Group]", or default if not found}
+
+      function GetProfileByte(Title, Group : String; Default : Byte) : Byte;
+        {-Return byte item "Title" in "[Group]", or default if not found}
+
+      function GetProfileInt(Title, Group : String; Default : Integer) : Integer;
+        {-Return integer item "Title" in "[Group]", or default if not found}
+
+      function GetProfileWord(Title, Group : String; Default : Word) : Word;
+        {-Return word item "Title" in "[Group]", or default if not found}
+
+      function GetProfileLong(Title, Group : String; Default : LongInt) : LongInt;
+        {-Return longint item "Title" in "[Group]", or default if not found}
+
+      procedure SetProfileString(Title, Group, NewVal : String);
+        {-Change existing item "Title" in "[Group]" to "NewVal"}
+
+      procedure AddProfileString(Title, Group, NewVal : String);
+        {-Add new item "Title=NewVal" to "[Group]".  Creates [Group] if not
+          found; otherwise adds "Title=NewVal" as last item in [Group]}
+
+      procedure EnumGroups(P : DoubleListPtr);
+        {-Return P loaded with the names of all groups in the file.  Items
+          on P are of type IniLinePtr.}
+
+      procedure EnumGroupItems(P : DoubleListPtr; Group : String;
+                               Verbose : Boolean);
+        {-Return P loaded with all items in group [Group].  Items on P are
+          of type IniLinePtr.}
+
+      procedure DeleteProfileString(Title, Group : String);
+        {-Deletes the item "Title" in "[Group]"}
+
+      procedure DeleteProfileGroup(Group: String);
+        {-Deletes all the items in "[Group]"}
+
+      function Modified : Boolean;
+        {-Returns value of NeedUpd}
+
+      {+++internal+++}
+      function GetIniGroupNode(Group : String) : IniLinePtr;
+      function GetIniNode(Title, Group : String) : IniLinePtr;
+      function GetLastNodeInGroup(Group : String) : IniLinePtr;
+      function GetProfilePrim(Title, Group : String) : String;
+    end;
+
+
+implementation
+
+{$ifdef OproG}
+uses
+  OpConst,
+  OpString;
+
+var
+  IniStatus : integer;
+
+{$else}
+uses
+  {$ifdef UseTPro}
+  TpString,
+  {$endif}
+  {$ifdef UseOPro}
+  OpString,
+  {$endif}
+  ApMisc;
+
+var
+  IniStatus : integer absolute AsyncStatus;
+{$endif}
+
+{$IFNDEF UseOPro}
+  {$IFNDEF UseTPro}
+  function Str2Int(S : String; var I : Integer) : Boolean;
+    {-Convert a String to an integer, returning true if successful}
+  var
+    Code : Word;
+    SLen : Byte absolute S;
+
+  begin
+    while S[SLen] = ' ' do
+      Dec(SLen);
+    if (SLen > 1) and (Upcase(S[SLen]) = 'H') then begin
+      Move(S[1], S[2], SLen-1);
+      S[1] := '$';
+    end
+    else if (SLen > 2) and (S[1] = '0') and (Upcase(S[2]) = 'X') then begin
+      Dec(SLen);
+      Move(S[3], S[2], SLen-1);
+      S[1] := '$';
+    end;
+    Val(S, I, code);
+    if code <> 0 then begin
+      I := code;
+      Str2Int := False;
+    end else
+      Str2Int := True;
+  end;
+
+  function Str2Word(S : String; var I : Word) : Boolean;
+    {-Convert a String to a word, returning true if successful}
+  var
+    Code : Word;
+    SLen : Byte absolute S;
+
+  begin
+    while S[SLen] = ' ' do
+      Dec(SLen);
+    if (SLen > 1) and (Upcase(S[SLen]) = 'H') then begin
+      Move(S[1], S[2], SLen-1);
+      S[1] := '$';
+    end
+    else if (SLen > 2) and (S[1] = '0') and (Upcase(S[2]) = 'X') then begin
+      Dec(SLen);
+      Move(S[3], S[2], SLen-1);
+      S[1] := '$';
+    end;
+    Val(S, I, code);
+    if code <> 0 then begin
+      I := code;
+      Str2Word := False;
+    end else
+      Str2Word := True;
+  end;
+
+  function Str2Long(S : String; var I : LongInt) : Boolean;
+    {-Convert a String to a longint, returning true if successful}
+  var
+    Code : Word;
+    SLen : Byte absolute S;
+
+  begin
+    while S[SLen] = ' ' do
+      Dec(SLen);
+    if (SLen > 1) and (Upcase(S[SLen]) = 'H') then begin
+      Move(S[1], S[2], SLen-1);
+      S[1] := '$';
+    end
+    else if (SLen > 2) and (S[1] = '0') and (Upcase(S[2]) = 'X') then begin
+      Dec(SLen);
+      Move(S[3], S[2], SLen-1);
+      S[1] := '$';
+    end;
+    Val(S, I, code);
+    if code <> 0 then begin
+      I := code;
+      Str2Long := False;
+    end else
+      Str2Long := True;
+  end;
+
+  function Trim(S : String) : String;
+    {-Return a String with leading and trailing white space removed}
+  var
+    I : Word;
+    SLen : Byte absolute S;
+
+  begin
+    while (SLen > 0) and (S[SLen] <= ' ') do
+      Dec(SLen);
+
+    I := 1;
+    while (I <= SLen) and (S[I] <= ' ') do
+      Inc(I);
+    Dec(I);
+    if I > 0 then
+      Delete(S, 1, I);
+
+    Trim := S;
+  end;
+{$ENDIF}
+  constructor DoubleListNode.Init;
+
+  begin
+    dlPrev := nil;
+    dlNext := nil;
+  end;
+
+  destructor DoubleListNode.Done;
+
+  begin
+  end;
+
+  constructor DoubleList.Init;
+
+  begin
+    dlHead := nil;
+    dlTail := nil;
+  end;
+
+  destructor DoubleList.Done;
+
+  var
+    TempNode1, TempNode2 : DoubleNodePtr;
+
+  begin
+    TempNode1 := dlHead;
+    TempNode2 := dlHead;
+    while TempNode2 <> nil do begin
+      TempNode1 := TempNode2;
+      TempNode2 := Next(TempNode1);
+      Dispose(TempNode1, Done);
+    end;
+  end;
+
+  procedure DoubleList.Append(P : DoubleNodePtr);
+    {-Add P to end of list}
+
+  begin
+    if dlHead = nil then begin
+      P^.dlNext := nil;
+      P^.dlPrev := nil;
+      dlHead := P;
+      dlTail := P;
+    end else begin
+      P^.dlNext := nil;
+      P^.dlPrev := dlTail;
+      dlTail := P;
+      P^.dlPrev^.dlNext := P;
+    end;
+    if P^.dlPrev = dlHead then
+      dlHead^.dlNext := P;
+  end;
+
+  procedure DoubleList.Insert(P : DoubleNodePtr);
+    {-Put P at beginning of list}
+
+  begin
+    if dlHead = nil then begin
+      P^.dlNext := nil;
+      P^.dlPrev := nil;
+      dlHead := P;
+      dlTail := P;
+    end else begin
+      P^.dlNext := dlHead;
+      P^.dlPrev := nil;
+      dlHead := P;
+      P^.dlNext^.dlPrev := P;
+    end;
+    if P^.dlNext = dlTail then
+      dlTail^.dlPrev := P;
+  end;
+
+  procedure DoubleList.Delete(P : DoubleNodePtr);
+    {-Delete P from list}
+
+  var
+    TempNode : DoubleNodePtr;
+
+  begin
+    if P = nil then
+      Exit;
+    {change pointers around node}
+    TempNode := P^.dlPrev;
+    if TempNode <> nil then
+      TempNode^.dlNext := P^.dlNext;
+    if P = dlTail then
+      dlTail := TempNode;
+    TempNode := P^.dlNext;
+    if TempNode <> nil then
+      TempNode^.dlPrev := P^.dlPrev;
+    if P = dlHead then
+      dlHead := TempNode;
+    {remove the node}
+    Dispose(P, Done);
+  end;
+
+  procedure DoubleList.Place(P, ExistNode : DoubleNodePtr);
+    {-Place P after ExistNode}
+
+  var
+    TempNode : DoubleNodePtr;
+
+  begin
+    if ExistNode = nil then begin
+      Insert(P);
+      Exit;
+    end;
+    P^.dlPrev := ExistNode;
+    P^.dlNext := ExistNode^.dlNext;
+    ExistNode^.dlNext := P;
+    TempNode := P^.dlNext;
+    if ExistNode = dlTail then
+      dlTail := P
+    else
+      TempNode^.dlPrev := P;
+  end;
+
+  function DoubleList.Next(P : DoubleNodePtr) : DoubleNodePtr;
+    {-Returns node after P}
+
+  begin
+    Next := P^.dlNext;
+  end;
+
+  function DoubleList.Prev(P : DoubleNodePtr) : DoubleNodePtr;
+    {-Returns node before P}
+  begin
+    Prev := P^.dlPrev;
+  end;
+{$ENDIF}
+  constructor IniLine.Init(S : String);
+
+  begin
+    if not DoubleListNode.Init then
+      Fail;
+    PL := StrPtr(StringToHeap(S));
+    if PL = nil then
+      Fail;
+  end;
+
+  destructor IniLine.Done;
+
+  begin
+    if PL <> nil then
+      DisposeString(Pointer(PL));
+    DoubleListNode.Done;
+  end;
+
+  function IniLine.Update(S : String) : Boolean;
+
+  var
+    L : StrPtr;
+
+  begin
+    Update := False;
+    L := StrPtr(StringToHeap(S));
+    if L = nil then
+      Exit;
+    DisposeString(Pointer(PL));
+    PL := L;
+    Update := True;
+  end;
+
+{---------------------------------------------------------------------------}
+
+  constructor IniMgr.Init(FN : String; Sparse : Boolean);
+
+  var
+    P : IniLinePtr;
+    S : String;
+
+  begin
+    if not DoubleList.Init then
+      Fail;
+
+    IniStatus := ecOK;
+    NeedUpd := False;
+    AlwaysUpd := True;
+    IsSparse := Sparse;
+
+    IniName := DefaultExtension(FN, 'INI');
+    Assign(IniF, IniName);
+    {$i-}
+    System.Reset(IniF);
+    if IOResult <> 0 then begin
+      {file doesn't yet exist; drop out}
+(*
+      NeedUpd := True;
+*)
+      Exit;
+    end;
+
+    while not EOF(IniF) do begin
+      ReadLn(IniF, S);
+      IniStatus := IOResult;
+      if IniStatus <> ecOK then begin
+        {read error here means something is wrong; bomb it}
+        Close(IniF);  if IOresult = 0 then ;
+        Done;
+        Fail;
+      end;
+
+      S := Trim(S);
+      if (not(Sparse)) or ((S <> '') and (S[1] <> ';')) then begin
+        New(P, Init(S));
+        if P = nil then begin
+          {out of memory, bomb it}
+          Close(IniF);
+          if IOResult = 0 then ;
+          IniStatus := ecOutOfMemory;
+          Done;
+          Fail;
+        end;
+        Append(P);
+      end;
+    end;
+    Close(IniF);
+    if IOResult = 0 then ;
+  end;
+
+  destructor IniMgr.Done;
+
+  begin
+    DoubleList.Done;
+  end;
+
+  procedure IniMgr.SetFlushMode(Always : Boolean);
+    {-Turn off/on auto-updating of file when an item is modified}
+  begin
+    AlwaysUpd := Always;
+  end;
+
+  procedure IniMgr.ChangeFileName(NewIniName : String);
+    {-Associates database with file NewIniName}
+
+  begin
+    IniName := DefaultExtension(NewIniName, 'INI');
+    NeedUpd := True;
+  end;
+
+  function IniMgr.GetFileName : String;
+
+  begin
+    GetFileName := IniName;
+  end;
+
+  procedure IniMgr.ForceUpd;
+
+  begin
+    NeedUpd := True;
+    FlushFile;
+  end;
+
+  procedure IniMgr.FlushFile;
+    {-Force an update of the physical file from the current list}
+  var
+    P : IniLinePtr;
+    S : String;
+
+  begin
+    if IsSparse then
+      Exit;
+    if AlwaysUpd or NeedUpd then begin
+      Assign(IniF, IniName);
+      Rewrite(IniF);
+      IniStatus := IOResult;
+      if IniStatus <> ecOK then
+        Exit;
+      P := IniLinePtr(dlHead);
+      while P <> nil do begin
+        if P^.PL^ <> '' then
+          if (P^.PL^[1] = '[') and (P <> IniLinePtr(dlHead)) then
+            WriteLn(IniF);
+        if (P^.PL^ <> '') then
+          WriteLn(IniF, P^.PL^);
+        IniStatus := IOResult;
+        if IniStatus <> ecOK then begin
+          Close(IniF);
+          if IOResult = 0 then ;
+          Exit;
+        end;
+        P := IniLinePtr(Next(P));
+      end;
+
+      Close(IniF);
+      if IOResult = 0 then ;
+      NeedUpd := False;
+    end;
+  end;
+
+  function IniMgr.GetIniNode(Title, Group : String) : IniLinePtr;
+    {-Returns the IniLinePtr pointing to the item "Title" in "[Group]"}
+  var
+    P : IniLinePtr;
+    GroupSeen : Boolean;
+    S : String;
+
+
+  begin
+    GetIniNode := nil;
+    IniStatus := ecRecordNotFound;
+    if dlHead = nil then begin
+      IniStatus := ecDatabaseEmpty;
+      Exit;
+    end;
+
+    {fixup Strings as needed}
+    if Group[1] <> '[' then
+      Group := '['+Group+']';
+    Group := StUpcase(Group);
+    Title := StUpcase(Title);
+
+    {search}
+    GroupSeen := False;
+    P := IniLinePtr(dlHead);
+    while P <> nil do begin
+      if (P^.PL^ <> '') and (P^.PL^[1] = '[') then begin
+        {a group header...}
+        if StUpcase(P^.PL^) = Group then
+          {in our group}
+          GroupSeen := True
+        else if GroupSeen then
+          {exhausted all options in our group; get out}
+          Exit;
+      end
+      else if (GroupSeen) and (P^.PL^ <> '') and (P^.PL^[1] <> ';') then begin
+        {in our group, see if the title matches}
+        S := Copy(P^.PL^, 1, Pos('=', P^.PL^)-1);
+        S := Trim(S);
+        S := StUpcase(S);
+        if Title = S then begin
+          GetIniNode := P;
+          IniStatus := ecOK;
+          Exit;
+        end;
+      end;
+      P := IniLinePtr(Next(P));
+    end;
+  end;
+
+  function IniMgr.GetIniGroupNode(Group : String) : IniLinePtr;
+    {-Returns the IniLinePtr pointing to "[Group]"}
+  var
+    P : IniLinePtr;
+    S : String;
+
+  begin
+    GetIniGroupNode := nil;
+    IniStatus := ecGroupNotFound;
+    if dlHead = nil then begin
+      IniStatus := ecDatabaseEmpty;
+      Exit;
+    end;
+
+    {fixup Strings as needed}
+    if Group[1] <> '[' then
+      Group := '['+Group+']';
+    Group := StUpcase(Group);
+
+    {search}
+    P := IniLinePtr(dlHead);
+    while P <> nil do begin
+      if (P^.PL^[1] = '[') and (StUpcase(P^.PL^) = Group) then begin
+        GetIniGroupNode := P;
+        IniStatus := ecOK;
+      end;
+      P := IniLinePtr(Next(P));
+    end;
+  end;
+
+  function IniMgr.GetLastNodeInGroup(Group : String) : IniLinePtr;
+    {-Returns the last node in group "[Group]"}
+  var
+    P, Q : IniLinePtr;
+    GroupSeen : Boolean;
+    S : String;
+
+
+  begin
+    GetLastNodeInGroup := nil;
+    IniStatus := ecGroupNotFound;
+    if dlHead = nil then begin
+      IniStatus := ecDatabaseEmpty;
+      Exit;
+    end;
+
+    {fixup Strings as needed}
+    if Group[1] <> '[' then
+      Group := '['+Group+']';
+    Group := StUpcase(Group);
+
+    {search}
+    GroupSeen := False;
+    Q := nil;
+    P := IniLinePtr(dlHead);
+    while P <> nil do begin
+      if P^.PL^[1] = '[' then begin
+        {a group header...}
+        if StUpcase(P^.PL^) = Group then
+          {in our group}
+          GroupSeen := True
+        else if (GroupSeen) then begin
+          {exhausted all lines in our group, return the last pointer}
+          if Q = nil then
+            Q := IniLinePtr(P^.dlPrev);
+          GetLastNodeInGroup := Q;
+          IniStatus := ecOK;
+          Exit;
+        end;
+      end;
+      Q := P;
+      P := IniLinePtr(Next(P));
+    end;
+    if GroupSeen then
+      GetLastNodeInGroup := Q
+    else
+      GetLastNodeInGroup := nil;
+  end;
+
+  function IniMgr.GetProfilePrim(Title, Group : String) : String;
+    {-Returns the item "Title" in group "[Group]" with all spaces removed.}
+  var
+    P : IniLinePtr;
+    S : String;
+
+  begin
+    P := GetIniNode(Title, Group);
+    if P = nil then
+      GetProfilePrim := ''
+    else begin
+      S := P^.PL^;
+      S := Copy(S, Pos('=', S)+1, 255);
+      S := Trim(S);
+      GetProfilePrim := S;
+    end;
+  end;
+
+  function IniMgr.GetProfileString(Title, Group, Default : String) : String;
+    {-Returns String item "Title" in "[Group]", or default if not found}
+  var
+    S : String;
+
+  begin
+    S := GetProfilePrim(Title, Group);
+    if S = '' then
+      S := Default;
+    GetProfileString := S;
+  end;
+
+  function IniMgr.GetProfileBool(Title, Group : String; Default : Boolean) : Boolean;
+    {-Returns boolean item "Title" in "[Group]", or default if not found}
+  var
+    S : String;
+
+  begin
+    S := GetProfilePrim(Title, Group);
+    if S <> '' then begin
+      S := StUpcase(S);
+      if (S = 'TRUE') or (S = '1') or (S = 'YES') then
+        GetProfileBool := True
+      else if (S = 'FALSE') or (S = '0') or (S = 'NO') then
+        GetProfileBool := False
+      else
+        GetProfileBool := Default;
+    end
+    else
+      GetProfileBool := Default;
+  end;
+
+  function IniMgr.GetProfileByte(Title, Group : String; Default : Byte) : Byte;
+    {-Returns byte item "Title" in "[Group]", or default if not found}
+  var
+    I : Integer;
+    S : String;
+
+  begin
+    S := GetProfilePrim(Title, Group);
+    if S <> '' then begin
+      if Str2Int(S, I) then
+        GetProfileByte := Byte(I)
+      else
+        GetProfileByte := Default;
+    end
+    else
+      GetProfileByte := Default;
+  end;
+
+  function IniMgr.GetProfileInt(Title, Group : String; Default : Integer) : Integer;
+    {-Returns integer item "Title" in "[Group]", or default if not found}
+  var
+    I : Integer;
+    S : String;
+
+  begin
+    S := GetProfilePrim(Title, Group);
+    if S <> '' then begin
+      if Str2Int(S, I) then
+        GetProfileInt := I
+      else
+        GetProfileInt := Default;
+    end
+    else
+      GetProfileInt := Default;
+  end;
+
+  function IniMgr.GetProfileWord(Title, Group : String; Default : Word) : Word;
+    {-Returns word item "Title" in "[Group]", or default if not found}
+  var
+    I : Word;
+    S : String;
+
+  begin
+    S := GetProfilePrim(Title, Group);
+    if S <> '' then begin
+      if Str2Word(S, I) then
+        GetProfileWord := I
+      else
+        GetProfileWord := Default;
+    end
+    else
+      GetProfileWord := Default;
+  end;
+
+  function IniMgr.GetProfileLong(Title, Group : String; Default : LongInt) : LongInt;
+    {-Returns longint item "Title" in "[Group]", or default if not found}
+  var
+    I : LongInt;
+    S : String;
+
+  begin
+    S := GetProfilePrim(Title, Group);
+    if S <> '' then begin
+      if Str2Long(S, I) then
+        GetProfileLong := I
+      else
+        GetProfileLong := Default;
+    end
+    else
+      GetProfileLong := Default;
+  end;
+
+  procedure IniMgr.DeleteProfileString(Title, Group : String);
+    {-Deletes item "Title" in group "[Group]" from list}
+  var
+    P : IniLinePtr;
+
+  begin
+    P := GetIniNode(Title, Group);
+    if P = nil then
+      IniStatus := ecRecordNotFound
+    else
+      Delete(P);
+  end;
+
+  procedure IniMgr.DeleteProfileGroup(Group: String);
+    {-Deletes all items under group "[Group]"}
+  var
+    P, NextOne : IniLinePtr;
+
+  begin
+    IniStatus := ecOK;
+    P := GetIniGroupNode(Group);
+    if P <> nil then begin
+      repeat
+        NextOne := IniLinePtr(Next(P));
+        Delete(P);
+        P := NextOne;
+      until (P = nil) or (P^.PL^[1] = '[');
+      if AlwaysUpd then
+        FlushFile
+      else
+        NeedUpd := True;
+    end else
+      IniStatus := ecGroupNotFound;
+  end;
+
+  function IniMgr.Modified : Boolean;
+
+  begin
+    Modified := NeedUpd;
+  end;
+
+  procedure IniMgr.SetProfileString(Title, Group, NewVal : String);
+    {-Change existing item "Title" in "[Group]" to "NewVal"}
+  var
+    P : IniLinePtr;
+    S : String;
+
+  begin
+    IniStatus := ecOK;
+    if IsSparse then exit;
+
+    P := GetIniNode(Title, Group);
+    if P = nil then
+      AddProfileString(Title, Group, NewVal)
+    else begin
+      S := P^.PL^;
+      Dec(S[0], Length(S) - Pos('=',S));
+      S := S + NewVal;
+      if P^.Update(S) then begin
+        IniStatus := ecOK;
+        if AlwaysUpd then
+          FlushFile
+        else
+          NeedUpd := True;
+      end else
+        IniStatus := ecOutOfMemory;
+    end;
+  end;
+
+  procedure IniMgr.AddProfileString(Title, Group, NewVal : String);
+    {-Add new item "Title=NewVal" to "[Group]".}
+  var
+    P, Q : IniLinePtr;
+
+  begin
+    IniStatus := ecOK;
+    if IsSparse then
+      Exit;
+
+    {make sure record doesn't already exist}
+    GetIniNode(Title, Group);
+    if (IniStatus <> ecRecordNotFound) and (IniStatus <> ecDataBaseEmpty)
+      then begin
+        IniStatus := ecRecordExists;
+        Exit;
+      end;
+
+    {fixup Strings as needed}
+    if Group[1] <> '[' then
+      Group := '['+Group+']';
+    Group := StUpcase(Group);
+
+    P := GetLastNodeInGroup(Group);
+    if P = nil then begin
+      {group not found, create a new one}
+      New(Q, Init(Group));
+      if Q = nil then begin
+        IniStatus := ecOutOfMemory;
+        Exit;
+      end;
+      Append(Q);
+      P := Q;
+    end;
+    {add our new element after}
+    New(Q, Init(Title+'='+NewVal));
+    if Q <> nil then begin
+      Place(Q, P);
+      IniStatus := ecOK;
+      if AlwaysUpd then
+        FlushFile
+      else
+        NeedUpd := True;
+    end else
+      IniStatus := ecOutOfMemory;
+  end;
+
+  function StripBrackets(S : String) : String;
+    {-Returns a String without brackets and in all upper case letters.}
+  var
+    B : Byte absolute S;
+
+  begin
+    S := Trim(S);
+    if S[b] = ']' then
+      Dec(B);
+    if S[1] = '[' then begin
+      Move(S[2], S[1], B-1);
+      Dec(B);
+    end;
+    StripBrackets := StUpcase(S);
+  end;
+
+  procedure IniMgr.EnumGroups(P : DoubleListPtr);
+    {-Returns P loaded with the names of all groups in the file.}
+  var
+    Q, R : IniLinePtr;
+
+  begin
+    Q := IniLinePtr(dlHead);
+    while Q <> nil do begin
+      if Q^.PL^[1] = '[' then begin
+        New(R, Init(StripBrackets(Q^.PL^)));
+        if R = nil then begin
+          IniStatus := ecOutOfMemory;
+          Exit;
+        end;
+        P^.Append(R);
+      end;
+      Q := IniLinePtr(Q^.dlNext);
+    end;
+    IniStatus := ecOK;
+  end;
+
+  procedure IniMgr.EnumGroupItems(P : DoubleListPtr; Group : String;
+                                  Verbose : Boolean);
+    {-Returns P loaded with all items in group "[Group]".}
+  var
+    Q, R : IniLinePtr;
+    S : String;
+
+  begin
+    {fixup Strings as needed}
+    if Group[1] <> '[' then
+      Group := '['+Group+']';
+    Group := StUpcase(Group);
+
+    Q := IniLinePtr(dlHead);
+    while Q <> nil do begin
+      if StUpcase(Q^.PL^) = Group then begin
+        Q := IniLinePtr(Q^.dlNext);
+        while (Q <> nil) do begin
+          if (Q^.PL^ <> '') and (Q^.PL^[1] <> '[') then begin
+            S := Trim(Q^.PL^);
+            if (S <> '') and (S[1] <> ';') then begin
+              if not Verbose then
+                S := ExtractWord(1, S, ['=']);
+              New(R, Init(S));
+              if R = nil then begin
+                IniStatus := ecOutOfMemory;
+                Exit;
+              end else
+                P^.Append(R);
+            end;
+          end;
+          if (Q^.PL^ <> '') then begin
+            if (Q^.PL^[1] <> '[') then
+              Q := IniLinePtr(Q^.dlNext)
+            else
+              Q := nil;
+          end else
+            Q := IniLinePtr(Q^.dlNext);
+        end;
+        IniStatus := ecOK;
+        Exit;
+      end;
+      Q := IniLinePtr(Q^.dlNext);
+    end;
+    IniStatus := ecGroupNotFound;
+  end;
+

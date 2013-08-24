@@ -1,0 +1,157 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML>
+  <HEAD>
+
+  <TITLE> EleWEB - Edit your profile - </TITLE>
+  <link rel="Stylesheet" TYPE="text/css" HREF="/eleweb.css">
+</HEAD>
+
+<BODY>
+
+<!-- --------------------------------------------------------------------- -->
+
+ <!-- Design the form -->
+<FORM ACTION="/cgi-bin/eleweb.exe?action=3&script=editprof&sub-action=1" METHOD="POST">
+
+
+ <!-- --------------------------------------------------------------------- -->
+ <TABLE cellSpacing=1 cellPadding=4 width="50%" border=0 align=center class="tab_border">
+   <TBODY>
+
+     <TR class="tab_header">
+       <TD colSpan=2 align="center">
+         Edit user profile
+       </TD>
+     </TR>
+
+     <TR>
+       <TD ALIGN=LEFT CLASS="tab_contents">
+         Username
+       </TD>
+ 
+        <TD class="tab_contents2">
+           |FA
+        </TD>
+     </TR>
+
+
+     <TR>
+       <TD class="tab_contents">
+         Pseudonym (alias)
+       </TD>
+
+      <TD class="tab_contents2">
+          |F3
+       </TD>
+
+     </TR>
+
+     <TR>
+       <TD ALIGN=left class="tab_contents">
+          Email address
+       </TD>
+
+      <TD class="tab_contents2">
+        <INPUT NAME="email" TYPE="text" value="|ZK">
+       </TD>
+     </TR>
+
+
+     <TR>
+       <TD ALIGN=left class="tab_contents">
+         Password (current) <FONT class="tab_required">*</FONT>
+       </TD>
+
+      <TD class="tab_contents2">
+          <INPUT NAME="password" TYPE="password" value="">
+       </TD>
+
+     </TR>
+
+     <TR>
+       <TD ALIGN=left class="tab_contents">
+          New Password
+       </TD>
+
+      <TD class="tab_contents2">
+          <INPUT NAME="password1" TYPE="password" value="">
+       </TD>
+
+     </TR>
+
+     <TR>
+       <TD ALIGN=left class="tab_contents">
+         New Password (confirm)
+       </TD>
+
+      <TD class="tab_contents2">
+          <INPUT NAME="password2" TYPE="password" value="">
+       </TD>
+     </TR>
+
+
+     <TR>
+       <TD ALIGN=left class="tab_contents">
+          City and Country
+       </TD>
+
+      <TD class="tab_contents2">
+          <INPUT NAME="location" TYPE="text" value="|ZB">
+       </TD>
+     </TR>
+
+
+     <TR>
+      <TD ALIGN=left class="tab_contents">
+        ICQ number
+       </TD>
+
+      <TD class="tab_contents2">
+        <INPUT NAME="icqnr" TYPE="text" value="|ZL">
+     </TD>
+     </TR>
+
+     <TR>
+       <TD ALIGN=left class="tab_contents">
+         Homepage
+       </TD>
+
+      <TD class="tab_contents2">
+          <INPUT NAME="homepage" TYPE="text" value="|ZM">
+     </TD>
+     </TR>
+
+     <TR>
+       <TD ALIGN=left class="tab_contents">
+         Usericon
+       </TD>
+
+      <TD class="tab_contents2">
+          <INPUT NAME="usericon" TYPE="text" value="|ZN">
+       </TD>
+     </TR>
+
+
+     <!-- Set the submit / clear buttons -->
+     <TR>
+       <TD ALIGN=CENTER class="tab_contents" COLSPAN="2">
+         <INPUT TYPE="submit" value="Submit">
+         <INPUT TYPE="reset" value="Reset">
+       </TD>
+
+     </TR>
+
+     <TR>
+       <TD class="tab_footer" colSpan=2>
+         <FONT SIZE="1">
+           &nbsp;
+         </FONT>
+       </TD>
+     </TR>
+
+
+   </TBODY>
+ </TABLE>
+ <!-- --------------------------------------------------------------------- -->
+</HTML>
+

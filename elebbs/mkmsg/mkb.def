@@ -1,0 +1,25 @@
+{$I-}
+{$S-}
+{$IFNDEF FPC}
+ {$L-}
+ {$D-}
+ {$V-}
+ {$L+}
+{$ENDIF}
+{$R-}
+{$X+}
+
+{$IFNDEF WINDOWS}
+{$IFNDEF FPC}
+{$O+}                       {Make units overlayable}
+{$ENDIF}
+{$X+}                       {Turn off extended syntax}
+{$ENDIF}
+
+{$IFDEF WINDOWS}
+  {$DEFINE BASMINT}         {Use BASM for interrupts under windows}
+{$ENDIF}
+
+{.$DEFINE OPRO}             {Remove dot to use with OPRO}
+
+{$R-,D+}

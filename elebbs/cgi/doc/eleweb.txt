@@ -1,0 +1,1008 @@
+EleWEB
+------
+
+Introduction
+------------
+EleWEB is a CGI for use with your webserver, this means that EleWEB
+does not replace your webserver, but in fact requires one to be able to use it.
+
+Most webservers support the CGI standard, and can be used in combination with
+EleWEB, EleWEB has been tested in combination with Internet Information Server,
+Apache and Xitami although most should work.
+
+EleWEB is available for OS/2, Windows, Linux and FreeBSD. Because of the wide
+variety of operating systems and combinations of webservers, we cannot
+describe each and every possible combination. Therefore, this document is
+written to help you understand what is required to make EleWEB run.
+
+
+ELEWEB ENVIRONMENT VARIABLE
+---------------------------
+EleWEB needs some EleBBS configuration files in order to run correctly,
+EleWEB will use an environment variable to locate these configuration files.
+Usually, you have already defined an "ELEBBS" environment variable and this
+is sufficient for EleWEB. Please note that the environment variable should
+point to the EleBBS directory.
+
+Most webservers however, do not pass along the environment variables that
+are available for normal operations, but instead only supply a set of default
+values. To override this behaviour, you should consult your webserver
+documentation, i've listed the 3 most common webservers below:
+
+        IIS
+        ---
+        If you define ELEBBS as a system environment variable, this
+        will be sufficient, a restart of the IIS services might be
+        necessary to recognize this environment variable. You can
+        accomplish this by running the program "iisreset"
+
+        Xitami
+        ------
+        In your "defaults.cfg" configuration file of Xitami, you should
+        look up the heading named "Cgi-Environment", and then add the
+        appropriate environment variable for EleBBS. Such an entry might
+        look something like this:
+
+          --
+                [Cgi-environment]
+                    Elebbs=C:\BBS\ELE\
+          --
+
+
+        Apache
+        ------
+        You need to tell Apache to set the EleBBS environment variable, you do
+        this by editting Apache's configuration file, and adding the keyword
+        SetEnv in the right place. Please consult the Apache documentation
+        on how to use this exactly, but it should look something like:
+
+          --
+               SetEnv ELEBBS /opt/ele/
+          --
+
+
+
+Installing "eleweb.exe"
+-----------------------
+After you have setup your environment variable, and you made yourself sure
+that the configuration changes have been applied, you should place the
+EleWEB executable (eleweb.exe on OS/2 and Windows, "eleweb" on Linux and
+FreeBSD), into your website's cgi-bin directory.
+
+
+        IIS
+        ---
+        If you run IIS, you have no such directory but have a "scripts"
+        directory instead. Because a lot of HTML templates and scripts
+        expect you to have an "cgi-bin" directory, the most easy way is to
+        create a new virtual directory and name it "cgi-bin". Please consult
+        the documentation on http://www.microsoft.com for information on how
+        to configure this. Just copy the file eleweb.exe to your cgi-bin
+        directory, and make sure your virtual directory is set to be executable.
+
+
+        Xitami
+        ------
+        Xitami has a CGI-BIN directory defined under the Xitami directory,
+        just copy the file to there.
+
+        Apache
+        ------
+        Apache has a CGI-BIN directory per default. Depending on the way you
+        installed Apache, the location may vary. Just copy your file to there.
+
+
+Configure your script and HTML location
+---------------------------------------
+Now you should determine where your EleWEB HTML templates will be stored, and
+where the EleXer scripts will be stored. Ensure these two directories are not
+available to your webserver.
+
+A common installation practice is to store your EleWEB HTML templates under
+your EleBBS root directory, and your EleXer scripts too. For example, if your
+EleBBS directory is at "C:\BBS\ELE\", you should store your HTML templates in
+"C:\BBS\ELE\HTML\" and your EleXer scripts in "C:\BBS\ELE\SCRIPT\".
+
+Now that you determined these directorys, fire up ELCONFIG, and navigate to:
+  ELCONFIG > System > Paths >
+You will find the entries "EleWEB HTML" and "EleWEB ELM" there, adjust them
+to the directories you have just picked.
+
+Now, move all of your *.HTML files to the selected HTML directory, and move
+the *.PAS and *.INC files to your EleXer directory.
+
+There are three special files - login.htm, eleweb.css and asklogin.htm - that
+should be put in you webservers document directory. The login.htm will attempt
+an automatic login if possible, and the asklogin.htm is the file used whenever
+a failed login is seen.
+
+Now, create an "images" directory below your webserves document directory. Put
+all the images (*.png, *.jpg and *.gif) files into this directory to make sure
+the images work on your server.
+
+
+Compiling the EleXer scripts
+----------------------------
+EleWEB is merely an script interpreter for the EleXer scripts that come with
+EleWEB. Most of the functionality of EleWEB is provided by the scripts,
+allowing you to customize EleWEB in an unique way.
+
+Customizing the scripts is not necessary though, as EleWEB uses an HTML
+template system that determines the way EleWEB looks and the scripts contain
+many options and possibilities that will fit most situations.
+
+The EleXer scripts come only in source, and should be compiled by yourself.
+Compiling the scripts is not difficult and only involves calling the
+program "elexer" with the -C option. For example, to compile the script
+"readmsg", you should navigate to the EleXer scripts directory, and then run:
+
+elexer -c readmsg
+
+this will compile the read message script. You need to compile all .PAS files,
+the .INC files are so called "include" files, and are used by EleXer
+themselves.
+To compile all EleXer scripts in Windows (not Windows95 based systems), you
+can use:
+
+for %i in (*.pas) do elexer -c %i
+
+In bash, you could use something like:
+
+for i in *.pas; do elexer -c $i; done
+
+and undoubtedly, for any other os there are other ways too. Please make
+absolutely sure that you use the EleXer program that came with the EleWEB
+archive as the EleXer from EleBBS might create incompatible EleXer modules.
+
+
+Configuration of the front page
+-------------------------------
+The default EleWEB templates are based on a newspage with a front page like
+system. EleWEB will use normal JAM messagebases to store these items.
+
+You should create the actual area in ELCONFIG. You can create the area like
+any other area, you should just ensure yourselve that the area type is set to
+"Forum", the areanumber is 1000 and please use a JAM messagebase.
+
+
+Configuration of the forums
+---------------------------
+The EleWEB forums are seperated in several categories, which are named Groups
+in ELCONFIG. You should create a new group (or several groups) and set it up
+as a forum group (set the type as "Forum").
+
+Now, create a few areas like you would normally do, but set the area type to
+a forum, and set the group to one of the earlier created groups.
+
+
+Creating a forum.ini file
+-------------------------
+For each forum you created here earlier, you should create a text-file named
+"forum<num>.ini", and put this file into the same directory as the JAM files
+for that area. This file specifies special information for the area which
+is used to display some info. The <num> should be replaced by the actual
+forum number, so for forum 1001 a file "forum1001.ini" should be specified.
+
+A forum.ini file, looks something like:
+
+      --
+          ;
+          ;
+          ; Forum.ini files are very straight forward.
+          ; ; = commentline
+          ; first line is the name of the moderator (html usable)
+          ; second line is the description file
+          moderator
+          Discussion forum<br>This is a description line.<BR>This is another one.
+      --
+
+You can put whatever you like in this file, and the comments are not necessary.
+
+
+Installing the EleUSER extension file
+-------------------------------------
+EleWEB stores more information about a user than EleBBS does, fortunately,
+EleBBS has a way to do this without limiting the amount of info you want to
+store. EleBBS and EleWEB do this by using a script named "usrsup", and a
+compiled version should be in your EleBBS directory (the "usrsup.elm" file
+to be precise) but also in your EleWEB directory. Make sure both versions
+are exactly the same.
+
+
+If you look at the source of "usrsup.pas" you see a line like this:
+
+      --
+         const
+           HomeDirectory = 'C:\bbs\ele\home\';
+      --
+
+this directory specifies where the EleWEB home directories should be created.
+You can easily change the location of this home directory, by changing this
+script and recompiling it. Make sure this directory exists.
+
+After you compiled the scripts, use the "eleuser" program from the EleWEB
+archive (or if a new EleBBS is released since EleBBS 0.10.rc1 use that one),
+to recreate the EleWEB user extension file. You do this by running:
+
+eleuser -e
+
+This will recreate the whole user extension file. Upon each logon, EleWEB
+will check whether the users' home directory still exists, and if necessary
+create the home directory. EleWEB will try to read a text file named
+"userinfo.txt" in this directory, in this file a lot of info can be stored,
+and it can be easily extended. The normal way to update this file is to login
+to your EleWEB and select "Edit profile", however, one entry in there is not
+editable but is useful anyway.
+There is a entry named "membertype" which contains what sort of user this is,
+it might be nice to show that you are the sysop, a line might look like:
+
+      --
+         membertype=<font color="red"><B>Sysop</B></font>
+      --
+
+Although this is not necessary.
+
+
+Running EleWEB
+--------------
+Once you have all done this, you should be able to run EleWEB, by going to:
+
+  http://localhost/login.htm
+
+which should show you the frontpage. Just navigate around, and toy around a bit
+with it. If you want to modify the EleWEB layout, look in your HTML directory.
+
+
+EleWEB DESIGN
+-------------
+Once you have the above up and running, you might want to customize
+EleWEB to your own style or perhaps add new parts to it. You can just go ahead
+and start customizing, but reading this part might help you better understand
+how EleWEB works and how the different parts interact.
+
+EleWEB has 4 operating modes, also known as actions. These operating modes
+are hard coded into EleWEB and are as followed:
+
+                Action 1
+                Logon    -  This is the way to log an EleWEB user on.
+                            EleWEB requires the fields "ele_username" and
+                            "ele_password" to be present and will use those
+                            for authentication.
+
+                            If authentication is succesful, the script
+                            "login" is automatically run.
+
+                Action 2
+                Logout   -  The user will be logged out, and the script
+                            "logout" is automatically run.
+
+                Action 3
+                Run Any  -  You specify the script name and the script
+                            "header" is run. The first parameter of this
+                            script is the name of the script that is supposed
+                            to be run. After "header" is done running, EleWEB
+                            will run the requested script.
+                            After this, the script "footer" is run. It is not
+                            required to have either a "header" or a "footer"
+                            script as it will be silently ignored when they
+                            do not exist.
+
+
+                Action 11
+                Run Diag -  Will show some diagnostic information to the
+                            requesting web browser.
+
+If any fatal error occurs from which EleWEB cannot recover, this error has a
+unique number and the "errors" script is run.
+
+For re-authentication, EleWEB requires three parameters:
+ - Nodenumber user is logged on to
+ - Password hash
+ - Userrecord number
+With this information, EleWEB will validate the user and select whether the
+user has access or not. Because there can be several ways to pass this
+information, EleWEB uses a script named "getuir" to retrieve this information,
+this script should always be available and is described below.
+
+
+When EleWEB is run with an action 3, EleWEB will always try to automatically
+log the user on using an existing cookie.
+It's the task of the script to actually check if this user is allowed to
+access that part or not. This allows you to only mark certain areas as
+unavailable to not logged in users.
+
+
+DEFAULT SCRIPTS
+---------------
+
+CHNGAREA.PAS            - Parameter(s):
+                            - value          Value of new area/group
+                            - new-script     The script to run after the
+                                             modifications are done.
+                            - sub-action     What to change exactly:
+                                                0 - Message group
+                                                1 - File group
+                                                2 - Message area
+                                                3 - File area
+
+                          Description:
+                            Script to change the logged on users message and
+                            file area/group. This script does not
+                            interact with the user but merely updates its
+                            data.
+
+                          Template(s):
+                            none
+
+
+EDITPROF.PAS            - Parameter(s):
+                            - sub-action     What to do exactly:
+                                                0 - Show the current info
+                                                1 - Update the users record
+                            - password1,     (sub-action = 1) The new password
+                              password2      for this user. Password1 is the
+                                             new password, and password2 is
+                                             the verification.
+                            - location       (sub-action = 1) The new location
+                                             of this user for inclusion in his/her
+                                             record
+                            - email          (sub-action = 1) The users new
+                                             email address for inclusion in
+                                             his/her record
+                            - icqnr          (sub-action = 1) The users ICQ
+                                             address for inclusion in his/her
+                                             record
+                            - homepage       (sub-action = 1) The users
+                                             homepage for inclusion in his/her
+                                             record
+                            - usericon       (sub-action = 1) Location to
+                                             a web graphic to show in users
+                                             profiles.
+                            - password       (sub-action = 1) The actual
+                                             current password. This is
+                                             necessary to update this record.
+
+
+                          Description:
+                            Script to change the logged on users record and
+                            profile data. This script can both display the
+                            users' current profile (sub-action = 0) and
+                            update the profile with new information
+                            (sub-action = 1).
+
+                          Template(s):
+                            editprof.htm - Template to show current users
+                                           profile.
+                            profupd.htm  - Template to notify the user that
+                                           his/her record has been updated.
+                            proferr.htm  - Template to notify the user that
+                                           the updating of his/her record
+                                           failed.
+                            uinferr.htm  - User is not found
+
+
+ERRORS.PAS (built-in)   - Parameter(s):
+                            (none)
+
+                          Description:
+                            Script which is automatically run by EleWEB
+                            whenever a fatal error occurs, but which can
+                            also be called by any other EleWEB script
+                            by using the "web_RunErrorScript" procedure.
+                            The actual error number is passed as a parameter
+                            and can be used to display a more useful error
+                            message.
+
+                          Template(s):
+                            error<num>.htm - If this file exists, EleWEB
+                                             will show it, if not EleWEB
+                                             will display a standard built-in
+                                             error text.
+
+FILEDN.PAS              - Parameter(s):
+                            - areanum        Actual area number of which
+                                             to download a file from
+                            - recordnum      Record number of file to download.
+                            
+
+                          Description:
+                            Script which will send the specified file
+                            to the user and specifying the name. This script
+                            does some very rudimentary access checks whether
+                            downloading is allowed but these checks should
+                            be extended.
+
+                          Template(s):
+                            (none)
+
+FOOTER.PAS (built-in)   - Parameter(s):
+                            (none)
+                            
+                          Description:
+                            Script which will be run at the end of all other
+                            (user) scripts. The first parameter of this script
+                            is the script name that was run before this one.
+                            
+                          Template(s):
+                            (none)
+
+GETUIR.PAS (built-in)   - Parameter(s):
+                            (none)
+                            
+                          Description:
+                            Script which will be run for each script and
+                            which should always call the EleXer routine named
+                            "web_SetLoginData" - this routine will pass the
+                            authentication information back to EleWEB which
+                            then will use this information to validate the
+                            user.
+                            
+                          Template(s):
+                            (none)
+
+HEADER.PAS (built-in)   - Parameter(s):
+                            (none)
+                            
+                          Description:
+                            Script which will be run at the begin of all other
+                            (user) scripts. The first parameter of this script
+                            is the script name that will be run.
+                            This script is also used (in the default templates)
+                            to call "openout", please see below for an
+                            explanation of what this script does
+
+                          Template(s):
+                            (none)
+
+LISTFILE.PAS            - Parameter(s):
+                            - newsubaction   New sub action to use for this
+                                             script (overrules sub-action)
+                            - sub-action     Actual command to perform
+                                                0 - List this specific area
+                                                1 - Search all areas
+                            - days           (sub-action = 1) Number of days
+                                             old the files can be
+                            - areanum        Actual area number to list
+                                             files in
+                            - keyword        (sub-action = 1) Keyword to search
+                                             for
+                            - checkgroup     (sub-action = 1) This can have
+                                             a value of either "true" or
+                                             "false". This defines whether
+                                             this search should be limited
+                                             to the current group only.
+                            - wildcard       (sub-action = 1) Wildcard to
+                                             search for.
+
+
+                          Description:
+                            Script which is used to list specific areas, or
+                            to search for keywords, wildcards and on date.
+                            
+                          Template(s):
+                            fl_ahead.htm - Template that is shown above each
+                                           area. For a normal file listing,
+                                           this is shown once, for a search
+                                           (eg: on date or keyword), this is
+                                           shown for each area.
+                            fl_data.htm  - Template for the actual file item.
+                            fl_miss.htm  - Template for the file item, if the
+                                           file is missing.
+                            fl_comnt.htm - Template for the actual item when
+                                           this item is a filearea comment.
+                            fl_data2.htm - If the description line uses more
+                                           than one line, the next lines are
+                                           displayed with this file.
+                            fl_afoot.htm - Template that is shown after each
+                                           area. For a normal file listing,
+                                           this is shown once, for a search
+                                           (eg: on date of wildcard), this is
+                                           shown for each area.
+                            fl_anone.htm - If the mode was a normal listing,
+                                           and no files were displayed,
+                                           this file is displayed.
+                            fl_head.htm  - This file is displayed at the
+                                           beginning of everything.
+                            fl_none.htm  - This file is displayed if there
+                                           was a search specified, but in all
+                                           areas there was no match.
+                            fl_foot.htm  - This template is displayed after
+                                           everything.
+
+LISTLAST.PAS            - Parameter(s):
+                            (none)
+                            
+                          Description:
+                            Script which can be used to display today's callers
+
+                          Template(s):
+                            llstdata.htm - Template with the actual lastcall
+                                           data in it.
+                            llsthead.htm - Template that is shown first.
+                            llstfoot.htm - Template that is shown after all
+                                           actual information.
+
+LISTONL.PAS             - Parameter(s):
+                            (none)
+                            
+                          Description:
+                            Script which can be used to display the users that
+                            are currently logged on.
+
+
+                          Template(s):
+                            olstdata.htm - Template with the actual online
+                                           users data in it.
+                            olsthead.htm - Template that is shown first.
+                            olstfoot.htm - Template that is shown after all
+                                           actual information.
+
+LISTUSR.PAS             - Parameter(s):
+                            (none)
+                            
+                          Description:
+                            Script which can be used to display all the users
+                            on the system.
+
+
+                          Template(s):
+                            ulstdata.htm - Template with the actual users
+                                           data in it.
+                            ulsthead.htm - Template that is shown first.
+                            ulstfoot.htm - Template that is shown after all
+                                           actual information.
+
+LOGIN.PAS (built-in)    - Parameter(s):
+                            (none)
+                            
+                          Description:
+                            This script is run as soon as EleWEB has
+                            successfully authenticated the user.
+                            The implementation of this script uses a redirect
+                            to another script ("readmsg") otherwise we
+                            would have to repost the login information each
+                            time we went back to the main menu.
+                            This script calls the "readmsg" script and
+                            instructs it to a Front Page action, with the
+                            area 1000. See the description of script "readmsg"
+                            for the exact information.
+                            
+                          Template(s):
+                            (none)
+
+LOGOUT.PAS (built-in)   - Parameter(s):
+                            (none)
+                            
+                          Description:
+                            This script is run as EleWEB logs a user off.
+                            This script resets the stored cookies on the
+                            users his system, and then redirects to the
+                            EleBBS homepage (www.elebbs.com)
+
+                          Template(s):
+                            (none)
+
+LSTAREAS.PAS            - Parameter(s):
+                            - newsubaction   (see sub-action)
+                            - sub-action     Actual command to perform:
+                                                 0 - List Message groups
+                                                 1 - List file groups
+                                                 2 - List message areas
+                                                      (check group)
+                                                 3 - List file areas
+                                                      (check group)
+                                                 4 - List message areas
+                                                      (ignore groups)
+                                                 5 - List file areas
+                                                      (ignore group)
+                                                 6 - List the areas marked
+                                                     as forums.
+
+                          Description:
+                            Script which is used to display the available
+                            message/file areas and groups. It also has a
+                            special mode to display the forum areas.
+
+                            If either sub-action 2 or 3 specified this
+                            script will only display the areas in the group
+                            the user has selected, while sub-action 4 and 5
+                            ignore the group and will actually show all areas.
+
+                            The mode 6 is a special mode which will display all
+                            groups and areas that are set as type "Forum".
+
+                          Template(s):
+                            frm_head.htm - (sub-action 6). Header file for the
+                                           forum listing. This file is
+                                           displayed first.
+                            frm_grp.htm  - (sub-action 6). This file is
+                                           displayed for each group that is
+                                           marked as a forum.
+                            frm_aron.htm - (sub-action 6). This file is
+                                           displayed for each area that is
+                                           marked as a forum, but also
+                                           contains new messages for this
+                                           user.
+                            frm_arof.htm - (sub-action 6). This file is
+                                           displayed for each area that is
+                                           marked as a forum, but does not
+                                           contain new messages for this user.
+                            frm_foot.htm - (sub-action 6). Displayed at the
+                                           end of the actual forum listing.
+
+                            mgrphead.htm - (sub-action 0). Displayed at the
+                                           beginning of a message group
+                                           listing.
+                            mgrpdata.htm - (sub-action 0). Template used to
+                                           display the actual message group
+                                           information.
+                            mgrpfoot.htm - (sub-action 0). Displayed at the
+                                           end of a message group listing.
+                            marehead.htm - (sub-action 2 and 4). Displayed at
+                                           the beginning of a message area
+                                           listing.
+                            maredata.htm - (sub-action 2 and 4). Template used
+                                           to display the actual message area
+                                           information.
+                            marefoot.htm - (sub-action 2 and 4). Template that
+                                           is displayed at the end of the
+                                           area listing.
+
+                            fgrphead.htm - (sub-action 1). Displayed at the
+                                           beginning of a file group listing.
+                            fgrpdata.htm - (sub-action 1). Template used to
+                                           display the actual file group
+                                           information.
+                            fgrpfoot.htm - (sub-action 1). Displayed at the
+                                           end of a file group listing..
+                            farehead.htm - (sub-action 3 and 5). Displayed at
+                                           the beginning of a file area
+                                           listing.
+                            faredata.htm - (sub-action 3 and 5). Template to
+                                           display the actual file area
+                                           information.
+                            farefoot.htm - (sub-action 3 and 5). Displayed at
+                                           the end of a file area listing.
+
+NEW_ONE.PAS             - Parameter(s):
+                            (none)
+                            
+                          Description:
+                            This script is used to display a HTML file, named
+                            "newuser.htm"
+
+                          Template(s):
+                            newuser.htm  - Template to show a new user form
+                                           that has to be filled in by the
+                                           user.
+
+NEW_TWO.PAS             - Parameter(s):
+                            - username       Username the user has entered
+                            - handle         Handle the user has entered
+                            - location       Location the user has entered
+                            - bd_day         Birth date, the day
+                            - bd_month       Birth date, the month
+                            - bd_year        Birth date, the year
+                            - password1      Password (1st entered)
+                            - password2      Password (2nd time)
+                            - email          E-mail address of this user
+                            - icqnr          ICQ number
+                            - homepage       Homepage this user has entered
+                            - usericon       User icon
+                            
+                          Description:
+                            This script is responsible for signing new users
+                            in, validating the entered data and adding them
+                            to the user file.
+
+                          Template(s):
+                            newwelc.htm  - Welcome message to the new user,
+                                           this is shown if the new user
+                                           creation was successful.
+                            newerr*.htm  - Error message to the new user.
+                                             1 - Duplicate username
+                                             2 - Duplicate handle
+                                             3 - User is in trashcan
+                                             4 - Not all fields are entered
+                                             5 - Invalid birth date entered
+                                             6 - Invalid password entered
+
+OPENOUT.PAS             - Parameter(s):
+                            (none)
+                            
+                          Description:
+                            This script is used to send headers to the
+                            server, including cookies which are used to
+                            validate the user.
+
+                          Template(s):
+                            (none)
+
+READMSG.PAS             - Parameter(s):
+                            - newsubaction   (see sub-action)
+                            - sub-action     Defines the way "readmsg" operates:
+                                                0 - List message headers
+                                                1 - Read a specified message
+                                                2 - Delete specified message
+                                                3 - Initialize the writing of
+                                                    a new message
+                                                4 - Write the new message
+                                                5 - Initialize the writing of
+                                                    a reply
+                                                6 - Write the reply
+                                                7 - List the message headers in
+                                                    a threaded (indented) way
+                                                8 - List all messages "flat"
+                                                9 - Show a message thread
+                                                10- List message, and add the
+                                                    message thread beneath it
+                                                11- Initialize the editing of
+                                                    a message
+                                                12- Write back the modified
+                                                    message
+                                                13- Lock/unlock a forum
+                                                    topic
+                                                14- Read the specified forum
+                                                15- Display the specified
+                                                    forum as a front page
+                                                    site.
+                                                16- Show the specified story
+                                                    expanded, and add all
+                                                    replies to it.
+
+                            - threadreply    The thread number this is a reply
+                                             to
+                            - fpreply        If a reply is made to a front page
+                                             story, this should contain the
+                                             front page story we are replying
+                                             to.
+                            - post_fromwho   From who this post is from
+                            - post_towho     To who this post addressed to
+                            - post_subject   Subject of this post
+                            - post_reply_towho
+                                             Who are we replying to?
+                            - post_reply_replyaddr
+                                             Fidonet address we are replying to
+                            - post_reply_replykludge
+                                             Original reply kludge
+                            - post_reply_address
+                                             Address we are replying to
+                            - post_private   Is the message we are posting
+                                             marked as private?
+                            - post_reqrct    Do we want a read receipt?
+                            - msgnum         Actual message number we are
+                                             reading
+                            - dontquotetext  If set, decides to not display
+                                             the original reply text.
+                            - areanum        Area number we are reading messages
+                                             from
+                            - unlock         Lock this topic so that nobody can
+                                             write new messages
+                            
+                          Description:
+                            This script provides the reading and writing of
+                            messages in many ways. It's a very large script
+                            with much functionality.
+
+
+                          Template(s):
+                            qrdhead.htm  - (sub-action 0). Header of the
+                                           quick header reader
+                            qrddata.htm  - (sub-action 0). Data of the quick
+                                           reader.
+                            qrdflonl.htm - (sub-action 14). Forum reader,
+                                           message threads that are locked but
+                                           contain new messages for this user.
+                            qrdflon.htm  - (sub-action 14). Forum reader,
+                                           message threads that contain new
+                                           messages.
+                            qrdflofl.htm - (sub-action 14). Forum reader,
+                                           message thread that does not contain
+                                           new messages but is locked.
+                            qrdfloff.htm - (sub-action 14). Forum reader,
+                                           message threads that does not contain
+                                           new messages.
+                            qrdhd2.htm   - (sub-action 8). Flat message reader,
+                                           header message.
+                            qrdfoot.htm  - (sub-action 0). Footer of the quick
+                                           reader if messages were found.
+                            qrdend.htm   - (sub-action 0). Footer of the quick
+                                           reader if no messages were found.
+                            qrdft2.htm   - (sub-action 8). Footer of the forum
+                                           reader if messages were found.
+                            qrdend2.htm  - (sub-action 8). Footer of the forum
+                                           reader if no messages were found.
+                            trdhead.htm  - (sub-action 7 and 10). Header for
+                                           the display of this thread view.
+                            trdfoot.htm  - (sub-action 7 and 10). Footer if
+                                           messages were displayed.
+                            trdend.htm   - (sub-action 7 and 10). Header if
+                                           no new messages are to be displayed.
+                            stor_dt.htm  - (sub-action 15). Actual
+                                           story data for the short view of
+                                           the story.
+                            stfl_dt.htm  - (sub-action 16). Story page, the
+                                           actual full story.
+                            stfl_cmn.htm - (sub-action 16). Story page when
+                                           viewing the full story, the comments
+                                           to this story are shown using this
+                                           template.
+                            stfl_hd.htm  - (sub-action 16). Story page when
+                                           viewing the full story. Header
+                                           template.
+                            stfl_f2.htm  - (sub-action 16). Show the full story
+                                           when the user is not logged in.
+                            stfl_ft.htm  - (sub-action 16). Show the full story
+                                           when the user is not logged in.
+                            stor_hd.htm  - (sub-action 16). Story page header
+                            stor_f2.htm  - (sub-action 16). Story page footer
+                                           when the user is not logged in
+                            stor_ft.htm  - (sub-action 16). Story page footer
+                                           when the user is logged in.
+                            rdhead1.htm  - (sub-action 2 and 10). Message
+                                           reader. This is the beginning of
+                                           the reader.
+                            rdhead2.htm  - (sub-action 2 and 10). Message
+                                           reader header, is not a reply.
+                            rdhead3.htm  - (sub-action 2 and 10). Message
+                                           reader header, is a reply to another
+                                           message.
+                            rdhead4.htm  - (sub-action 2 and 10). Hasn't got
+                                           any replies.
+                            rdhead5.htm  - (sub-action 2 and 10). Has replies.
+                            rdhead6.htm  - (sub-action 2 and 10). Message reader
+                                           header, has no thread linked to
+                                           it.
+                            rdhead7.htm  - (sub-action 2 and 10). Message
+                                           reader header, has thread(s)
+                                           linked to it.
+                            rdhead99.htm - (sub-action 2 and 10). And closing
+                                           message reader header.
+                            rdtextn.htm  - (sub-action 2 and 10). Displaying of
+                                           regular text
+                            rdtextq.htm  - (sub-action 2 and 10). Displaying of
+                                           quoted text
+                            rdtextk.htm  - (sub-action 2 and 10). Displaying of
+                                           kludge lines.
+                            rdtextt.htm  - (sub-action 2 and 10). Displaying of
+                                           tear and origin lines.
+                            rdfoot.htm   - (sub-action 2 and 10). Footer for
+                                           reading this message.
+                            rderror.htm  - (sub-action 2 and 10). Error reading
+                                           this message.
+                            rd_flhd.htm  - (sub-action 9). Flat message reader
+                                           header.
+                            rd_flhd1.htm - (sub-action 9). Flat message reader,
+                                           odd messages header.
+                            rd_flhd2.htm - (sub-action 9). Flat message reader,
+                                           even messages header.
+                            rdfltxth.htm - (sub-action 10). Flat message reader,
+                                           show normal buttons.
+                            rdfltxta.htm - (sub-action 10). Flat message reader,
+                                           sysop access buttons.
+                            rdfltxtc.htm - (sub-action 10). Flat message reader,
+                                           text between code tags
+                            rd_flft1.htm - (sub-action 10). Flat message reader,
+                                           odd message footer.
+                            rd_flft2.htm - (sub-action 10). Flat message reader,
+                                           even message footer.
+                            rd_flft.htm  - (sub-action 10). Flat message reader,
+                                           footer.
+                            delerr2.htm  - (sub-action 2). You cannot delete
+                                           messages when it already has replies.
+                            delsucc.htm  - (sub-action 2). Template to show
+                                           that the message is deleted.
+                            delerror.htm - (sub-action 2). Template to show
+                                           that the message could not be
+                                           deleted (eg: no access)
+                            wmsg_tre.htm - (sub-action 5). Template for
+                                           changing a message.
+                            wmsg_six.htm - (sub-action 5). Reply to a comment.
+                            wmsg_fiv.htm - (sub-action 5). Reply to a story.
+                            wmsg_two.htm - (sub-action 5). Reply to a message.
+                            wmsg_for.htm - (sub-action 3). Post a new forum
+                                           message.
+                            wmsg_one.htm - (sub-action 3). Post a new message.
+                            werror<num>  - (sub-action 3). Error:
+                                               0 - Update successful
+                                               1 - No write access to this area
+                                               2 - "From" is not entered
+                                               3 - "To" is not entered
+                                               4 - "Subject" is empty
+                                               5 - Message to "Sysop" in
+                                                   an echomail area
+                                               6 - Tried to write a netmail
+                                               7 - Invalid email address
+                            w2succ.htm   - (sub-action 12). Template to show
+                                           that message changes have been
+                                           applied successfully.
+
+
+
+STRIPHTM.PAS            - Parameter(s):
+                            (none)
+                            
+                            This script should *not* be run from within the
+                            web browser. It should be run from the command
+                            prompt. The script will remove unnecessary white
+                            space from HTML code and will join several lines
+                            into one. This will greatly increase the speed
+                            of EleWEB's output to the end user.
+
+                          Description:
+                            It is recommended to have a separate directory
+                            where you put your templates that are for
+                            production, and a seperate directory for your
+                            designs.
+                            On your production directory, you could run the
+                            "striphtm" script.
+                            Running:
+
+                            "eleweb striphtm"
+
+                            will display how to use this script.
+
+
+                          Template(s):
+                            (none)
+
+STRTLOG.PAS             - Parameter(s):
+                            (none)
+                            
+                          Description:
+                            The "login.htm" HTML file redirects to this script.
+                            This script checks whether the user already has a
+                            cookie, and if so is directly logged in. If no
+                            cookies exist for EleWEB, the "please login" page
+                            is displayed. This facilitates the auto login
+                            of users.
+
+                          Template(s):
+                            (none)
+
+UINFO.PAS               - Parameter(s):
+                            - uname          Username to search for
+                            - urec           Userrecord to search for
+                            
+                          Description:
+                            This script displays some info about the selected
+                            user.
+
+
+                          Template(s):
+                            uinfdata.htm - Template that is used to show the
+                                           user data
+                            uinferr.htm  - Template that is used when the
+                                           user was not found.
+
+WALL.PAS                - Parameter(s):
+                            - highlight      Text to highlight
+                            - lines          Number of lines to show
+                            - refreshsec     Reload this page each 'xx'
+                                             seconds
+                            - dorefresh      should this page auto refresh
+
+                            
+                          Description:
+                            This script can function like a "Wall"
+                            system, or as a "Guestbook".
+
+                          Template(s):
+                            (none)
+
+
+
+CREDITS
+-------
+The used icons are based on the UBB icons (www.ubb.com)
+3d-Smiley.gif is created by Hylke Witjens (hylke@wwd.nl)
+
+
+LINKS
+-----
+
+CGI standard    - http://hoohoo.ncsa.uiuc.edu/cgi/interface.html
+Xitami          - http://www.xitami.com/
+Apache          - http://www.apache.org/
+IIS             - http://www.microsoft.com/iis/
+

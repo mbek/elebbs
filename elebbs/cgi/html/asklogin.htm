@@ -1,0 +1,95 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML>
+  <HEAD>
+
+  <TITLE> EleWEB </TITLE>
+  <link rel="Stylesheet" TYPE="text/css" HREF="/eleweb.css">
+</HEAD>
+
+<BODY>
+
+  <TABLE align=center width="80%" class="tab_border">
+     <TR class="tab_header">
+       <TD CENTER="LEFT">
+         &nbsp;
+       </TD>
+     </TR>
+    
+     <TR class="tab_contents">
+       <TD>
+         Welcome to this system, <br>
+         <br>
+         You tried to access a part of EleVillage that cannot be accessed by
+         unknown users.
+         If you do not have a login yet, you can create one by clicking
+         <A HREF="/cgi-bin/eleweb.exe?action=3&script=new_one">here</A>.
+         <BR>
+         EleVillage uses cookies to store login information, if your browser
+         is configured to not accept cookies, you will be unable to login.<BR><BR>
+         If you experience any problems, please <a href="mailto:elevillage@elebbs.com">mail</A> us.
+         <BR>&nbsp;<BR>
+       </TD>
+     </TR>
+
+     <TR class="tab_footer">
+       <TD CENTER="LEFT">
+         &nbsp;
+       </TD>
+     </TR>
+    
+  </TABLE>
+
+ <BR><BR><BR>
+
+ <!-- Design the form -->
+ <FORM ACTION="/cgi-bin/eleweb.exe?action=1" METHOD="POST">
+
+ <!-- --------------------------------------------------------------------- -->
+ <TABLE cellSpacing=1 cellPadding=4 width="70%" border=0 align=center class="tab_border">
+   <TBODY>
+
+     <TR class="tab_header">
+       <TD colSpan=2 align="center" class="tab_header">
+         Login
+         <BR>
+       </TD>
+     </TR>
+
+
+     <TR>
+       <TD ALIGN=LEFT width="30%" class="tab_contents">
+          Username
+       </TD>
+ 
+        <TD width="70%" class="tab_contents2">
+           <INPUT NAME="ele_username" TYPE="text" value="">
+        </TD>
+     </TR>
+
+
+     <TR>
+       <TD ALIGN=LEFT class="tab_Contents">
+         Password
+       </TD>
+
+       <TD class="tab_contents2">
+          <INPUT NAME="ele_password" TYPE="password" value="">
+       </TD>
+     </TR>
+ 
+     <!-- Set the submit / clear buttons -->
+     <TR class="tab_footer">
+       <TD ALIGN="CENTER" COLSPAN="2">
+         <INPUT TYPE="submit" value="Submit">
+         <INPUT TYPE="reset" value="Reset">
+       </TD>
+
+     </TR>
+
+  </TABLE>
+
+  <!-- End the form -->
+  </FORM>
+
+   </BODY>
+</HTML>

@@ -1,0 +1,141 @@
+body {
+   background: white;
+   color: black;
+}
+
+A:link { COLOR: #0000bb; }
+A:active { COLOR: #0000bb; }
+A:visited { COLOR: #bb0000; }
+A:hover { COLOR: #bb0000; }
+
+SELECT { FONT-SIZE: 11px; COLOR: #000000; FONT-FAMILY: Verdana,Arial,Helvetica,sans-serif; BACKGROUND-COLOR: #CFCFCF; }
+
+TEXTAREA { FONT-SIZE: 12px; COLOR: #000000; FONT-FAMILY: Verdana,Arial,Helvetica,sans-serif; BACKGROUND-COLOR: #DDDDEE; }
+
+INPUT { FONT-SIZE: 12px; COLOR: #000000; FONT-FAMILY: Verdana,Arial,Helvetica,sans-serif; BACKGROUND-COLOR: #DDDDEE; }
+
+HR { MARGIN-TOP: 0px; MARGIN-BOTTOM: 0px; }
+
+/* table for forum reader. Spans whole screen and is used for the navigating */
+/* information etc */
+.frm_tab_top { background-color: white; width=100%; }
+
+/* font information for the navigation bar at the top of the screen */
+.frm_font_top { FONT-SIZE: 12px; FONT-FAMILY: Verdana,Arial,Helvetica; }
+
+/* table for forum reader. Spans again the whole screen, and shows the table */
+/* fields. */
+.frm_tab_hdr { background-color: #ffffff; width=100%; }
+
+/* table for forum reader. Column layout */
+.frm_td_hdr { background-color: #ccccee; }
+
+/* font information for the forum reader. Table header */
+.frm_font_hdr { FONT-SIZE: 10px; FONT-FAMILY: Verdana,Arial,Helvetica; }
+
+/* generic table, gray border */
+.tab_border { background-color: #ffffff; } /* was: eeeeee */
+
+/* generic table, purple header */
+.tab_header { background-color: #ccccee; color: black; font-weight: bold;}
+
+/* generic table, purple header */
+.tab_hdr2 { background-color: #ccccee; color: black; font-weight: bold; font-size:10px; }
+
+/* generic table, purple footer */
+.tab_footer { background-color: #ccccee; }
+
+/* generic table, actual contents */
+.tab_contents { background-color: #eeeeee; font-size: 12px; font-family: Verdana,Arial,Helvetica;}
+
+/* generic table, actual contents (slightly different color) */
+.tab_contents2 { background-color: #ddddee; font-size: 12px; font-family: Verdana,Arial,Helvetica;}
+
+/* indicator for required fields in a table */
+.tab_required { font-size: 15px; font-family: Verdana,Arial,Helvetica; font-weight: bold; color: red; }
+
+/* forum overview, new messages indicator */
+.frm_newmsgindicator { background-color: #ddddee; font-size: 12px; font-family: Verdana,Arial,Helvetica;}
+
+/* forums overview, indicator header */
+.frm_header { background-color: #ccccee; color: black; font-weight: bold;}
+
+/* forums overview, category header */
+.frm_category { background-color: #ccccee; color: black; font-weight: bold;}
+
+/* forum overview, actual forum name */
+.frm_areaname { font-size: 10px; font-family: Verdana,Arial,Helvetica; background-color: #eeeeee; }
+
+/* forum overview, "by (name) on 00:00 at 00-00-0000 */
+.frm_byhdr { font-size: 9px; font-family: Verdana,Arial,Helvetica;  }
+
+/* forum overview, actual forum description */
+.frm_areadesc { font-size: 9px; font-family: Verdana,Arial,Helvetica; background-color: #eeeeee; }
+
+/* forum overview, post count */
+.frm_postcount { font-size: 10px; font-family: Verdana,Arial,Helvetica; background-color: #eeeeee; }
+
+/* forum overview, thread count */
+.frm_threadcount { font-size: 10px; font-family: Verdana,Arial,Helvetica; background-color: #ddddee; }
+
+/* forum overview, last poster */
+.frm_lastposter { font-size: 10px; font-family: Verdana,Arial,Helvetica; background-color: #eeeeee; }
+
+/* forum overview, moderator */
+.frm_moderator { font-size: 10px; font-family: Verdana,Arial,Helvetica; background-color: #ddddee; }
+               
+/* messages of a forum overview, thread */
+.frm_msgs_thread { background-color: #eeeeee; font-size: 11px; font-family: Verdana,Arial,Helvetica; }
+ 
+/* messages of a forum overview, last poster */
+.frm_msgs_lastposter { background-color: #eeeeee; font-size: 11px; font-family: Verdana,Arial,Helvetica; }
+
+/* messages of a forum overview, replycount */
+.frm_msgs_replycount { background-color: #eeeeee; font-size: 11px; font-family: Verdana,Arial,Helvetica; }
+
+/* messages of a forum overview, lastpost date */
+.frm_msgs_lastpostdate { background-color: #eeeeee; font-size: 11px; font-family: Verdana,Arial,Helvetica; }
+               
+/* message text for kludges, normal reader */
+.txt_kludge { font-size: 10px; font-family: Verdana,Arial,Helvetica; color: red; }
+
+/* message text for quotes, normal reader */
+.txt_quote { font-size: 10px; font-family: Verdana,Arial,Helvetica; color: gray; }
+
+/* message text for normal text, normal reader */
+.txt_normal { font-size: 10px; font-family: Verdana,Arial,Helvetica; color: black; }
+
+/* forum message text for normal text, forum reader (odd lines) */
+.frm_normaltxt_odd { font-size: 10px; font-family: Verdana,Arial,Helvetica; color: black; }
+
+/* forum message text for normal text, forum reader (non-odd lines) */
+.frm_normaltxt_nonodd { font-size: 10px; font-family: Verdana,Arial,Helvetica; color: black; }
+
+/* message text for tearlines and originlines, normal reader */
+.txt_tear { font-size: 10px; font-family: Verdana,Arial,Helvetica; color: green; }
+
+/* story page, story title */
+.story_title { font-size: 12px; font-family: Verdana,Arial,Helvetica; color: white; font-weight: bold;}
+
+/* story page, story title */
+.story_byhdr { font-size: 9px; font-family: Verdana,Arial,Helvetica; color: black;}
+
+/* frontpage story page. Story text itself */
+.story_text { background-color: #ffffff; }
+
+/* indicator for "not logged in" */
+.tab_notloggedin { font-size: 12px; font-family: Verdana,Arial,Helvetica; font-weight: bold; color: red; }
+
+/* story page, left and right borders */
+.story_table { font-size: 10px; background-color: #ccccee; color: white; font-weight: bold;}
+
+/* story page, text in the left adn right borders */
+.story_table_text { font-size: 11.5px; background-color: white; color: black; }
+
+/* code header text (code:) */
+.code_hdr { font-size: 11px; }
+
+/* code header text (quote:) */
+.quote_hdr { font-size: 11px; }
+
+

@@ -1,0 +1,79 @@
+{$IFDEF VIRTUALPASCAL} {$DEFINE USE32BIT} {$ENDIF}
+{$IFDEF SPEEDPASCAL}   {$DEFINE USE32BIT} {$ENDIF}
+{$IFDEF WIN32}                            {$ENDIF}
+
+{$IFNDEF USE32BIT}
+   Type SmallInt = Integer;
+{$ENDIF}
+
+{$IFNDEF VirtualPascal}
+   Type SmallWord = Word;
+{$ELSE}
+   Type SmallInt = System.Integer;
+{$ENDIF}
+
+Type MsgTxtType = String[255];         {MsgTxt.Bbs file}
+
+Type MsgToIdxType = String[35];          {MsgToIdx.Bbs file}
+
+Type MsgInfoType = Record              {MsgInfo.Bbs file}
+  LowMsg: SmallWord;                        {Low message number in file}
+  HighMsg: SmallWord;                       {High message number in file}
+  Active: SmallWord;                        {Number of active messages}
+  AreaActive: Array[1..200] of SmallWord;   {Number active in each area}
+  End;
+
+Type MsgIdxType = Record               {MsgIdx.Bbs file}
+  MsgNum: SmallWord;                   {Message number}
+  Area: Byte;                          {Message area}
+  End;
+
+Type MsgHdrType = Record               {MsgHdr.Bbs file}
+  MsgNum: SmallWord;                   {Message number}
+  ReplyTo: SmallWord;                  {Message is reply to this number}
+  SeeAlso: SmallWord;                  {Message has replies}
+  Extra: SmallWord;                    {No longer used}
+  StartRec: SmallWord;                 {starting seek offset in MsgTxt.Bbs}
+  NumRecs: SmallWord;                  {number of MsgTxt.Bbs records}
+  DestNet: SmallInt;                   {NetMail Destination Net}
+  DestNode: SmallInt;                  {NetMail Destination Node}
+  OrigNet: SmallInt;                   {NetMail Originating Net}
+  OrigNode: SmallInt;                  {NetMail Originating Node}
+  DestZone: Byte;                      {NetMail Destination Zone}
+  OrigZone: Byte;                      {NetMail Originating Zone}
+  Cost: SmallWord;                     {NetMail Cost}
+  MsgAttr: Byte;                       {Message attribute - see constants}
+  NetAttr: Byte;                       {Netmail attribute - see constants}
+  Area: Byte;                          {Message area}
+  Time: String[5];                     {Message time in HH:MM}
+  Date: String[8];                     {Message date in MM-DD-YY}
+  MsgTo: String[35];                   {Message is intended for}
+  MsgFrom: String[35];                 {Message was written by}
+  Subj: String[72];                    {Message subject}
+  End;
+
+
+Type LastReadType = Array[1..200] Of SmallWord; {LASTREAD.BBS file}
+
+
+Const                                  {MsgHdr.MsgAttr}
+  maDeleted =       1;                 {Message is deleted}
+  maUnmovedNet =    2;                 {Unexported Netmail message}
+  maNetMail =       4;                 {Message is netmail message}
+  maPriv =          8;                 {Message is private}
+  maRcvd =         16;                 {Message is received}
+  maUnmovedEcho =  32;                 {Unexported Echomail message}
+  maLocal =        64;                 {"Locally" entered message}
+
+
+Const                                  {MsgHdr.NetAttr}
+  naKillSent =      1;                 {Delete after exporting}
+  naSent =          2;                 {Msg has been sent}
+  naFAttach =       4;                 {Msg has file attached}
+  naCrash =         8;                 {Msg is crash}
+  naReqRcpt =      16;                 {Msg requests receipt}
+  naReqAudit =     32;                 {Msg requests audit}
+  naRetRcpt =      64;                 {Msg is a return receipt}
+  naFileReq =     128;                 {Msg is a file request}
+
+

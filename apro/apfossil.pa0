@@ -1,0 +1,160 @@
+type
+  {Holds driver information from FOSSIL GetDriverInfo call}
+  DriverInfo = record
+    diSize      : Word;
+    diSpec      : Byte;
+    diRev       : Byte;
+    diID        : Pointer;
+    diInSize    : Word;
+    diInFree    : Word;
+    diOutSize   : Word;
+    diOutFree   : Word;
+    diSWidth    : Byte;
+    diSHeight   : Byte;
+    diBaudMask  : Byte;
+    diJunk      : Word;
+  end;
+
+const
+  {---- FOSSIL options ----}
+  ptHandleFossilBug = $8000; {Set to handle OutBuffUsed bug in FOSSIL driver}
+  ptTrueOutBuffFree = $4000; {Set to return true OutBuffFree value}
+  ptPutCharWait     = $2000; {Set to use "wait" transmit}
+{  ptBufferGetChar   = $1000; Set to use buffered reads}       {!!.02}{!!.03}
+
+  {---- Default options ----}
+  DefFossilOptionsSimple  = ptHandleFossilBug + ptPutCharWait;
+  DefFossilOptions : Word = DefFossilOptionsSimple;
+
+  {Custom constants}
+  FossilSignature = $1954;       {Fossil Signature}
+  FossilInt       = $14;         {Standard Fossil interrupt}
+
+  ValidLineStatus  : Byte = $FF; {Mask for valid line status bits}     {!!.02}
+  ValidModemStatus : Byte = $FF; {Mask for valid modem status bits}    {!!.02}
+
+  BufferMax : Word = 1024;       {Max size of getchar buffer}          {!!.02}
+
+{$IFDEF UsePModeDLL}
+
+procedure FossilIntr(var Regs : Registers); Export;
+  {-Normal int in rmode, virtualized int in pmode}
+procedure fInitPort(var P : PortRecPtr; ComName : ComNameType;
+                    Baud : LongInt;
+                    Parity : ParityType; DataBits : DataBitType;
+                    StopBits : StopBitType;
+                    InSize, OutSize : Word;
+                    Options : Word); Export;
+procedure fInitPortKeep(var P : PortRecPtr; ComName : ComNameType;
+                    InSize, OutSize : Word); Export;
+procedure fDonePort(var P : PortRecPtr); Export;
+procedure fSetUart(ComName : ComNameType; NewBase : Word;
+                   NewIrq, NewVector : Byte); Export;
+procedure fSetLine(P : PortRecPtr; Baud : LongInt; Parity : ParityType;
+                   DataBits : DataBitType; StopBits : StopBitType); Export;
+procedure fGetLine(P : PortRecPtr; var Baud : LongInt;
+                   var Parity : ParityType;
+                   var DataBits : DataBitType;
+                   var StopBits : StopBitType;
+                   FromHardware : Boolean); Export;
+procedure fSetModem(P : PortRecPtr; DTR, RTS : Boolean); Export;
+procedure fGetModem(P : PortRecPtr; var DTR, RTS : Boolean); Export;
+procedure fGetChar(P : PortRecPtr; var C : Char); Export;
+procedure fPeekChar(P : PortRecPtr; var C : Char; PeekAhead : Word); Export;
+procedure fPutChar(P : PortRecPtr; C : Char); Export;
+procedure fStartTransmitter(P : PortRecPtr); Export;
+function fCharReady(P : PortRecPtr) : Boolean; Export;
+function fTransReady(P : PortRecPtr) : Boolean; Export;
+procedure fSendBreak(P : PortRecPtr); Export;
+procedure fActivatePort(P : PortRecPtr; Restore : Boolean); Export;
+procedure fDeactivatePort(P : PortRecPtr; Restore : Boolean); Export;
+procedure fSavePort(P : PortRecPtr; var PSR); Export;
+procedure fRestorePort(P : PortRecPtr; var PSR); Export;
+procedure fGotError(P : PortRecPtr; StatusCode : Word); Export;
+function fUpdateLineStatus(P : PortRecPtr) : Byte; Export;
+function fUpdateModemStatus(P : PortRecPtr) : Byte; Export;
+{$IFDEF UseHWFlow}
+procedure fHWFlowSet(P : PortRecPtr; Enable : Boolean;
+                     BufferFull, BufferResume : Word;
+                     Options : Word); Export;
+function fHWFlowGet(P : PortRecPtr) : FlowState; Export;
+{$ENDIF}
+
+{$IFDEF UseSWFlow}
+procedure fSWFlowSet(P : PortRecPtr; Enable : Boolean;
+                     BufferFull, BufferResume : Word;
+                     Options : Word); Export;
+function fSWFlowGet(P : PortRecPtr) : FlowState; Export;
+procedure fSWFlowCtl(P : PortRecPtr; OnChar, OffChar : Char;
+                     Resume : Boolean); Export;
+{$ENDIF}
+procedure fBufferStatus(P : PortRecPtr;
+                        var InFree, OutFree, InUsed, OutUsed : Word); Export;
+procedure fBufferFlush(P : PortRecPtr; FlushIn, FlushOut: Boolean); Export;
+procedure ActivateApFossil; Export;
+
+{$ELSE}
+
+{$IFNDEF VirtualPascal}
+{$IFNDEF DELPHI}
+procedure FossilIntr(var Regs : Registers);
+  {-Normal int in rmode, virtualized int in pmode}
+{$ENDIF}
+{$ENDIF}
+procedure fInitPort(var P : PortRecPtr; ComName : ComNameType;
+                    Baud : LongInt;
+                    Parity : ParityType; DataBits : DataBitType;
+                    StopBits : StopBitType;
+                    InSize, OutSize : Word;
+                    Options : Word);
+procedure fInitPortKeep(var P : PortRecPtr; ComName : ComNameType;
+                    InSize, OutSize : Word);
+procedure fDonePort(var P : PortRecPtr);
+procedure fSetUart(ComName : ComNameType; NewBase : Word;
+                   NewIrq, NewVector : Byte);
+procedure fSetLine(P : PortRecPtr; Baud : LongInt; Parity : ParityType;
+                   DataBits : DataBitType; StopBits : StopBitType);
+procedure fGetLine(P : PortRecPtr; var Baud : LongInt;
+                   var Parity : ParityType;
+                   var DataBits : DataBitType;
+                   var StopBits : StopBitType;
+                   FromHardware : Boolean);
+procedure fSetModem(P : PortRecPtr; DTR, RTS : Boolean);
+procedure fGetModem(P : PortRecPtr; var DTR, RTS : Boolean);
+procedure fGetChar(P : PortRecPtr; var C : Char);
+procedure fPeekChar(P : PortRecPtr; var C : Char; PeekAhead : Word);
+procedure fPutChar(P : PortRecPtr; C : Char);
+procedure fStartTransmitter(P : PortRecPtr);
+function fCharReady(P : PortRecPtr) : Boolean;
+function fTransReady(P : PortRecPtr) : Boolean;
+procedure fSendBreak(P : PortRecPtr);
+procedure fActivatePort(P : PortRecPtr; Restore : Boolean);
+procedure fDeactivatePort(P : PortRecPtr; Restore : Boolean);
+procedure fSavePort(P : PortRecPtr; var PSR);
+procedure fPutBlock(P : PortRecPtr; var Block; BlockLen : Word;
+                       var BytesWritten : Word);
+procedure fRestorePort(P : PortRecPtr; var PSR);
+procedure fGotError(P : PortRecPtr; StatusCode : Word);
+function fUpdateLineStatus(P : PortRecPtr) : Byte;
+function fUpdateModemStatus(P : PortRecPtr) : Byte;
+{$IFDEF UseHWFlow}
+procedure fHWFlowSet(P : PortRecPtr; Enable : Boolean;
+                     BufferFull, BufferResume : Word;
+                     Options : Word);
+function fHWFlowGet(P : PortRecPtr) : FlowState;
+{$ENDIF}
+
+{$IFDEF UseSWFlow}
+procedure fSWFlowSet(P : PortRecPtr; Enable : Boolean;
+                     BufferFull, BufferResume : Word;
+                     Options : Word);
+function fSWFlowGet(P : PortRecPtr) : FlowState;
+procedure fSWFlowCtl(P : PortRecPtr; OnChar, OffChar : Char;
+                     Resume : Boolean);
+{$ENDIF}
+procedure fBufferStatus(P : PortRecPtr;
+                        var InFree, OutFree, InUsed, OutUsed : Word);
+procedure fBufferFlush(P : PortRecPtr; FlushIn, FlushOut: Boolean);
+procedure ActivateApFossil;
+
+{$ENDIF}

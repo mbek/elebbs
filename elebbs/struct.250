@@ -1,0 +1,1017 @@
+(*
+   Copyright (c) 1996 Andrew Milner & Wantree Development
+   All Rights Reserved
+
+   Copyright (c) 1997 - 1999 by Maarten Bekers, The Elevator Software.
+   Made this structure compatible with FPK-Pascal, VirtualPascal, SpeedPascal
+     and Delphi.
+*)
+
+{$IFDEF VIRTUALPASCAL} {$DEFINE USE32BIT} {$ENDIF}
+{$IFDEF SPEEDPASCAL}   {$DEFINE USE32BIT} {$ENDIF}
+{$IFDEF WIN32}         {$H-}              {$ENDIF}
+
+{$IFNDEF USE32BIT}
+   Type SmallInt = Integer;
+{$ENDIF}
+
+{$IFDEF FPC}
+   Type SmallInt = System.Integer;
+        TpReal   = Array[0..2] of SmallInt;
+
+{$ELSE}
+Type    TpReal   = Real;
+{$ENDIF}
+
+{$IFNDEF VirtualPascal}
+   Type SmallWord = Word;
+{$ENDIF}
+
+{$IFDEF FPC}
+  {$PACKRECORDS 1}
+  {$PACKENUM 1}
+{$ENDIF}
+
+type
+  AskType        = (Yes, No, Ask, Only);
+  VideoType      = (Auto, Short, Long);
+  MsgType        = (LocalMail, NetMail, EchoMail, Internet, Newsgroup, ForumGroup);
+  GroupType      = (group_Normal, group_Forum);
+  MsgKindsType   = (elemsgBoth, elemsgPrivate, elemsgPublic, elemsgROnly, elemsgNoReply);
+  OrphanType     = (Ignore, Create, Kill);
+  ResetType      = (Never, Week, Month, Year);
+  FlagType       = array[1..4] of Byte;
+  Time           = String[5];
+  Date           = String[8];
+  LongDate       = String[9];
+  ByteArray32    = Array[1..32] of Byte;
+
+  NetAddress     = record
+                     Zone,
+                     Net,
+                     Node,
+                     Point          : SmallWord;
+                   end;
+
+  LIMITSrecord   = record
+                     Security,
+                     Ltime,
+                     L300,
+                     L1200,
+                     L2400,
+                     L4800,
+                     L7200,
+                     L9600,
+                     L12000,
+                     L14400,
+                     L16800,
+                     L19200,
+                     L38400,
+                     Llocal,
+                     RatioNum,
+                     RatioK         : SmallWord;
+                     PerMinCost     : TPReal;
+
+                     L21600,
+                     L24000,
+                     L26400,
+                     L28800,
+                     L57600,
+                     L64000         : SmallWord;
+
+                     FlexiTime      : TPReal;
+                     LsessionTime   : SmallWord;
+                     ResetAmt       : SmallWord;
+                     ResetPeriod    : ResetType;
+                     ResetOffset    : SmallWord;
+
+                     L31200,
+                     L33600,
+                     L115200        : SmallWord;
+                     FreeSpace      : Array[1..11] of Byte;
+                   end;
+
+
+  MSGINFOrecord  = record
+                     LowMsg,
+                     HighMsg,
+                     TotalMsgs      : SmallWord;
+                     TotalOnBoard   : array[1..200] of SmallWord;
+                   end;
+
+  HMBMSGIDXrecord = record
+                      MsgNum         : SmallInt;
+                      Board          : Byte;
+                    end;
+
+  MSGTOIDXrecord = String[35];
+
+  HMBMSGHDRrecord= record
+                     MsgNum         : SmallInt;
+                     PrevReply,
+                     NextReply,
+                     TimesRead      : SmallWord;
+                     StartBlock     : SmallWord;
+                     NumBlocks,
+                     DestNet,
+                     DestNode,
+                     OrigNet,
+                     OrigNode       : SmallWord;
+                     DestZone,
+                     OrigZone       : Byte;
+                     Cost           : SmallWord;
+                     MsgAttr,
+                     NetAttr,
+                     Board          : Byte;
+                     PostTime       : Time;
+                     PostDate       : Date;
+                     WhoTo,
+                     WhoFrom        : MSGTOIDXrecord;
+                     Subject        : String[72];
+                   end;
+
+  MSGTXTrecord   = String[255];
+
+
+  LASTCALLrecord = record
+                     Line           : Byte;
+                     Name,
+                     Handle         : MSGTOIDXrecord;
+                     City           : String[25];
+                     Baud           : SmallWord;
+                     Times          : LongInt;
+                     LogOn          : String[5];
+                     LogOff         : String[5];
+                     Attribute      : Byte;
+                   end;
+
+                { Attribute - Bit 0 : Hidden }
+
+  FILESHDRrecord = record
+                     Name           : String[12];
+                     Size,
+                     CRC32          : LongInt;
+                     Uploader       : String[35];
+                     UploadDate,
+                     FileDate,
+                     LastDL         : LongInt;
+                     TimesDL        : SmallWord;
+                     Attrib         : Byte;
+                     PassWord       : String[15];
+                     KeyWord        : Array[1..5] of String[15];
+                     Cost           : SmallWord;
+                     LongDescPtr    : LongInt;
+                     LfnPtr         : Longint;
+                     FreeSpace      : Array[1..16] of Byte;
+                   end;
+
+          {Attrib - Bit 0 : Deleted
+                        1 : Unlisted
+                        2 : Free (don't adjust ratio) - Does NOT affect "Cost"
+                        3 : Not available (don't allow downloads)
+                        4 : Locked (no kill)
+                        5 : Missing/offline
+                        6 : No time restrictions - always allow DL
+          }
+
+  FILESIDXrecord = record
+                     Name           : String[12];
+                     UploadDate     : LongInt;
+                     KeywordCRC     : Array[1..5] of LongInt;
+                     LongDescPtr    : LongInt;
+                   end;
+
+  LASTREADrecord = array[1..200] of SmallWord;
+
+  USERSIDXrecord = record
+                     NameCRC32,
+                     HandleCRC32    : LongInt;
+                   end;
+
+  COMBINEDrecord = array[1..200] of SmallWord;
+
+  LANGUAGErecord = record
+                     Name           : String[20];
+                     Attribute      : Byte;
+                     DefName,
+                     MenuPath,
+                     TextPath,
+                     QuesPath       : String[60];
+                     Security       : SmallWord;
+                     Flags,
+                     NotFlagsMask   : FlagType;
+                     FreeSpace      : Array[1..190] of Byte;
+                   end;
+
+
+  USERSrecord    = record
+                     Name           : MSGTOIDXrecord;
+                     Location       : String[25];
+                     Organisation,
+                     Address1,
+                     Address2,
+                     Address3       : String[50];
+                     Handle         : String[35];
+                     Comment        : String[80];
+                     PasswordCRC    : LongInt;
+                     DataPhone,
+                     VoicePhone     : String[15];
+                     LastTime       : Time;
+                     LastDate       : Date;
+
+                     Attribute,
+
+                      { Bit 0 : Deleted
+                            1 : Clear screen
+                            2 : More prompt
+                            3 : ANSI
+                            4 : No-kill
+                            5 : Xfer priority
+                            6 : Full screen msg editor
+                            7 : Quiet mode }
+
+                     Attribute2     : Byte;
+
+                      { Bit 0 : Hot-keys
+                            1 : AVT/0
+                            2 : Full screen message viewer
+                            3 : Hidden from userlist
+                            4 : Page priority
+                            5 : No echomail in mailbox scan
+                            6 : Guest account
+                            7 : Post bill enabled }
+
+                     Flags          : FlagType;
+                     Credit,
+                     Pending        : LongInt;
+                     MsgsPosted,
+                     Security       : SmallWord;
+                     LastRead,
+                     NoCalls,
+                     Uploads,
+                     Downloads,
+                     UploadsK,
+                     DownloadsK,
+                     TodayK         : LongInt;
+                     Elapsed        : SmallInt;
+                     ScreenLength   : SmallWord;
+                     LastPwdChange  : Byte;
+                     Group          : SmallWord;
+                     CombinedInfo   : COMBINEDrecord;
+                     FirstDate,
+                     BirthDate,
+                     SubDate        : Date;
+                     ScreenWidth,
+                     Language,
+                     DateFormat     : Byte;
+                     {  No.      Sort of format to use : }
+                     {  01       DD-MM-YY        }
+                     {  02       MM-DD-YY        }
+                     {  03       YY-MM-DD        }
+                     {  04       DD-Mmm-YY       }
+                     {  05       DD-MM-YYYY      }
+                     {  06       MM-DD-YYYY      }
+                     {  07       YYYY-MM-DD      }
+                     {  08       DD-Mmm-YYYY     }
+
+                     ForwardTo      : String[35];
+                     MsgArea,
+                     FileArea       : SmallWord;
+                     DefaultProtocol: Char;
+                     FileGroup      : SmallWord;
+                     LastDOBCheck   : Byte;
+                     Sex            : Byte;
+                     XIrecord       : LongInt;
+                     MsgGroup       : SmallWord;
+
+                     Attribute3     : Byte;
+
+                      { Bit 0 : Mailbox check: scan selected areas only }
+
+                     PassWord       : String[15];
+
+                     FreeSpace      : Array[1..31] of Byte;
+                   end;
+
+  USERSXIrecord  = record
+                     FreeSpace      : Array[1..200] of Byte;
+                   end;
+
+  SYSINFOrecord  = record
+                     TotalCalls     : LongInt;
+                     LastCaller,
+                     LastHandle     : MSGTOIDXrecord;
+                     ExtraSpace     : array[1..92] of Byte;
+                   end;
+
+  TIMELOGrecord  = record
+                     StartDate      : Date;
+                     BusyPerHour    : array[0..23] of SmallWord;
+                     BusyPerDay     : array[0..6] of SmallWord;
+                   end;
+
+  MNUrecord      = record
+                     Typ            : Byte;
+                     Security,
+                     MaxSec         : SmallWord;
+                     NotFlagsMask,
+                     Flags          : FlagType;
+                     TimeLeft,
+                     TimeUsed       : SmallWord;
+                     Age,
+                     TermAttrib     : Byte;
+
+                     {Bit 0 : ANSI
+                          1 : AVT
+                          2 : RIP}
+
+                     MinSpeed,
+                     MaxSpeed,
+                     Credit,
+                     OptionCost,
+                     PerMinCost     : LongInt;
+                     Node,
+                     Group          : ByteArray32;
+                     StartTime,
+                     StopTime       : Array[1..7] of SmallWord;
+                     Display        : String[135];
+                     HotKey         : String[8];
+                     MiscData       : String[135];
+                     Foreground,
+                     Background     : Byte;
+                     FreeSpace      : Array[1..50] of Byte;
+                   end;
+
+
+  EVENTrecord    = record
+                     Status         : Byte; { 0=Deleted 1=Enabled 2=Disabled }
+                     StartTime      : Time;
+                     ErrorLevel     : Byte;
+                     Days           : Byte;
+                     Forced         : Boolean;
+                     LastTimeRun    : Date;
+                   end;
+
+  EVENTrecordArray = array[1..20] of EVENTrecord;
+
+  MESSAGErecord  = PACKED record
+                     AreaNum,
+                     Unused         : SmallWord;
+                     Name           : String[40];
+                     Typ            : MsgType;
+                     MsgKinds       : MsgKindsType;
+                     Attribute      : Byte;
+
+                      { Bit 0 : Enable EchoInfo
+                            1 : Combined access
+                            2 : File attaches
+                            3 : Allow aliases
+                            4 : Use SoftCRs as characters
+                            5 : Force handle
+                            6 : Allow deletes
+                            7 : Is a JAM area }
+
+                     DaysKill,    { Kill older than 'x' days }
+                     RecvKill       : Byte; { Kill recv msgs, recv for more than 'x' days }
+                     CountKill      : SmallWord;
+
+                     ReadSecurity   : SmallWord;
+                     ReadFlags,
+                     ReadNotFlags   : FlagType;
+
+                     WriteSecurity  : SmallWord;
+                     WriteFlags,
+                     WriteNotFlags  : FlagType;
+
+                     SysopSecurity  : SmallWord;
+                     SysopFlags,
+                     SysopNotFlags  : FlagType;
+
+                     OriginLine     : String[60];
+                     AkaAddress     : Byte;
+
+                     Age            : Byte;
+
+                     JAMbase        : String[60];
+                     Group          : SmallWord;
+                     AltGroup       : Array[1..3] of SmallWord;
+
+                     Attribute2     : Byte;
+
+                      { Bit 0 : Include in all groups }
+
+                     NetmailArea    : SmallWord;
+                     FreeSpace2     : Array[1..7] of Byte;
+                   end;
+
+  GROUPrecord    = record
+                     AreaNum        : SmallWord;
+                     Name           : String[40];
+                     Security       : SmallWord;
+                     Flags,
+                     NotFlagsMask   : FlagType;
+                     Typ            : GroupType; { only for messages }
+                     FreeSpace      : Array[1..99] of Byte;
+                   end;
+
+  FILESrecord    = record
+                     AreaNum,
+                     Unused         : SmallWord;
+                     Name           : String[40];
+                     Attrib         : Byte;
+
+                      { Bit 0 : Include in new files scan
+                            1 : Include in upload dupe scan
+                                                        2 : Permit long descriptions
+                            3 : Area is on CD-ROM
+                            4 : All files are FREE
+                            5 : Allow DLs not in FDB
+                            6 : Allow users to password uploads
+                            7 : Scan uploads }
+
+                     FilePath       : String[40];
+                     KillDaysDL,
+                     KillDaysFD     : SmallWord;
+                     PassWord       : String[15];
+                     MoveArea       : SmallWord;
+                     Age,
+                     ConvertExt     : Byte;
+                     Group          : SmallWord;
+                     Attrib2        : Byte;
+
+                      { Bit 0 : Include in all groups }
+
+                     DefCost,
+                     UploadArea,
+                     UploadSecurity : SmallWord;
+                     UploadFlags,
+                     UploadNotFlags : FlagType;
+                     Security       : SmallWord;
+                     Flags,
+                     NotFlags       : FlagType;
+                     ListSecurity   : SmallWord;
+                     ListFlags,
+                     ListNotFlags   : FlagType;
+                     AltGroup       : Array[1..3] of SmallWord;
+                     Device         : Byte;
+                     FreeSpace      : Array[1..13] of Byte;
+                   end;
+
+  CONFrecord     = record
+                     Name,
+                     Parent         : String[8];
+                     Desc           : String[70];
+                     Attr           : Byte;
+
+                      { Bit 0 : Private
+                            1 : Unlisted
+                            2 : Global
+                            3 : Permanent
+                            4 : Use handles
+                                          }
+
+                     Moderator      : String[35];
+                     Language       : String[20];
+                     PassWord       : String[15];
+                     Security       : SmallWord;
+                     Flags          : FlagType;
+                     NumNodes       : Byte;
+                     Active         : Array[1..250] of Byte;
+                     Child          : Array[1..250] of Boolean;
+                     NotFlagsMask   : FlagType;
+                     FreeSpace      : Array[1..96] of Byte;
+                   end;
+
+  MODEMrecord  = record
+                   ComPort,
+                   InitTries        : Byte;
+                   BufferSize,
+                   ModemDelay       : SmallWord;
+                   MaxSpeed         : LongInt;
+                   SendBreak,
+                   LockModem,
+                   AnswerPhone,
+                   OffHook          : Boolean;
+                   InitStr,
+                   InitStr2,
+                   BusyStr          : String[70];
+                   InitResp,
+                   BusyResp,
+                   Connect300,
+                   Connect1200,
+                   Connect2400,
+                   Connect4800,
+                   Connect7200,
+                   Connect9600,
+                   Connect12k,
+                   Connect14k,
+                   Connect16k,
+                   Connect19k,
+                   Connect38k,
+                   ConnectFax       : String[40];
+                   RingStr,
+                   AnswerStr        : String[20];
+                   ErrorFreeString  : String[15];
+
+                   Connect21k,
+                   Connect24k,
+                   Connect26k,
+                   Connect28k,
+                   Connect57k,
+                   Connect64k       : String[40];
+
+                   Connect31k,
+                   Connect33k,
+                   Connect115k      : String[40];
+
+
+                   FreeSpace        : Array[1..59] of Byte;
+                 end;
+
+  ARCrecord = record
+                Extension : String[3];
+                UnpackCmd,
+                PackCmd   : String[60];
+              end;
+
+  CONFIGrecord = packed record
+    VersionID           : SmallWord;
+    ProductID           : Byte;                          { $01 = RemoteAccess }
+                                                               { $02 = tcRA32 }
+                                                               { $03 = EleBBS }
+    xBaud               : LongInt;
+    xInitTries          : Byte;
+    xInitStr,
+    xBusyStr            : String[70];
+    xInitResp,
+    xBusyResp,
+    xConnect300,
+    xConnect1200,
+    xConnect2400,
+    xConnect4800,
+    xConnect9600,
+    xConnect19k,
+    xConnect38k         : String[40];
+    xAnswerPhone        : Boolean;
+    xRing,
+    xAnswerStr          : String[20];
+    xFlushBuffer        : Boolean;
+    xModemDelay         : SmallInt;
+
+    MinimumBaud,
+    GraphicsBaud,
+    TransferBaud        : SmallWord;
+    SlowBaudTimeStart,
+    SlowBaudTimeEnd,
+    DownloadTimeStart,
+    DownloadTimeEnd     : Time;
+
+    PageStart           : Array[0..6] of Time;
+    PageEnd             : Array[0..6] of Time;
+
+    SeriNum,
+    CustNum             : String[22];
+{}  FreeSpace1          : Array[1..24] of Byte;
+    PwdExpiry           : SmallWord;
+
+    MenuPath,
+    TextPath,
+    AttachPath,
+    NodelistPath,
+    MsgBasePath,
+    SysPath,
+    ExternalEdCmd       : String[60];
+
+    Address             : Array[0..9] of NetAddress;
+    SystemName          : String[30];
+
+    NewSecurity         : SmallWord;
+    NewCredit           : SmallWord;
+    NewFlags            : FlagType;
+
+    OriginLine          : String[60];
+    QuoteString         : String[15];
+    Sysop               : String[35];
+    LogFileName         : String[60];
+    FastLogon,
+    AllowSysRem,
+    MonoMode,
+    StrictPwdChecking,
+    DirectWrite,
+    SnowCheck           : Boolean;
+    CreditFactor        : SmallInt;
+
+    UserTimeOut,
+    LogonTime,
+    PassWordTries,
+    MaxPage,
+    PageLength          : SmallWord;
+    CheckForMultiLogon,
+    ExcludeSysopFromList,
+    OneWordNames        : Boolean;
+    CheckMail           : AskType;
+    AskVoicePhone,
+    AskDataPhone,
+    DoFullMailCheck,
+    AllowFileShells,
+    FixUploadDates,
+    FreezeChat          : Boolean;
+    ANSI,                       { ANSI: Yes, no, or ask new users     }
+    ClearScreen,                { Clear:        "                     }
+    MorePrompt          : AskType;    { More:         "                     }
+    UploadMsgs          : Boolean;
+    KillSent            : AskType;
+
+    CrashAskSec         : SmallWord;       { Min sec# to ask 'Crash Mail ?'      }
+    CrashAskFlags       : FlagType;
+    CrashSec            : SmallWord;       { Min sec# to always send crash mail. }
+    CrashFlags          : FlagType;
+    FAttachSec          : SmallWord;       {        "    ask 'File Attach ?'     }
+    FAttachFlags        : FlagType;
+
+    NormFore,
+    NormBack,
+    StatFore,
+    StatBack,
+    HiBack,
+    HiFore,
+    WindFore,
+    WindBack,
+    ExitLocal,
+    Exit300,
+    Exit1200,
+    Exit2400,
+    Exit4800,
+    Exit9600,
+    Exit19k,
+    Exit38k             : Byte;
+
+    MultiLine           : Boolean;
+    MinPwdLen           : Byte;
+    MinUpSpace          : SmallWord;
+    HotKeys             : Asktype;
+    BorderFore,
+    BorderBack,
+    BarFore,
+    BarBack,
+    LogStyle,
+    MultiTasker,
+    PwdBoard            : Byte;
+    xBufferSize         : SmallWord;
+    FKeys               : Array[1..10] of String[60];
+
+    WhyPage             : Boolean;
+    LeaveMsg            : Byte;
+    ShowMissingFiles,
+    xLockModem          : Boolean;
+{}  FreeSpace2          : Array[1..10] of Byte;
+    AllowNetmailReplies : Boolean;
+    LogonPrompt         : String[40];
+    CheckNewFiles       : AskType;
+    ReplyHeader         : String[60];
+    BlankSecs           : byte;
+    ProtocolAttrib      : Array[1..6] of Byte;
+    xErrorFreeString    : String[15];
+    xDefaultCombined    : array[1..25] of Byte;
+    RenumThreshold      : SmallWord;
+    LeftBracket,
+    RightBracket        : Char;
+    AskForHandle        : Boolean;
+    AskForBirthDate     : Boolean;
+
+    GroupMailSec        : SmallWord;
+
+    ConfirmMsgDeletes   : Boolean;
+
+    FreeSpace4          : Array[1..30] of byte;
+
+    TempScanDir         : String[60];
+    ScanNow             : AskType;
+    xUnknownArcAction,
+    xFailedUnpackAction,
+    FailedScanAction    : Byte; {Bit 0:Mark deleted, 1:Mark unlisted, 2:Mark notavail}
+    xUnknownArcArea,
+    xFailedUnpackArea,
+    FailedScanArea      : SmallWord;
+    ScanCmd             : String[60];
+    xDeductIfUnknown    : Boolean;
+
+    NewUserGroup        : Byte;
+    AVATAR              : AskType;
+    BadPwdArea          : Byte;
+    Location            : String[40];
+    DoAfterAction       : Byte; {0 = wait for CR, > 0 = wait for x seconds}
+{}  OldFileLine         : String[40];
+    CRfore,
+    CRback              : Byte;
+    LangHdr             : String[40];
+    xSendBreak          : Boolean;
+{}  ListPath            : String[60];
+    FullMsgView         : AskType;
+    EMSI_Enable         : AskType;
+    EMSI_NewUser        : Boolean;
+
+    EchoChar            : String[1];
+    xConnect7200,
+    xConnect12000,
+    xConnect14400       : String[40];
+    Exit7200,
+    Exit12000,
+    Exit14400           : Byte;
+    ChatCommand         : String[60];
+    ExtEd               : AskType;
+    NewuserLanguage     : Byte;
+    LanguagePrompt      : String[40];
+    VideoMode           : Byte; { was: VideoType; }
+    AutoDetectANSI      : Boolean;
+    xOffHook            : Boolean;
+    NewUserDateFormat   : Byte;
+    KeyboardPwd         : String[15];
+    CapLocation         : Boolean;
+    NewuserSub          : Byte;
+    PrinterName         : String[4];
+    HilitePromptFore,
+    HiLitePromptBack    : Byte;
+    xInitStr2           : String[70];
+    AltJSwap            : Boolean;
+    SemPath             : String[60];
+    AutoChatCapture     : Boolean;
+
+    FileBasePath        : String[60];
+    NewFileTag          : Boolean;
+    IgnoreDupeExt       : Boolean;
+    TempCDFilePath      : String[60];
+    TagFore,
+    TagBack             : Byte;
+    xConnect16k         : String[40];
+    Exit16k,
+    FilePayback         : Byte;
+    FileLine,
+    FileMissingLine     : String[200];
+    NewUserULCredit     : Byte;
+    NewUserULCreditK    : SmallWord;
+    ArcInfo             : Array[1..10] of ARCrecord;
+    RAMGRAltFKeys       : Array[1..5] of String[60];
+    ArcViewCmd          : String[60];
+    xConnectFax         : String[40];
+    ExitFax             : Byte;
+    UseXMS,
+    UseEMS              : Boolean;
+    CheckDOB            : Byte;
+    EchoCheck           : AskType;
+    ccSec,
+    ReturnRecSec        : SmallWord;
+    HonourNetReq        : Boolean;
+    DefaultCombined     : COMBINEDrecord;
+    AskForSex,
+    AskForAddress       : Boolean;
+    DLdesc              : AskType;
+    NewPhoneScan        : Boolean;
+
+    Exit21k,
+    Exit24k,
+    Exit26k,
+    Exit28k,
+    Exit57k,
+    Exit64k             : Byte;
+
+    TagLogoffWarning,
+    LimitLocal,
+    SavePassWords       : Boolean;
+
+    BlankLogins         : Byte;
+    ripiconpath         : String[60];
+
+    Exit31k,
+    Exit33k             : Byte;
+    IncludeNewCDareas   : Boolean;
+    Exit115k            : Byte;
+    FutureExpansion : Array[1..512] of Byte;
+  end;
+
+  EXITINFOrecord = record
+                     Baud             : SmallWord;
+                     SysInfo          : SYSINFOrecord;
+                     TimeLogInfo      : TIMELOGrecord;
+                     UserInfo         : USERSrecord;
+                     EventInfo        : EVENTrecord;
+                     NetMailEntered,
+                     EchoMailEntered  : Boolean;
+                     LoginTime        : Time;
+                     LoginDate        : Date;
+                     TimeLimit        : SmallWord;
+                     LoginSec         : LongInt;
+                     UserRecord       : SmallInt;
+                     ReadThru,
+                     NumberPages,
+                     DownloadLimit    : SmallWord;
+                     TimeOfCreation   : Time;
+                     LogonPassWordCRC : LongInt;
+                     WantChat         : Boolean;
+
+                     DeductedTime     : SmallInt;
+                     MenuStack        : Array[1..50] of String[8];
+                     MenuStackPointer : Byte;
+                     UserXIinfo       : USERSXIrecord;
+                     ErrorFreeConnect,
+                     SysopNext        : Boolean;
+
+                     EMSI_Session     : Boolean;        { These fields hold  }
+                     EMSI_Crtdef,                       { data related to an }
+                     EMSI_Protocols,                    { EMSI session       }
+                     EMSI_Capabilities,
+                     EMSI_Requests,
+                     EMSI_Software    : String[40];
+                     Hold_Attr1,
+                     Hold_Attr2,
+                     Hold_Len         : Byte;
+
+                     PageReason       : String[80];
+                     StatusLine       : Byte;
+                     LastCostMenu     : String[8];
+                     MenuCostPerMin   : SmallWord;
+
+                     DoesAVT,
+                     RIPmode          : Boolean;
+                     RIPVersion       : Byte;
+                     ExtraSpace       : Array[1..85] of Byte;
+                 end;
+
+  PROTOCOLrecord = record
+                     Name           : String[15];
+                     ActiveKey      : Char;
+                     OpusTypeCtlFile,
+                     BatchAvailable : Boolean;
+                     Attribute      : Byte; { 0=Disabled, 1=Enabled }
+                     LogFileName,
+                     CtlFileName,
+                     DnCmdString,
+                     DnCtlString,
+                     UpCmdString,
+                     UpCtlString    : String[80];
+                     UpLogKeyWord,
+                     DnLogKeyWord   : String[20];
+                     XferDescWordNum,
+                     XferNameWordNum : Byte;
+                   end;
+
+  NodeIdxRecord  = Record                                      { NODEIDX.RA }
+                     NodeType   : Byte;                            { 0=Zone }
+                                                                 { 1=Region }
+                                                                   { 2=Host }
+                     Number     : SmallWord;     { Zone, region, net number }
+                     Cost       : SmallWord;                 { # of credits }
+                     IncEntry   : Byte;            { Entry#+1 in NODEINC.RA }
+                     Pointer    : LongInt;            { Pointer to nodelist }
+                   End;  { NodeIdxRecord }
+
+  NodeIncRecord  = String[16];                                 { NODEINC.RA }
+                                                            { Nodelist name }
+
+
+
+
+{----------------- EleBBS additions ----------------------------------}
+
+  AccessType = (nwsPostNever, nwsPostAlways, nwsPostUseSettings, nwsUseBoth);
+
+  TagFileRecord = packed record      { RA v2.02 but never properly documented }
+    Name                : String[12];  { For using LFN, use the RecordNum and }
+    Password            : String[15];                            { Look it up }
+    Attrib              : Byte;
+    AreaNum,
+    RecordNum           : SmallWord;
+    Size                : Longint;
+    Filedate            : Longint;                                 { Not used }
+    Cost                : Longint;
+    CDROM               : Boolean;
+    FoundFirst          : Boolean;                     { Internally used only }
+    xFerTime            : SmallWord;
+  end; { TagFileRecord }
+
+
+  TelnetRecord  = record
+    MaxSessions         : Longint;              { Maximum concurrent sessions }
+    ServerPort          : Longint;                 { Port we are listening on }
+    StartNodeWith       : Longint;             { Starting point for the nodes }
+    Attrib              : Longint;              { Bit 0: Deny telnet download }
+                               { Bit 1: Start EleBBS minized for telnet nodes }
+                                { Bit 2: Start EleBBS hidden for telnet nodes }
+    ProgramPath         : String;              { Path were to find EleBBS.EXE }
+    NodeDirectories     : String;           { Directory TELSRV will switch to }
+    FreeSpace           : Array[1..20] of Longint;
+  end; { Telnetrecord }
+
+  LightbarRecord= record
+    LightX              : Byte;                     { X, Y screen coordinates }
+    LightY              : Byte;
+    LowItem             : String[135];                       { Low-color item }
+    SelectItem          : String[135];                        { Selected item }
+    Attrib              : Byte;                              { Bit 0: Enabled }
+    FreeSpace           : Array[1..100] of Byte;
+  end; { LightbarRecord }
+
+  NewsArticleRecord= record
+    GroupName           : String[100];
+    ArticleNr           : Longint;             { Article number in news group }
+    AreaNum             : Longint;                { Areanumber in MESSAGES.RA }
+    BodyLen             : Longint;                  { Length of the body text }
+    Attribute           : Longint;              { Bit 0: Tossed into msgbase? }
+                                                           { Bit 1: Is Email? }
+    TimesSent           : Longint;      { Number of tries sending this msgs?, }
+    FreeSpace           : Array[1..100] of Longint;
+      { Body      : Array[0..BodyLen] of Char; }
+  end; { NewsArticleRecord }
+
+  NewsGroupStatRecord=record
+    GroupName           : String[100];
+    LoMsgCount          : Longint;
+    FreeSpace           : Array[1..40] of Longint;
+  end; { NewsGroupStatRecord }
+
+
+  NewsServerRecord = record
+    MaxSessions         : Longint;              { Maximum concurrent sessions }
+    ServerPort          : Longint;                 { Port we are listening on }
+    Attribute           : Longint;              { Bit 0: Allow Sysop to logon }
+                                         { Bit 1: Do count the msglines/bytes }
+                                                 { Bit 2: Increase postscount }
+                             { Bit 3: Needed to be authd. to get a group list }
+    DomainName          : String[120];{ Domainname of messages, emtpy=use ftn }
+    FreeSpace           : Array[0..38] of Longint;
+  end; { NewsServerRecord }
+
+
+  NewsGroupStat = record
+    GroupName           : String[100];       { Group name of these statistics }
+    NumRead             : Longint;          { Articles read in this newsgroup }
+    NumWrite            : Longint;       { Articles written in this newsgroup }
+    NumDeny             : Longint;        { Articles denied in this newsgroup }
+    LastAccessed        : String[10];  { Date this newsgroup was last accesed }
+    FreeSpace           : Array[0..40] of Longint;
+  end; { NewsGroupStat }
+
+
+  ELECONFIGrecord = packed record
+    VersionID           : SmallWord;                                   { $009 }
+    UtilityLogFileName  : String[250];        { Utilities/Servers logfilename }
+    CapitalizeUserName  : Boolean;              { Capitalize username/handle? }
+    AttachPassword      : String[15];     { pwd needed to attach to a session }
+    webHtmlPath         : String[250];     { EleWEB html-files (default) path }
+    webELMPath          : String[250];     { EleWEB ELM-binary (default) path }
+    FreeSpace           : Array[0..8174] of Byte;
+  end; { ELECONFIGrecord }
+
+  EleMessageRecord = Record
+    AreaNum             : Longint;
+    GroupName           : String[128];
+    Attribute           : Byte;                 { Bit 0: Available for usenet }
+                                               { Bit 1: From-address override }
+                                                         { Bit 2: Squish area }
+                                             { Bit 3: Allow edit of messages? }
+    AccessSettings      : AccessType;
+    AttachArea          : Longint;         { Areanumber to put attachments in }
+    FreeSpace           : Array[1..37] of Longint;
+  end; { EleMessageRecord }
+
+  EleFilesRecord   = Record
+    AreaNum             : Longint;
+    ExportURL,                                  { URL used by EleFILE HTMLIST }
+    ftpPath             : String[250];
+    ftpLoginName,
+    ftpPassword         : String[35];
+    Attribute           : Byte;                 { Bit 0: Available for usenet }
+    FreeSpace           : Array[1..140] of Longint;
+  end; { EleFilesRecord }
+
+  USERONrecord   = record
+                     Name,
+                     Handle         : MSGTOIDXrecord;
+                     Line           : Byte;
+                     Baud           : SmallWord;
+                     City           : String[25];
+                     Status,
+                     Attribute      : Byte;
+                     StatDesc       : String[10];
+                     FreeSpace      : Array[1..90] of Byte;
+                     NoCalls        : SmallWord;
+                     NodeNumber     : Longint; {!}
+                     LastUpdate     : Longint; {unixtimestamp, EleWEB only }
+                   end;
+
+                   { Status byte - 0 : Browsing (in a menu)
+                                   1 : Uploading/downloading
+                                   2 : Reading/posting messages
+                                   3 : In a door/external utility
+                                   4 : Chatting with sysop
+                                   5 : Answering questionnaire
+                                   6 : RTC
+                                   7 : New user logon
+                                 255 : User-defined - display StatDesc
+
+                     Attribute   - Bit 0 : Hidden
+                                       1 : Wants chat
+                                       2 : Reserved for RANETMGR
+                                       3 : Do not disturb flag
+                                       6 : Ready (0=busy) }
+

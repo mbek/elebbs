@@ -1,0 +1,61 @@
+EleBBS v0.11.b1
+===============
+
+Building EleBBS is rather straightforward. All needed sources are, well -
+should be, under the main source directory. You also need AsyncPro for DOS to
+compile the whole of the EleBBS source tree, although there is work in progress
+to seperate this completely.
+
+You should install FreePascal which is available for download at
+www.freepascal.org. Currently i use an 1.1 version of this compiler but
+building using FreePascal 1.0.6 should work too.
+
+You also need EleCOM, and you might want to install it in C:\elecom\src\.
+
+Assuming you installed the EleBBS source under "C:\BBS\SRC\", you could create
+two simple files, defining the unit search and includefile search directories
+for FreePascal, you could something like this:
+
+--units.lst--
+-Fuc:\elecom\src;
+-Fuc:\bbs\src;
+-Fuc:\apro;
+-Fuc:\bbs\src\mkmsg\;
+-Fuc:\bbs\src\32bit;
+-Fuc:\bbs\src\gencfg\;
+-Fuc:\bbs\src\csys\;
+-Fuc:\bbs\src\inet\source\;
+-Fuc:\bbs\src\cgi\;
+-Fuc:\bbs\src\mysql\;
+-Fuc:\bbs\src\elexer\;
+----
+
+and:
+
+--incls.lst--
+-Fic:\bbs\src;
+-Fic:\apro;
+-Fic:\bbs\src\mkmsg\;
+-Fic:\bbs\src\dummy\dos;
+-Fic:\bbs\src\mkmsg;
+-Fic:\bbs\src\32bit;
+-Fic:\bbs\src\gencfg\;
+-Fic:\elecom\src\;
+-FiC:\bbs\src\baseinc\;
+----
+
+Put these two include files in the same directory as your FreePascal compiler.
+If you installed EleBBS in any other directory, you need to change it. Building
+EleBBS from there on is pretty straightforward, just open COMPILER.INC and
+read the instructions in there. It pretty much explains how to setup different
+settings for different programs.
+
+After that, you can build EleBBS for example by using:
+
+ppc386 c:\bbs\src\elebbs -B @units.lst @incls.lst -Sd
+
+That should give you a working EleBBS.
+
+
+Sincerely,
+Maarten Bekers.

@@ -1,0 +1,48 @@
+Design objectives EleWEB
+------------------------
+
+-- One generic EleWEB executable
+-- Do as little as possible in the executable
+-- EleXer base and only scripting langauge
+-- As little as possible hardcoded into the EleWEB executable
+-- script to run is specified on commandline
+-- guest access should be allowed or possible
+-- no hardcoded replying on temporarily directories
+-- Plug & Play (auto EleBBS environment detection and sorts)
+-- template support for output of HTML
+-- Login can be using HTML or via HTTP/401 (HTTP-auth)
+-- All data is passed using POSTS (no gets anymore) except action-number
+-- Cookie support for username/password
+
+
+------- Login procedure
+Login should be the only time username and password is transmitted in clear
+text. This should generate an unique identifier (CRC32 of password) which
+in combination with username should provide login.
+At login we give the weblogin a unique nodenumber. This is written in
+USERON.BBS - in combination with LastUpdate (unix-timestamp) we put an expiry
+time on this.
+
+
+------- EleXer new fields
+ web_GetUIP             - returns UIP as passed to the CGI
+ web_GetUIR             - returns UIR as passed to the CGI
+ web_GetUIN             - returns UIN as passed to the CGI
+ web_ShowHTML           - Show HTML file with macro support
+                            ^F == |F
+                            ^K == |K
+ web_GetDateTime        - Returns an RFC820 formatted current time
+ web_GetCookie          - Get the value of a cookie
+ web_SetLoginData       - Set the UIR, UIP, UIN field to the login script.
+ web_GetFormData        - Get a POST or GET field
+
+------- EleWEB.EXE (generic)
+Action    = required field for all EleWEB actions.
+ele_uip   = CRC32 of password (except login)
+ele_uir   = Userrecord number of username (except login)
+ele_uin   = Nodenumber user is logged in to. (except login)
+
+
+------- EleWEB.EXE
+Variables = ele_username = username to login
+            ele_password = password to login

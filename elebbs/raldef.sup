@@ -1,0 +1,4370 @@
+(*
+**
+** Copyright (C) 1999-2003 Maarten Bekers. All rights reserved.
+**
+** This file is part of EleBBS, EleXer and EleWEB.
+**
+** This file may be distributed under the terms of the Q Public License
+** as defined by Trolltech AS of Norway and appearing in the file
+** LICENSE.QPL included in the packaging of this file.
+**
+** This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+** WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+**
+*)
+(*
+**
+** RALDEF.SUP, Default RAL values for ElCONFIG
+**
+** Copyright (c) 1996 by Maarten Bekers
+**
+** Created : 19-Apr-1997
+** Last update : 19-Apr-1997
+**
+* note: Split up in 4 parts, because TP's limit.
+**
+*)
+
+(*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-*)
+
+
+procedure LoadralDefaults_0(var LangArray: DefaultLangArrayRec);
+begin;
+   LangArray[  0].TextStr    := StringNew('EleBBS language file (English) rev 980909');
+   LangArray[  0].HasDefault := False;
+   LangArray[  0].DefaultKey := #00;
+   LangArray[  0].Keys       := '';
+   LangArray[  0].TxtColor   := 205;
+
+   LangArray[  1].TextStr    := StringNew('Yes');
+   LangArray[  1].HasDefault := False;
+   LangArray[  1].DefaultKey := #00;
+   LangArray[  1].Keys       := 'Y';
+   LangArray[  1].TxtColor   := 0;
+
+   LangArray[  2].TextStr    := StringNew('No');
+   LangArray[  2].HasDefault := False;
+   LangArray[  2].DefaultKey := #00;
+   LangArray[  2].Keys       := 'N';
+   LangArray[  2].TxtColor   := 0;
+
+   LangArray[  3].TextStr    := StringNew('Sorry, you may only log on to one line at any one time!');
+   LangArray[  3].HasDefault := False;
+   LangArray[  3].DefaultKey := #00;
+   LangArray[  3].Keys       := '';
+   LangArray[  3].TxtColor   := 0;
+
+   LangArray[  4].TextStr    := StringNew('Your name was not located in the system user file.');
+   LangArray[  4].HasDefault := False;
+   LangArray[  4].DefaultKey := #00;
+   LangArray[  4].Keys       := '';
+   LangArray[  4].TxtColor   := 0;
+
+   LangArray[  5].TextStr    := StringNew('Name entered: ');
+   LangArray[  5].HasDefault := False;
+   LangArray[  5].DefaultKey := #00;
+   LangArray[  5].Keys       := '';
+   LangArray[  5].TxtColor   := 0;
+
+   LangArray[  6].TextStr    := StringNew('Did you enter your name correctly');
+   LangArray[  6].HasDefault := True;
+   LangArray[  6].DefaultKey := 'Y';
+   LangArray[  6].Keys       := '';
+   LangArray[  6].TxtColor   := 0;
+
+   LangArray[  7].TextStr    := StringNew('Sorry, this system is private.');
+   LangArray[  7].HasDefault := False;
+   LangArray[  7].DefaultKey := #00;
+   LangArray[  7].Keys       := '';
+   LangArray[  7].TxtColor   := 0;
+
+   LangArray[  8].TextStr    := StringNew('Sorry, that name is not acceptable on this system');
+   LangArray[  8].HasDefault := False;
+   LangArray[  8].DefaultKey := #00;
+   LangArray[  8].Keys       := '';
+   LangArray[  8].TxtColor   := 0;
+
+   LangArray[  9].TextStr    := StringNew('Would you like ANSI colour and graphics');
+   LangArray[  9].HasDefault := True;
+   LangArray[  9].DefaultKey := 'Y';
+   LangArray[  9].Keys       := '';
+   LangArray[  9].TxtColor   := 0;
+
+   LangArray[ 10].TextStr    := StringNew('Do you want to use the ANSI full-screen editor');
+   LangArray[ 10].HasDefault := True;
+   LangArray[ 10].DefaultKey := 'Y';
+   LangArray[ 10].Keys       := '';
+   LangArray[ 10].TxtColor   := 0;
+
+   LangArray[ 11].TextStr    := StringNew('Would you like AVATAR codes to be sent');
+   LangArray[ 11].HasDefault := True;
+   LangArray[ 11].DefaultKey := 'N';
+   LangArray[ 11].Keys       := '';
+   LangArray[ 11].TxtColor   := 0;
+
+   LangArray[ 12].TextStr    := StringNew('Would you like hot-keyed menus');
+   LangArray[ 12].HasDefault := True;
+   LangArray[ 12].DefaultKey := 'Y';
+   LangArray[ 12].Keys       := '';
+   LangArray[ 12].TxtColor   := 0;
+
+   LangArray[ 13].TextStr    := StringNew('Use the full screen message viewer');
+   LangArray[ 13].HasDefault := True;
+   LangArray[ 13].DefaultKey := 'Y';
+   LangArray[ 13].Keys       := '';
+   LangArray[ 13].TxtColor   := 0;
+
+   LangArray[ 14].TextStr    := StringNew('How many lines does your display have (10-66, Enter=24): ');
+   LangArray[ 14].HasDefault := False;
+   LangArray[ 14].DefaultKey := #00;
+   LangArray[ 14].Keys       := '';
+   LangArray[ 14].TxtColor   := 0;
+
+   LangArray[ 15].TextStr    := StringNew('Would you like to pause after each screen page');
+   LangArray[ 15].HasDefault := True;
+   LangArray[ 15].DefaultKey := 'Y';
+   LangArray[ 15].Keys       := '';
+   LangArray[ 15].TxtColor   := 0;
+
+   LangArray[ 16].TextStr    := StringNew('Do you want screen clearing codes to be sent');
+   LangArray[ 16].HasDefault := True;
+   LangArray[ 16].DefaultKey := 'Y';
+   LangArray[ 16].Keys       := '';
+   LangArray[ 16].TxtColor   := 0;
+
+   LangArray[ 17].TextStr    := StringNew('Where are you calling from? ');
+   LangArray[ 17].HasDefault := False;
+   LangArray[ 17].DefaultKey := #00;
+   LangArray[ 17].Keys       := '';
+   LangArray[ 17].TxtColor   := 0;
+
+   LangArray[ 18].TextStr    := StringNew('Please enter your home/voice phone number:');
+   LangArray[ 18].HasDefault := False;
+   LangArray[ 18].DefaultKey := #00;
+   LangArray[ 18].Keys       := '';
+   LangArray[ 18].TxtColor   := 0;
+
+   LangArray[ 19].TextStr    := StringNew('Please enter your business/data phone number:');
+   LangArray[ 19].HasDefault := False;
+   LangArray[ 19].DefaultKey := #00;
+   LangArray[ 19].Keys       := '';
+   LangArray[ 19].TxtColor   := 0;
+
+   LangArray[ 20].TextStr    := StringNew('Enter your handle (RETURN for none) : ');
+   LangArray[ 20].HasDefault := False;
+   LangArray[ 20].DefaultKey := #00;
+   LangArray[ 20].Keys       := '';
+   LangArray[ 20].TxtColor   := 0;
+
+   LangArray[ 21].TextStr    := StringNew('That name is already being used by another user, or is unacceptable.');
+   LangArray[ 21].HasDefault := False;
+   LangArray[ 21].DefaultKey := #00;
+   LangArray[ 21].Keys       := '';
+   LangArray[ 21].TxtColor   := 0;
+
+   LangArray[ 22].TextStr    := StringNew('Please enter your date of birth');
+   LangArray[ 22].HasDefault := False;
+   LangArray[ 22].DefaultKey := #00;
+   LangArray[ 22].Keys       := '';
+   LangArray[ 22].TxtColor   := 0;
+
+   LangArray[ 23].TextStr    := StringNew('You must enter a valid date of birth!');
+   LangArray[ 23].HasDefault := False;
+   LangArray[ 23].DefaultKey := #00;
+   LangArray[ 23].Keys       := '';
+   LangArray[ 23].TxtColor   := 0;
+
+   LangArray[ 24].TextStr    := StringNew('Enter your password to use: ');
+   LangArray[ 24].HasDefault := False;
+   LangArray[ 24].DefaultKey := #00;
+   LangArray[ 24].Keys       := '';
+   LangArray[ 24].TxtColor   := 0;
+
+   LangArray[ 25].TextStr    := StringNew('Please re-enter for verification: ');
+   LangArray[ 25].HasDefault := False;
+   LangArray[ 25].DefaultKey := #00;
+   LangArray[ 25].Keys       := '';
+   LangArray[ 25].TxtColor   := 0;
+
+   LangArray[ 26].TextStr    := StringNew('Passwords do not match!');
+   LangArray[ 26].HasDefault := False;
+   LangArray[ 26].DefaultKey := #00;
+   LangArray[ 26].Keys       := '';
+   LangArray[ 26].TxtColor   := 0;
+
+   LangArray[ 27].TextStr    := StringNew('Did you enter all the above information correctly');
+   LangArray[ 27].HasDefault := True;
+   LangArray[ 27].DefaultKey := 'Y';
+   LangArray[ 27].Keys       := '';
+   LangArray[ 27].TxtColor   := 0;
+
+   LangArray[ 28].TextStr    := StringNew('Scanning phone numbers, please wait a moment..');
+   LangArray[ 28].HasDefault := False;
+   LangArray[ 28].DefaultKey := #00;
+   LangArray[ 28].Keys       := '';
+   LangArray[ 28].TxtColor   := 0;
+
+   LangArray[ 29].TextStr    := StringNew('WARNING: Unacceptable voice phone number entered, notifying sysop.');
+   LangArray[ 29].HasDefault := False;
+   LangArray[ 29].DefaultKey := #00;
+   LangArray[ 29].Keys       := '';
+   LangArray[ 29].TxtColor   := 0;
+
+   LangArray[ 30].TextStr    := StringNew('WARNING: Duplicate voice phone number entered, notifying sysop.');
+   LangArray[ 30].HasDefault := False;
+   LangArray[ 30].DefaultKey := #00;
+   LangArray[ 30].Keys       := '';
+   LangArray[ 30].TxtColor   := 0;
+
+   LangArray[ 31].TextStr    := StringNew('Sorry, but you cannot use this system at this speed.');
+   LangArray[ 31].HasDefault := False;
+   LangArray[ 31].DefaultKey := #00;
+   LangArray[ 31].Keys       := '';
+   LangArray[ 31].TxtColor   := 0;
+
+   LangArray[ 32].TextStr    := StringNew('Sorry, 300 baud callers are not permitted to call at this time');
+   LangArray[ 32].HasDefault := False;
+   LangArray[ 32].DefaultKey := #00;
+   LangArray[ 32].Keys       := '';
+   LangArray[ 32].TxtColor   := 0;
+
+   LangArray[ 33].TextStr    := StringNew('** Sysop Remote Access has been disabled **');
+   LangArray[ 33].HasDefault := False;
+   LangArray[ 33].DefaultKey := #00;
+   LangArray[ 33].Keys       := '';
+   LangArray[ 33].TxtColor   := 0;
+
+   LangArray[ 34].TextStr    := StringNew('Incorrect, try again.');
+   LangArray[ 34].HasDefault := False;
+   LangArray[ 34].DefaultKey := #00;
+   LangArray[ 34].Keys       := '';
+   LangArray[ 34].TxtColor   := 0;
+
+   LangArray[ 35].TextStr    := StringNew('Access denied!');
+   LangArray[ 35].HasDefault := False;
+   LangArray[ 35].DefaultKey := #00;
+   LangArray[ 35].Keys       := '';
+   LangArray[ 35].TxtColor   := 0;
+
+   LangArray[ 36].TextStr    := StringNew('Leave a message to the sysop');
+   LangArray[ 36].HasDefault := True;
+   LangArray[ 36].DefaultKey := 'Y';
+   LangArray[ 36].Keys       := '';
+   LangArray[ 36].TxtColor   := 0;
+
+   LangArray[ 37].TextStr    := StringNew('Sorry, but your access to this system has been suspended by the sysop.');
+   LangArray[ 37].HasDefault := False;
+   LangArray[ 37].DefaultKey := #00;
+   LangArray[ 37].Keys       := '';
+   LangArray[ 37].TxtColor   := 0;
+
+   LangArray[ 38].TextStr    := StringNew('System event in');
+   LangArray[ 38].HasDefault := False;
+   LangArray[ 38].DefaultKey := #00;
+   LangArray[ 38].Keys       := '';
+   LangArray[ 38].TxtColor   := 0;
+
+   LangArray[ 39].TextStr    := StringNew('your time limit has been adjusted to');
+   LangArray[ 39].HasDefault := False;
+   LangArray[ 39].DefaultKey := #00;
+   LangArray[ 39].Keys       := '';
+   LangArray[ 39].TxtColor   := 0;
+
+   LangArray[ 40].TextStr    := StringNew('minutes');
+   LangArray[ 40].HasDefault := False;
+   LangArray[ 40].DefaultKey := #00;
+   LangArray[ 40].Keys       := '';
+   LangArray[ 40].TxtColor   := 0;
+
+   LangArray[ 41].TextStr    := StringNew('Check for waiting mail');
+   LangArray[ 41].HasDefault := True;
+   LangArray[ 41].DefaultKey := 'Y';
+   LangArray[ 41].Keys       := '';
+   LangArray[ 41].TxtColor   := 0;
+
+   LangArray[ 42].TextStr    := StringNew('Check for new files');
+   LangArray[ 42].HasDefault := True;
+   LangArray[ 42].DefaultKey := 'N';
+   LangArray[ 42].Keys       := '';
+   LangArray[ 42].TxtColor   := 0;
+
+   LangArray[ 43].TextStr    := StringNew('Your current password has expired!');
+   LangArray[ 43].HasDefault := False;
+   LangArray[ 43].DefaultKey := #00;
+   LangArray[ 43].Keys       := '';
+   LangArray[ 43].TxtColor   := 0;
+
+   LangArray[ 44].TextStr    := StringNew('For security purposes, you are required to change your password every');
+   LangArray[ 44].HasDefault := False;
+   LangArray[ 44].DefaultKey := #00;
+   LangArray[ 44].Keys       := '';
+   LangArray[ 44].TxtColor   := 0;
+
+   LangArray[ 45].TextStr    := StringNew('times you call');
+   LangArray[ 45].HasDefault := False;
+   LangArray[ 45].DefaultKey := #00;
+   LangArray[ 45].Keys       := '';
+   LangArray[ 45].TxtColor   := 0;
+
+   LangArray[ 46].TextStr    := StringNew('File to move/copy (wildcards valid): ');
+   LangArray[ 46].HasDefault := False;
+   LangArray[ 46].DefaultKey := #00;
+   LangArray[ 46].Keys       := '';
+   LangArray[ 46].TxtColor   := 0;
+
+   LangArray[ 47].TextStr    := StringNew('You can''t use the same password! Try again..');
+   LangArray[ 47].HasDefault := False;
+   LangArray[ 47].DefaultKey := #00;
+   LangArray[ 47].Keys       := '';
+   LangArray[ 47].TxtColor   := 0;
+
+   LangArray[ 48].TextStr    := StringNew('Your password must contain at least');
+   LangArray[ 48].HasDefault := False;
+   LangArray[ 48].DefaultKey := #00;
+   LangArray[ 48].Keys       := '';
+   LangArray[ 48].TxtColor   := 0;
+
+   LangArray[ 49].TextStr    := StringNew('characters');
+   LangArray[ 49].HasDefault := False;
+   LangArray[ 49].DefaultKey := #00;
+   LangArray[ 49].Keys       := '';
+   LangArray[ 49].TxtColor   := 0;
+
+   LangArray[ 50].TextStr    := StringNew('not found!');
+   LangArray[ 50].HasDefault := False;
+   LangArray[ 50].DefaultKey := #00;
+   LangArray[ 50].Keys       := '';
+   LangArray[ 50].TxtColor   := 0;
+
+   LangArray[ 51].TextStr    := StringNew('Full destination path: ');
+   LangArray[ 51].HasDefault := False;
+   LangArray[ 51].DefaultKey := #00;
+   LangArray[ 51].Keys       := '';
+   LangArray[ 51].TxtColor   := 0;
+
+   LangArray[ 52].TextStr    := StringNew('Can''t copy a file on top of itself!');
+   LangArray[ 52].HasDefault := False;
+   LangArray[ 52].DefaultKey := #00;
+   LangArray[ 52].Keys       := '';
+   LangArray[ 52].TxtColor   := 0;
+
+   LangArray[ 53].TextStr    := StringNew('Error opening source file..');
+   LangArray[ 53].HasDefault := False;
+   LangArray[ 53].DefaultKey := #00;
+   LangArray[ 53].Keys       := '';
+   LangArray[ 53].TxtColor   := 0;
+
+   LangArray[ 54].TextStr    := StringNew('Unable to create target file..');
+   LangArray[ 54].HasDefault := False;
+   LangArray[ 54].DefaultKey := #00;
+   LangArray[ 54].Keys       := '';
+   LangArray[ 54].TxtColor   := 0;
+
+   LangArray[ 55].TextStr    := StringNew('Error occurred during copy..');
+   LangArray[ 55].HasDefault := False;
+   LangArray[ 55].DefaultKey := #00;
+   LangArray[ 55].Keys       := '';
+   LangArray[ 55].TxtColor   := 0;
+
+   LangArray[ 56].TextStr    := StringNew('Would you like a return receipt');
+   LangArray[ 56].HasDefault := True;
+   LangArray[ 56].DefaultKey := 'N';
+   LangArray[ 56].Keys       := '';
+   LangArray[ 56].TxtColor   := 0;
+
+   LangArray[ 57].TextStr    := StringNew('(K)eyword in text');
+   LangArray[ 57].HasDefault := False;
+   LangArray[ 57].DefaultKey := #00;
+   LangArray[ 57].Keys       := 'K';
+   LangArray[ 57].TxtColor   := 0;
+
+   LangArray[ 58].TextStr    := StringNew('Invalid choice, please try again: ');
+   LangArray[ 58].HasDefault := False;
+   LangArray[ 58].DefaultKey := #00;
+   LangArray[ 58].Keys       := '';
+   LangArray[ 58].TxtColor   := 0;
+
+   LangArray[ 59].TextStr    := StringNew('Please enter a number in the range');
+   LangArray[ 59].HasDefault := False;
+   LangArray[ 59].DefaultKey := #00;
+   LangArray[ 59].Keys       := '';
+   LangArray[ 59].TxtColor   := 0;
+
+   LangArray[ 60].TextStr    := StringNew('Password: ');
+   LangArray[ 60].HasDefault := False;
+   LangArray[ 60].DefaultKey := #00;
+   LangArray[ 60].Keys       := '';
+   LangArray[ 60].TxtColor   := 0;
+
+   LangArray[ 61].TextStr    := StringNew('Number: ');
+   LangArray[ 61].HasDefault := False;
+   LangArray[ 61].DefaultKey := #00;
+   LangArray[ 61].Keys       := '';
+   LangArray[ 61].TxtColor   := 0;
+
+   LangArray[ 62].TextStr    := StringNew('Number entered: ');
+   LangArray[ 62].HasDefault := False;
+   LangArray[ 62].DefaultKey := #00;
+   LangArray[ 62].Keys       := '';
+   LangArray[ 62].TxtColor   := 0;
+
+   LangArray[ 63].TextStr    := StringNew('Is this correct');
+   LangArray[ 63].HasDefault := True;
+   LangArray[ 63].DefaultKey := 'Y';
+   LangArray[ 63].Keys       := '';
+   LangArray[ 63].TxtColor   := 0;
+
+   LangArray[ 64].TextStr    := StringNew('Sorry, daily time limit exceeded -- call back tomorrow.');
+   LangArray[ 64].HasDefault := False;
+   LangArray[ 64].DefaultKey := #00;
+   LangArray[ 64].Keys       := '';
+   LangArray[ 64].TxtColor   := 0;
+
+   LangArray[ 65].TextStr    := StringNew('WARNING -- Time remaining:');
+   LangArray[ 65].HasDefault := False;
+   LangArray[ 65].DefaultKey := #00;
+   LangArray[ 65].Keys       := '';
+   LangArray[ 65].TxtColor   := 0;
+
+   LangArray[ 66].TextStr    := StringNew('* User Inactivity Timeout, Disconnecting *');
+   LangArray[ 66].HasDefault := False;
+   LangArray[ 66].DefaultKey := #00;
+   LangArray[ 66].Keys       := '';
+   LangArray[ 66].TxtColor   := 0;
+
+   LangArray[ 67].TextStr    := StringNew('You are about to be disconnected for inactivity!');
+   LangArray[ 67].HasDefault := False;
+   LangArray[ 67].DefaultKey := #00;
+   LangArray[ 67].Keys       := '';
+   LangArray[ 67].TxtColor   := 0;
+
+   LangArray[ 68].TextStr    := StringNew('More(Y/n/=)?');
+   LangArray[ 68].HasDefault := False;
+   LangArray[ 68].DefaultKey := #00;
+   LangArray[ 68].Keys       := 'YN=';
+   LangArray[ 68].TxtColor   := 0;
+
+   LangArray[ 69].TextStr    := StringNew('Sysop breaking in for a chat:');
+   LangArray[ 69].HasDefault := False;
+   LangArray[ 69].DefaultKey := #00;
+   LangArray[ 69].Keys       := '';
+   LangArray[ 69].TxtColor   := 0;
+
+   LangArray[ 70].TextStr    := StringNew('No user on-line!');
+   LangArray[ 70].HasDefault := False;
+   LangArray[ 70].DefaultKey := #00;
+   LangArray[ 70].Keys       := '';
+   LangArray[ 70].TxtColor   := 0;
+
+   LangArray[ 71].TextStr    := StringNew('Sysop chat mode ended');
+   LangArray[ 71].HasDefault := False;
+   LangArray[ 71].DefaultKey := #00;
+   LangArray[ 71].Keys       := '';
+   LangArray[ 71].TxtColor   := 0;
+
+   LangArray[ 72].TextStr    := StringNew('Please wait a moment..');
+   LangArray[ 72].HasDefault := False;
+   LangArray[ 72].DefaultKey := #00;
+   LangArray[ 72].Keys       := '';
+   LangArray[ 72].TxtColor   := 0;
+
+   LangArray[ 73].TextStr    := StringNew('Thanks for waiting.');
+   LangArray[ 73].HasDefault := False;
+   LangArray[ 73].DefaultKey := #00;
+   LangArray[ 73].Keys       := '';
+   LangArray[ 73].TxtColor   := 0;
+
+   LangArray[ 74].TextStr    := StringNew('** LOCKING OUT USER **');
+   LangArray[ 74].HasDefault := False;
+   LangArray[ 74].DefaultKey := #00;
+   LangArray[ 74].Keys       := '';
+   LangArray[ 74].TxtColor   := 0;
+
+   LangArray[ 75].TextStr    := StringNew('** SECURITY LOCK-OUT COMPLETE **');
+   LangArray[ 75].HasDefault := False;
+   LangArray[ 75].DefaultKey := #00;
+   LangArray[ 75].Keys       := '';
+   LangArray[ 75].TxtColor   := 0;
+
+   LangArray[ 76].TextStr    := StringNew('Top menu missing, disconnecting.');
+   LangArray[ 76].HasDefault := False;
+   LangArray[ 76].DefaultKey := #00;
+   LangArray[ 76].Keys       := '';
+   LangArray[ 76].TxtColor   := 0;
+
+   LangArray[ 77].TextStr    := StringNew('ERROR - Menu missing: ');
+   LangArray[ 77].HasDefault := False;
+   LangArray[ 77].DefaultKey := #00;
+   LangArray[ 77].Keys       := '';
+   LangArray[ 77].TxtColor   := 0;
+
+   LangArray[ 78].TextStr    := StringNew('System contains messages ranging');
+   LangArray[ 78].HasDefault := False;
+   LangArray[ 78].DefaultKey := #00;
+   LangArray[ 78].Keys       := '';
+   LangArray[ 78].TxtColor   := 0;
+
+   LangArray[ 79].TextStr    := StringNew('Enter number of message to delete: ');
+   LangArray[ 79].HasDefault := False;
+   LangArray[ 79].DefaultKey := #00;
+   LangArray[ 79].Keys       := '';
+   LangArray[ 79].TxtColor   := 0;
+
+   LangArray[ 80].TextStr    := StringNew('There is no message number');
+   LangArray[ 80].HasDefault := False;
+   LangArray[ 80].DefaultKey := #00;
+   LangArray[ 80].Keys       := '';
+   LangArray[ 80].TxtColor   := 0;
+
+   LangArray[ 81].TextStr    := StringNew('in this area');
+   LangArray[ 81].HasDefault := False;
+   LangArray[ 81].DefaultKey := #00;
+   LangArray[ 81].Keys       := '';
+   LangArray[ 81].TxtColor   := 0;
+
+   LangArray[ 82].TextStr    := StringNew('Deleting message #');
+   LangArray[ 82].HasDefault := False;
+   LangArray[ 82].DefaultKey := #00;
+   LangArray[ 82].Keys       := '';
+   LangArray[ 82].TxtColor   := 0;
+
+   LangArray[ 83].TextStr    := StringNew('You cannot delete that message.');
+   LangArray[ 83].HasDefault := False;
+   LangArray[ 83].DefaultKey := #00;
+   LangArray[ 83].Keys       := '';
+   LangArray[ 83].TxtColor   := 0;
+
+   LangArray[ 84].TextStr    := StringNew('Sorry, you do not have sufficient credit for this destination.');
+   LangArray[ 84].HasDefault := False;
+   LangArray[ 84].DefaultKey := #00;
+   LangArray[ 84].Keys       := '';
+   LangArray[ 84].TxtColor   := 0;
+
+   LangArray[ 85].TextStr    := StringNew('Could not find node');
+   LangArray[ 85].HasDefault := False;
+   LangArray[ 85].DefaultKey := #00;
+   LangArray[ 85].Keys       := '';
+   LangArray[ 85].TxtColor   := 0;
+
+   LangArray[ 86].TextStr    := StringNew('? to list zones, z:? to list nets in zone z, n/? to list nodes in net n.');
+   LangArray[ 86].HasDefault := False;
+   LangArray[ 86].DefaultKey := #00;
+   LangArray[ 86].Keys       := '';
+   LangArray[ 86].TxtColor   := 0;
+
+   LangArray[ 87].TextStr    := StringNew('Available zones');
+   LangArray[ 87].HasDefault := False;
+   LangArray[ 87].DefaultKey := #00;
+   LangArray[ 87].Keys       := '';
+   LangArray[ 87].TxtColor   := 0;
+
+   LangArray[ 88].TextStr    := StringNew('          Number  Name                               Location             Cost');
+   LangArray[ 88].HasDefault := False;
+   LangArray[ 88].DefaultKey := #00;
+   LangArray[ 88].Keys       := '';
+   LangArray[ 88].TxtColor   := 0;
+
+   LangArray[ 89].TextStr    := StringNew('Nets/regions in zone');
+   LangArray[ 89].HasDefault := False;
+   LangArray[ 89].DefaultKey := #00;
+   LangArray[ 89].Keys       := '';
+   LangArray[ 89].TxtColor   := 0;
+
+   LangArray[ 90].TextStr    := StringNew('Nodes in');
+   LangArray[ 90].HasDefault := False;
+   LangArray[ 90].DefaultKey := #00;
+   LangArray[ 90].Keys       := '';
+   LangArray[ 90].TxtColor   := 0;
+
+   LangArray[ 91].TextStr    := StringNew('Sorry, there is no');
+   LangArray[ 91].HasDefault := False;
+   LangArray[ 91].DefaultKey := #00;
+   LangArray[ 91].Keys       := '';
+   LangArray[ 91].TxtColor   := 0;
+
+   LangArray[ 92].TextStr    := StringNew('listed');
+   LangArray[ 92].HasDefault := False;
+   LangArray[ 92].DefaultKey := #00;
+   LangArray[ 92].Keys       := '';
+   LangArray[ 92].TxtColor   := 0;
+
+   LangArray[ 93].TextStr    := StringNew('Sorry, nodelist help is not available at this time.');
+   LangArray[ 93].HasDefault := False;
+   LangArray[ 93].DefaultKey := #00;
+   LangArray[ 93].Keys       := '';
+   LangArray[ 93].TxtColor   := 0;
+
+   LangArray[ 94].TextStr    := StringNew('Zone');
+   LangArray[ 94].HasDefault := False;
+   LangArray[ 94].DefaultKey := #00;
+   LangArray[ 94].Keys       := '';
+   LangArray[ 94].TxtColor   := 0;
+
+   LangArray[ 95].TextStr    := StringNew('Region');
+   LangArray[ 95].HasDefault := False;
+   LangArray[ 95].DefaultKey := #00;
+   LangArray[ 95].Keys       := '';
+   LangArray[ 95].TxtColor   := 0;
+
+   LangArray[ 96].TextStr    := StringNew('Net');
+   LangArray[ 96].HasDefault := False;
+   LangArray[ 96].DefaultKey := #00;
+   LangArray[ 96].Keys       := '';
+   LangArray[ 96].TxtColor   := 0;
+
+   LangArray[ 97].TextStr    := StringNew('Node');
+   LangArray[ 97].HasDefault := False;
+   LangArray[ 97].DefaultKey := #00;
+   LangArray[ 97].Keys       := '';
+   LangArray[ 97].TxtColor   := 0;
+
+   LangArray[ 98].TextStr    := StringNew('Choose a user (enter the line number): ');
+   LangArray[ 98].HasDefault := False;
+   LangArray[ 98].DefaultKey := #00;
+   LangArray[ 98].Keys       := '';
+   LangArray[ 98].TxtColor   := 0;
+
+   LangArray[ 99].TextStr    := StringNew('Sorry, there isn''t anyone on that line');
+   LangArray[ 99].HasDefault := False;
+   LangArray[ 99].DefaultKey := #00;
+   LangArray[ 99].Keys       := '';
+   LangArray[ 99].TxtColor   := 0;
+
+   LangArray[100].TextStr    := StringNew('doesn''t wish to be disturbed.');
+   LangArray[100].HasDefault := False;
+   LangArray[100].DefaultKey := #00;
+   LangArray[100].Keys       := '';
+   LangArray[100].TxtColor   := 0;
+
+   LangArray[101].TextStr    := StringNew('Sysop Override : Send anyway');
+   LangArray[101].HasDefault := True;
+   LangArray[101].DefaultKey := 'Y';
+   LangArray[101].Keys       := '';
+   LangArray[101].TxtColor   := 0;
+
+   LangArray[102].TextStr    := StringNew('Message to');
+   LangArray[102].HasDefault := False;
+   LangArray[102].DefaultKey := #00;
+   LangArray[102].Keys       := '';
+   LangArray[102].TxtColor   := 0;
+
+   LangArray[103].TextStr    := StringNew('node');
+   LangArray[103].HasDefault := False;
+   LangArray[103].DefaultKey := #00;
+   LangArray[103].Keys       := '';
+   LangArray[103].TxtColor   := 0;
+
+   LangArray[104].TextStr    := StringNew('Aborted.');
+   LangArray[104].HasDefault := False;
+   LangArray[104].DefaultKey := #00;
+   LangArray[104].Keys       := '';
+   LangArray[104].TxtColor   := 0;
+
+   LangArray[105].TextStr    := StringNew('Processing...');
+   LangArray[105].HasDefault := False;
+   LangArray[105].DefaultKey := #00;
+   LangArray[105].Keys       := '';
+   LangArray[105].TxtColor   := 0;
+
+   LangArray[106].TextStr    := StringNew('Message sent');
+   LangArray[106].HasDefault := False;
+   LangArray[106].DefaultKey := #00;
+   LangArray[106].Keys       := '';
+   LangArray[106].TxtColor   := 0;
+
+   LangArray[107].TextStr    := StringNew('Sorry, but you may only page for a chat between');
+   LangArray[107].HasDefault := False;
+   LangArray[107].DefaultKey := #00;
+   LangArray[107].Keys       := '';
+   LangArray[107].TxtColor   := 0;
+
+   LangArray[108].TextStr    := StringNew('Sorry, you may only page for a chat');
+   LangArray[108].HasDefault := False;
+   LangArray[108].DefaultKey := #00;
+   LangArray[108].Keys       := '';
+   LangArray[108].TxtColor   := 0;
+
+   LangArray[109].TextStr    := StringNew('times per call.');
+   LangArray[109].HasDefault := False;
+   LangArray[109].DefaultKey := #00;
+   LangArray[109].Keys       := '';
+   LangArray[109].TxtColor   := 0;
+
+   LangArray[110].TextStr    := StringNew('Why would you like to chat with the sysop?');
+   LangArray[110].HasDefault := False;
+   LangArray[110].DefaultKey := #00;
+   LangArray[110].Keys       := '';
+   LangArray[110].TxtColor   := 0;
+
+   LangArray[111].TextStr    := StringNew('Sorry, but the sysop is not currently available.');
+   LangArray[111].HasDefault := False;
+   LangArray[111].DefaultKey := #00;
+   LangArray[111].Keys       := '';
+   LangArray[111].TxtColor   := 0;
+
+   LangArray[112].TextStr    := StringNew('Leave a message to the sysop');
+   LangArray[112].HasDefault := True;
+   LangArray[112].DefaultKey := 'Y';
+   LangArray[112].Keys       := '';
+   LangArray[112].TxtColor   := 0;
+
+   LangArray[113].TextStr    := StringNew('Sorry, this password is unacceptable. Please try something else..');
+   LangArray[113].HasDefault := False;
+   LangArray[113].DefaultKey := #00;
+   LangArray[113].Keys       := '';
+   LangArray[113].TxtColor   := 0;
+
+   LangArray[114].TextStr    := StringNew('You must select a password that is less similar to your current one!');
+   LangArray[114].HasDefault := False;
+   LangArray[114].DefaultKey := #00;
+   LangArray[114].Keys       := '';
+   LangArray[114].TxtColor   := 0;
+
+   LangArray[115].TextStr    := StringNew('Would you like to (S)elect, (D)e-Select all message areas or (Q)uit?');
+   LangArray[115].HasDefault := False;
+   LangArray[115].DefaultKey := #00;
+   LangArray[115].Keys       := 'SDQ';
+   LangArray[115].TxtColor   := 0;
+
+   LangArray[116].TextStr    := StringNew('Verify that you would like to make this change');
+   LangArray[116].HasDefault := True;
+   LangArray[116].DefaultKey := 'N';
+   LangArray[116].Keys       := '';
+   LangArray[116].TxtColor   := 0;
+
+   LangArray[117].TextStr    := StringNew('ON ');
+   LangArray[117].HasDefault := False;
+   LangArray[117].DefaultKey := #00;
+   LangArray[117].Keys       := '';
+   LangArray[117].TxtColor   := 0;
+
+   LangArray[118].TextStr    := StringNew('OFF');
+   LangArray[118].HasDefault := False;
+   LangArray[118].DefaultKey := #00;
+   LangArray[118].Keys       := '';
+   LangArray[118].TxtColor   := 0;
+
+   LangArray[119].TextStr    := StringNew('Attach local files');
+   LangArray[119].HasDefault := True;
+   LangArray[119].DefaultKey := 'Y';
+   LangArray[119].Keys       := '';
+   LangArray[119].TxtColor   := 0;
+
+   LangArray[120].TextStr    := StringNew('Enter full path and file names to send, 1 per line (blank line to end):');
+   LangArray[120].HasDefault := False;
+   LangArray[120].DefaultKey := #00;
+   LangArray[120].Keys       := '';
+   LangArray[120].TxtColor   := 0;
+
+   LangArray[121].TextStr    := StringNew('File: ');
+   LangArray[121].HasDefault := False;
+   LangArray[121].DefaultKey := #00;
+   LangArray[121].Keys       := '';
+   LangArray[121].TxtColor   := 0;
+
+   LangArray[122].TextStr    := StringNew('Sent: ');
+   LangArray[122].HasDefault := False;
+   LangArray[122].DefaultKey := #00;
+   LangArray[122].Keys       := '';
+   LangArray[122].TxtColor   := 0;
+
+   LangArray[123].TextStr    := StringNew('Could not find');
+   LangArray[123].HasDefault := False;
+   LangArray[123].DefaultKey := #00;
+   LangArray[123].Keys       := '';
+   LangArray[123].TxtColor   := 0;
+
+   LangArray[124].TextStr    := StringNew('Enter message area(s) to toggle: ');
+   LangArray[124].HasDefault := False;
+   LangArray[124].DefaultKey := #00;
+   LangArray[124].Keys       := '';
+   LangArray[124].TxtColor   := 0;
+
+   LangArray[125].TextStr    := StringNew('Data file not present');
+   LangArray[125].HasDefault := False;
+   LangArray[125].DefaultKey := #00;
+   LangArray[125].Keys       := '';
+   LangArray[125].TxtColor   := 0;
+
+   LangArray[126].TextStr    := StringNew('File to view (Enter=quit): ');
+   LangArray[126].HasDefault := False;
+   LangArray[126].DefaultKey := #00;
+   LangArray[126].Keys       := '';
+   LangArray[126].TxtColor   := 0;
+
+   LangArray[127].TextStr    := StringNew('Cannot locate any files for this message!');
+   LangArray[127].HasDefault := False;
+   LangArray[127].DefaultKey := #00;
+   LangArray[127].Keys       := '';
+   LangArray[127].TxtColor   := 0;
+
+   LangArray[128].TextStr    := StringNew('Files attached to this message:');
+   LangArray[128].HasDefault := False;
+   LangArray[128].DefaultKey := #00;
+   LangArray[128].Keys       := '';
+   LangArray[128].TxtColor   := 0;
+
+   LangArray[129].TextStr    := StringNew('Directory to move files to: ');
+   LangArray[129].HasDefault := False;
+   LangArray[129].DefaultKey := #00;
+   LangArray[129].Keys       := '';
+   LangArray[129].TxtColor   := 0;
+
+   LangArray[130].TextStr    := StringNew('Moving files..');
+   LangArray[130].HasDefault := False;
+   LangArray[130].DefaultKey := #00;
+   LangArray[130].Keys       := '';
+   LangArray[130].TxtColor   := 0;
+
+   LangArray[131].TextStr    := StringNew('Check that you have all the files safely. Okay to kill the files here');
+   LangArray[131].HasDefault := True;
+   LangArray[131].DefaultKey := 'N';
+   LangArray[131].Keys       := '';
+   LangArray[131].TxtColor   := 0;
+
+   LangArray[132].TextStr    := StringNew('Killing the attached files..');
+   LangArray[132].HasDefault := False;
+   LangArray[132].DefaultKey := #00;
+   LangArray[132].Keys       := '';
+   LangArray[132].TxtColor   := 0;
+
+   LangArray[133].TextStr    := StringNew('AVATAR codes now active');
+   LangArray[133].HasDefault := False;
+   LangArray[133].DefaultKey := #00;
+   LangArray[133].Keys       := '';
+   LangArray[133].TxtColor   := 0;
+
+   LangArray[134].TextStr    := StringNew('AVATAR codes will NOT be used');
+   LangArray[134].HasDefault := False;
+   LangArray[134].DefaultKey := #00;
+   LangArray[134].Keys       := '';
+   LangArray[134].TxtColor   := 0;
+
+   LangArray[135].TextStr    := StringNew('Todays Callers to');
+   LangArray[135].HasDefault := False;
+   LangArray[135].DefaultKey := #00;
+   LangArray[135].Keys       := '';
+   LangArray[135].TxtColor   := 0;
+
+   LangArray[136].TextStr    := StringNew('Name                Line   BaudRate   LogOn  LogOff   Times  Location');
+   LangArray[136].HasDefault := False;
+   LangArray[136].DefaultKey := #00;
+   LangArray[136].Keys       := '';
+   LangArray[136].TxtColor   := 0;
+
+   LangArray[137].TextStr    := StringNew('Quiet mode');
+   LangArray[137].HasDefault := False;
+   LangArray[137].DefaultKey := #00;
+   LangArray[137].Keys       := '';
+   LangArray[137].TxtColor   := 0;
+
+   LangArray[138].TextStr    := StringNew('Sorry, but the full screen editor is not installed');
+   LangArray[138].HasDefault := False;
+   LangArray[138].DefaultKey := #00;
+   LangArray[138].Keys       := '';
+   LangArray[138].TxtColor   := 0;
+
+   LangArray[139].TextStr    := StringNew('WARNING! The full screen editor requires that you have ANSI capability');
+   LangArray[139].HasDefault := False;
+   LangArray[139].DefaultKey := #00;
+   LangArray[139].Keys       := '';
+   LangArray[139].TxtColor   := 0;
+
+   LangArray[140].TextStr    := StringNew('The full screen message editor will be used to enter messages');
+   LangArray[140].HasDefault := False;
+   LangArray[140].DefaultKey := #00;
+   LangArray[140].Keys       := '';
+   LangArray[140].TxtColor   := 0;
+
+   LangArray[141].TextStr    := StringNew('The line editor will be used to enter messages');
+   LangArray[141].HasDefault := False;
+   LangArray[141].DefaultKey := #00;
+   LangArray[141].Keys       := '';
+   LangArray[141].TxtColor   := 0;
+
+   LangArray[142].TextStr    := StringNew('Sorry, ANSI graphics are not available at this speed');
+   LangArray[142].HasDefault := False;
+   LangArray[142].DefaultKey := #00;
+   LangArray[142].Keys       := '';
+   LangArray[142].TxtColor   := 0;
+
+   LangArray[143].TextStr    := StringNew('ANSI/Colour graphics now active');
+   LangArray[143].HasDefault := False;
+   LangArray[143].DefaultKey := #00;
+   LangArray[143].Keys       := '';
+   LangArray[143].TxtColor   := 0;
+
+   LangArray[144].TextStr    := StringNew('ANSI/Colour graphics will NOT be used');
+   LangArray[144].HasDefault := False;
+   LangArray[144].DefaultKey := #00;
+   LangArray[144].Keys       := '';
+   LangArray[144].TxtColor   := 0;
+
+   LangArray[145].TextStr    := StringNew('HotKeys active');
+   LangArray[145].HasDefault := False;
+   LangArray[145].DefaultKey := #00;
+   LangArray[145].Keys       := '';
+   LangArray[145].TxtColor   := 0;
+
+   LangArray[146].TextStr    := StringNew('HotKeys disabled');
+   LangArray[146].HasDefault := False;
+   LangArray[146].DefaultKey := #00;
+   LangArray[146].Keys       := '';
+   LangArray[146].TxtColor   := 0;
+
+   LangArray[147].TextStr    := StringNew('Page Pausing');
+   LangArray[147].HasDefault := False;
+   LangArray[147].DefaultKey := #00;
+   LangArray[147].Keys       := '';
+   LangArray[147].TxtColor   := 0;
+
+   LangArray[148].TextStr    := StringNew('Full screen message reader enabled');
+   LangArray[148].HasDefault := False;
+   LangArray[148].DefaultKey := #00;
+   LangArray[148].Keys       := '';
+   LangArray[148].TxtColor   := 0;
+
+   LangArray[149].TextStr    := StringNew('Full screen message reader disabled');
+   LangArray[149].HasDefault := False;
+   LangArray[149].DefaultKey := #00;
+   LangArray[149].Keys       := '';
+   LangArray[149].TxtColor   := 0;
+
+   LangArray[150].TextStr    := StringNew('Current time         : ');
+   LangArray[150].HasDefault := False;
+   LangArray[150].DefaultKey := #00;
+   LangArray[150].Keys       := '';
+   LangArray[150].TxtColor   := 0;
+
+end;
+
+(*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-*)
+
+procedure LoadralDefaults_1(var LangArray: DefaultLangArrayRec);
+begin;
+   LangArray[151].TextStr    := StringNew('Current date         : ');
+   LangArray[151].HasDefault := False;
+   LangArray[151].DefaultKey := #00;
+   LangArray[151].Keys       := '';
+   LangArray[151].TxtColor   := 0;
+
+   LangArray[152].TextStr    := StringNew('Connect time         : ');
+   LangArray[152].HasDefault := False;
+   LangArray[152].DefaultKey := #00;
+   LangArray[152].Keys       := '';
+   LangArray[152].TxtColor   := 0;
+
+   LangArray[153].TextStr    := StringNew('Time used today      : ');
+   LangArray[153].HasDefault := False;
+   LangArray[153].DefaultKey := #00;
+   LangArray[153].Keys       := '';
+   LangArray[153].TxtColor   := 0;
+
+   LangArray[154].TextStr    := StringNew('Time remaining today : ');
+   LangArray[154].HasDefault := False;
+   LangArray[154].DefaultKey := #00;
+   LangArray[154].Keys       := '';
+   LangArray[154].TxtColor   := 0;
+
+   LangArray[155].TextStr    := StringNew('Daily time limit     : ');
+   LangArray[155].HasDefault := False;
+   LangArray[155].DefaultKey := #00;
+   LangArray[155].Keys       := '';
+   LangArray[155].TxtColor   := 0;
+
+   LangArray[156].TextStr    := StringNew('Screen clear codes WILL be sent');
+   LangArray[156].HasDefault := False;
+   LangArray[156].DefaultKey := #00;
+   LangArray[156].Keys       := '';
+   LangArray[156].TxtColor   := 0;
+
+   LangArray[157].TextStr    := StringNew('Screen clear codes will NOT be sent');
+   LangArray[157].HasDefault := False;
+   LangArray[157].DefaultKey := #00;
+   LangArray[157].Keys       := '';
+   LangArray[157].TxtColor   := 0;
+
+   LangArray[158].TextStr    := StringNew('Midnight');
+   LangArray[158].HasDefault := False;
+   LangArray[158].DefaultKey := #00;
+   LangArray[158].Keys       := '';
+   LangArray[158].TxtColor   := 0;
+
+   LangArray[159].TextStr    := StringNew('Noon');
+   LangArray[159].HasDefault := False;
+   LangArray[159].DefaultKey := #00;
+   LangArray[159].Keys       := '';
+   LangArray[159].TxtColor   := 0;
+
+   LangArray[160].TextStr    := StringNew('Line');
+   LangArray[160].HasDefault := False;
+   LangArray[160].DefaultKey := #00;
+   LangArray[160].Keys       := '';
+   LangArray[160].TxtColor   := 0;
+
+   LangArray[161].TextStr    := StringNew('Percentage of hourly system usage for');
+   LangArray[161].HasDefault := False;
+   LangArray[161].DefaultKey := #00;
+   LangArray[161].Keys       := '';
+   LangArray[161].TxtColor   := 0;
+
+   LangArray[162].TextStr    := StringNew('Enter Username search string or (Enter) for all users: ');
+   LangArray[162].HasDefault := False;
+   LangArray[162].DefaultKey := #00;
+   LangArray[162].Keys       := '';
+   LangArray[162].TxtColor   := 0;
+
+   LangArray[163].TextStr    := StringNew('Name                          Location                  LastOn    Calls Ratio');
+   LangArray[163].HasDefault := False;
+   LangArray[163].DefaultKey := #00;
+   LangArray[163].Keys       := '';
+   LangArray[163].TxtColor   := 0;
+
+   LangArray[164].TextStr    := StringNew('is not a listed user of this system.');
+   LangArray[164].HasDefault := False;
+   LangArray[164].DefaultKey := #00;
+   LangArray[164].Keys       := '';
+   LangArray[164].TxtColor   := 0;
+
+   LangArray[165].TextStr    := StringNew('Enter new user security-level for');
+   LangArray[165].HasDefault := False;
+   LangArray[165].DefaultKey := #00;
+   LangArray[165].Keys       := '';
+   LangArray[165].TxtColor   := 0;
+
+   LangArray[166].TextStr    := StringNew('File to view: ');
+   LangArray[166].HasDefault := False;
+   LangArray[166].DefaultKey := #00;
+   LangArray[166].Keys       := '';
+   LangArray[166].TxtColor   := 0;
+
+   LangArray[167].TextStr    := StringNew('Sorry, couldn''t locate that file..');
+   LangArray[167].HasDefault := False;
+   LangArray[167].DefaultKey := #00;
+   LangArray[167].Keys       := '';
+   LangArray[167].TxtColor   := 0;
+
+   LangArray[168].TextStr    := StringNew('Callers On-Line to');
+   LangArray[168].HasDefault := False;
+   LangArray[168].DefaultKey := #00;
+   LangArray[168].Keys       := '';
+   LangArray[168].TxtColor   := 0;
+
+   LangArray[169].TextStr    := StringNew('Name                         Line   BaudRate   Status     Location');
+   LangArray[169].HasDefault := False;
+   LangArray[169].DefaultKey := #00;
+   LangArray[169].Keys       := '';
+   LangArray[169].TxtColor   := 0;
+
+   LangArray[170].TextStr    := StringNew('Browsing');
+   LangArray[170].HasDefault := False;
+   LangArray[170].DefaultKey := #00;
+   LangArray[170].Keys       := '';
+   LangArray[170].TxtColor   := 0;
+
+   LangArray[171].TextStr    := StringNew('File Xfer');
+   LangArray[171].HasDefault := False;
+   LangArray[171].DefaultKey := #00;
+   LangArray[171].Keys       := '';
+   LangArray[171].TxtColor   := 0;
+
+   LangArray[172].TextStr    := StringNew('Messages');
+   LangArray[172].HasDefault := False;
+   LangArray[172].DefaultKey := #00;
+   LangArray[172].Keys       := '';
+   LangArray[172].TxtColor   := 0;
+
+   LangArray[173].TextStr    := StringNew('Door');
+   LangArray[173].HasDefault := False;
+   LangArray[173].DefaultKey := #00;
+   LangArray[173].Keys       := '';
+   LangArray[173].TxtColor   := 0;
+
+   LangArray[174].TextStr    := StringNew('Sysop Chat');
+   LangArray[174].HasDefault := False;
+   LangArray[174].DefaultKey := #00;
+   LangArray[174].Keys       := '';
+   LangArray[174].TxtColor   := 0;
+
+   LangArray[175].TextStr    := StringNew('Quest''naire');
+   LangArray[175].HasDefault := False;
+   LangArray[175].DefaultKey := #00;
+   LangArray[175].Keys       := '';
+   LangArray[175].TxtColor   := 0;
+
+   LangArray[176].TextStr    := StringNew('Free : ');
+   LangArray[176].HasDefault := False;
+   LangArray[176].DefaultKey := #00;
+   LangArray[176].Keys       := '';
+   LangArray[176].TxtColor   := 0;
+
+   LangArray[177].TextStr    := StringNew('bytes');
+   LangArray[177].HasDefault := False;
+   LangArray[177].DefaultKey := #00;
+   LangArray[177].Keys       := '';
+   LangArray[177].TxtColor   := 0;
+
+   LangArray[178].TextStr    := StringNew('Using: ');
+   LangArray[178].HasDefault := False;
+   LangArray[178].DefaultKey := #00;
+   LangArray[178].Keys       := '';
+   LangArray[178].TxtColor   := 0;
+
+   LangArray[179].TextStr    := StringNew('There is not enough free space for your upload!');
+   LangArray[179].HasDefault := False;
+   LangArray[179].DefaultKey := #00;
+   LangArray[179].Keys       := '';
+   LangArray[179].TxtColor   := 0;
+
+   LangArray[180].TextStr    := StringNew('Start sending now, or press <Ctrl-X> several times to abort');
+   LangArray[180].HasDefault := False;
+   LangArray[180].DefaultKey := #00;
+   LangArray[180].Keys       := '';
+   LangArray[180].TxtColor   := 0;
+
+   LangArray[181].TextStr    := StringNew('File to upload: ');
+   LangArray[181].HasDefault := False;
+   LangArray[181].DefaultKey := #00;
+   LangArray[181].Keys       := '';
+   LangArray[181].TxtColor   := 0;
+
+   LangArray[182].TextStr    := StringNew('Sorry, but you may not upload that file');
+   LangArray[182].HasDefault := False;
+   LangArray[182].DefaultKey := #00;
+   LangArray[182].Keys       := '';
+   LangArray[182].TxtColor   := 0;
+
+   LangArray[183].TextStr    := StringNew('Sorry, that file already exists here.');
+   LangArray[183].HasDefault := False;
+   LangArray[183].DefaultKey := #00;
+   LangArray[183].Keys       := '';
+   LangArray[183].TxtColor   := 0;
+
+   LangArray[184].TextStr    := StringNew('Files Received');
+   LangArray[184].HasDefault := False;
+   LangArray[184].DefaultKey := #00;
+   LangArray[184].Keys       := '';
+   LangArray[184].TxtColor   := 0;
+
+   LangArray[185].TextStr    := StringNew('File Received');
+   LangArray[185].HasDefault := False;
+   LangArray[185].DefaultKey := #00;
+   LangArray[185].Keys       := '';
+   LangArray[185].TxtColor   := 0;
+
+   LangArray[186].TextStr    := StringNew('No Files Received');
+   LangArray[186].HasDefault := False;
+   LangArray[186].DefaultKey := #00;
+   LangArray[186].Keys       := '';
+   LangArray[186].TxtColor   := 0;
+
+   LangArray[187].TextStr    := StringNew('You have been granted an extra');
+   LangArray[187].HasDefault := False;
+   LangArray[187].DefaultKey := #00;
+   LangArray[187].Keys       := '';
+   LangArray[187].TxtColor   := 0;
+
+   LangArray[188].TextStr    := StringNew('NOTE - One or more of your files was rejected because they already exist here.');
+   LangArray[188].HasDefault := False;
+   LangArray[188].DefaultKey := #00;
+   LangArray[188].Keys       := '';
+   LangArray[188].TxtColor   := 0;
+
+   LangArray[189].TextStr    := StringNew('NOTE - One or more of your files was rejected because they are unacceptable.');
+   LangArray[189].HasDefault := False;
+   LangArray[189].DefaultKey := #00;
+   LangArray[189].Keys       := '';
+   LangArray[189].TxtColor   := 0;
+
+   LangArray[190].TextStr    := StringNew('Begin description with a "/" if file is for the sysop only');
+   LangArray[190].HasDefault := False;
+   LangArray[190].DefaultKey := #00;
+   LangArray[190].Keys       := '';
+   LangArray[190].TxtColor   := 0;
+
+   LangArray[191].TextStr    := StringNew('Please describe');
+   LangArray[191].HasDefault := False;
+   LangArray[191].DefaultKey := #00;
+   LangArray[191].Keys       := '';
+   LangArray[191].TxtColor   := 0;
+
+   LangArray[192].TextStr    := StringNew('Sorry, file transfers are not permitted at this speed');
+   LangArray[192].HasDefault := False;
+   LangArray[192].DefaultKey := #00;
+   LangArray[192].Keys       := '';
+   LangArray[192].TxtColor   := 0;
+
+   LangArray[193].TextStr    := StringNew('File(s) to download: ');
+   LangArray[193].HasDefault := False;
+   LangArray[193].DefaultKey := #00;
+   LangArray[193].Keys       := '';
+   LangArray[193].TxtColor   := 0;
+
+   LangArray[194].TextStr    := StringNew('Sorry, but the protocol you have selected does not support batch transfers');
+   LangArray[194].HasDefault := False;
+   LangArray[194].DefaultKey := #00;
+   LangArray[194].Keys       := '';
+   LangArray[194].TxtColor   := 0;
+
+   LangArray[195].TextStr    := StringNew('daily time limit');
+   LangArray[195].HasDefault := False;
+   LangArray[195].DefaultKey := #00;
+   LangArray[195].Keys       := '';
+   LangArray[195].TxtColor   := 0;
+
+   LangArray[196].TextStr    := StringNew('Sorry, but this download would exceed your');
+   LangArray[196].HasDefault := False;
+   LangArray[196].DefaultKey := #00;
+   LangArray[196].Keys       := '';
+   LangArray[196].TxtColor   := 0;
+
+   LangArray[197].TextStr    := StringNew('k daily limit');
+   LangArray[197].HasDefault := False;
+   LangArray[197].DefaultKey := #00;
+   LangArray[197].Keys       := '';
+   LangArray[197].TxtColor   := 0;
+
+   LangArray[198].TextStr    := StringNew('ratio limit');
+   LangArray[198].HasDefault := False;
+   LangArray[198].DefaultKey := #00;
+   LangArray[198].Keys       := '';
+   LangArray[198].TxtColor   := 0;
+
+   LangArray[199].TextStr    := StringNew('(S)tart transfer, (L)ogoff after transfer, (N)ew protocol, (A)bort:');
+   LangArray[199].HasDefault := False;
+   LangArray[199].DefaultKey := #00;
+   LangArray[199].Keys       := 'SLNA';
+   LangArray[199].TxtColor   := 0;
+
+   LangArray[200].TextStr    := StringNew('Files: ');
+   LangArray[200].HasDefault := False;
+   LangArray[200].DefaultKey := #00;
+   LangArray[200].Keys       := '';
+   LangArray[200].TxtColor   := 0;
+
+   LangArray[201].TextStr    := StringNew('Size : ');
+   LangArray[201].HasDefault := False;
+   LangArray[201].DefaultKey := #00;
+   LangArray[201].Keys       := '';
+   LangArray[201].TxtColor   := 0;
+
+   LangArray[202].TextStr    := StringNew('Time : ');
+   LangArray[202].HasDefault := False;
+   LangArray[202].DefaultKey := #00;
+   LangArray[202].Keys       := '';
+   LangArray[202].TxtColor   := 0;
+
+   LangArray[203].TextStr    := StringNew('minutes at');
+   LangArray[203].HasDefault := False;
+   LangArray[203].DefaultKey := #00;
+   LangArray[203].Keys       := '';
+   LangArray[203].TxtColor   := 0;
+
+   LangArray[204].TextStr    := StringNew('BPS');
+   LangArray[204].HasDefault := False;
+   LangArray[204].DefaultKey := #00;
+   LangArray[204].Keys       := '';
+   LangArray[204].TxtColor   := 0;
+
+   LangArray[205].TextStr    := StringNew('Start receiving now, or press <Ctrl-X> several times to abort');
+   LangArray[205].HasDefault := False;
+   LangArray[205].DefaultKey := #00;
+   LangArray[205].Keys       := '';
+   LangArray[205].TxtColor   := 0;
+
+   LangArray[206].TextStr    := StringNew('Files sent');
+   LangArray[206].HasDefault := False;
+   LangArray[206].DefaultKey := #00;
+   LangArray[206].Keys       := '';
+   LangArray[206].TxtColor   := 0;
+
+   LangArray[207].TextStr    := StringNew('File sent');
+   LangArray[207].HasDefault := False;
+   LangArray[207].DefaultKey := #00;
+   LangArray[207].Keys       := '';
+   LangArray[207].TxtColor   := 0;
+
+   LangArray[208].TextStr    := StringNew('No files sent');
+   LangArray[208].HasDefault := False;
+   LangArray[208].DefaultKey := #00;
+   LangArray[208].Keys       := '';
+   LangArray[208].TxtColor   := 0;
+
+   LangArray[209].TextStr    := StringNew('Auto logoff in ten seconds: Press "!" to disconnect now, "S" to stop countdown');
+   LangArray[209].HasDefault := False;
+   LangArray[209].DefaultKey := #00;
+   LangArray[209].Keys       := '';
+   LangArray[209].TxtColor   := 0;
+
+   LangArray[210].TextStr    := StringNew('File to download (full path & name) : ');
+   LangArray[210].HasDefault := False;
+   LangArray[210].DefaultKey := #00;
+   LangArray[210].Keys       := '';
+   LangArray[210].TxtColor   := 0;
+
+   LangArray[211].TextStr    := StringNew('No files to send!');
+   LangArray[211].HasDefault := False;
+   LangArray[211].DefaultKey := #00;
+   LangArray[211].Keys       := '';
+   LangArray[211].TxtColor   := 0;
+
+   LangArray[212].TextStr    := StringNew('Sorry, only the first six listed protocols are available for message upload.');
+   LangArray[212].HasDefault := False;
+   LangArray[212].DefaultKey := #00;
+   LangArray[212].Keys       := '';
+   LangArray[212].TxtColor   := 0;
+
+   LangArray[213].TextStr    := StringNew('One moment..');
+   LangArray[213].HasDefault := False;
+   LangArray[213].DefaultKey := #00;
+   LangArray[213].Keys       := '';
+   LangArray[213].TxtColor   := 0;
+
+   LangArray[214].TextStr    := StringNew('(*) indicates batch transfer available');
+   LangArray[214].HasDefault := False;
+   LangArray[214].DefaultKey := #00;
+   LangArray[214].Keys       := '';
+   LangArray[214].TxtColor   := 0;
+
+   LangArray[215].TextStr    := StringNew('Protocol (Enter=quit): ');
+   LangArray[215].HasDefault := False;
+   LangArray[215].DefaultKey := #00;
+   LangArray[215].Keys       := '';
+   LangArray[215].TxtColor   := 0;
+
+   LangArray[216].TextStr    := StringNew('(Free)');
+   LangArray[216].HasDefault := False;
+   LangArray[216].DefaultKey := #00;
+   LangArray[216].Keys       := '';
+   LangArray[216].TxtColor   := 0;
+
+   LangArray[217].TextStr    := StringNew('Incorrect');
+   LangArray[217].HasDefault := False;
+   LangArray[217].DefaultKey := #00;
+   LangArray[217].Keys       := '';
+   LangArray[217].TxtColor   := 0;
+
+   LangArray[218].TextStr    := StringNew('Accepted');
+   LangArray[218].HasDefault := False;
+   LangArray[218].DefaultKey := #00;
+   LangArray[218].Keys       := '';
+   LangArray[218].TxtColor   := 0;
+
+   LangArray[219].TextStr    := StringNew('Sorry, downloads are only allowed between');
+   LangArray[219].HasDefault := False;
+   LangArray[219].DefaultKey := #00;
+   LangArray[219].Keys       := '';
+   LangArray[219].TxtColor   := 0;
+
+   LangArray[220].TextStr    := StringNew('* NODELIST BROWSING * (blank line quits):');
+   LangArray[220].HasDefault := False;
+   LangArray[220].DefaultKey := #00;
+   LangArray[220].Keys       := '';
+   LangArray[220].TxtColor   := 0;
+
+   LangArray[221].TextStr    := StringNew('? to list all zones');
+   LangArray[221].HasDefault := False;
+   LangArray[221].DefaultKey := #00;
+   LangArray[221].Keys       := '';
+   LangArray[221].TxtColor   := 0;
+
+   LangArray[222].TextStr    := StringNew('z:? to list nets in zone z');
+   LangArray[222].HasDefault := False;
+   LangArray[222].DefaultKey := #00;
+   LangArray[222].Keys       := '';
+   LangArray[222].TxtColor   := 0;
+
+   LangArray[223].TextStr    := StringNew('n/? to list nodes in net n');
+   LangArray[223].HasDefault := False;
+   LangArray[223].DefaultKey := #00;
+   LangArray[223].Keys       := '';
+   LangArray[223].TxtColor   := 0;
+
+   LangArray[224].TextStr    := StringNew('Password change successful');
+   LangArray[224].HasDefault := False;
+   LangArray[224].DefaultKey := #00;
+   LangArray[224].Keys       := '';
+   LangArray[224].TxtColor   := 0;
+
+   LangArray[225].TextStr    := StringNew('Your password must contain at least');
+   LangArray[225].HasDefault := False;
+   LangArray[225].DefaultKey := #00;
+   LangArray[225].Keys       := '';
+   LangArray[225].TxtColor   := 0;
+
+   LangArray[226].TextStr    := StringNew('characters! Try again..');
+   LangArray[226].HasDefault := False;
+   LangArray[226].DefaultKey := #00;
+   LangArray[226].Keys       := '';
+   LangArray[226].TxtColor   := 0;
+
+   LangArray[227].TextStr    := StringNew('You must enter both your first and last names!');
+   LangArray[227].HasDefault := False;
+   LangArray[227].DefaultKey := #00;
+   LangArray[227].Keys       := '';
+   LangArray[227].TxtColor   := 0;
+
+   LangArray[228].TextStr    := StringNew('Screen length changed to');
+   LangArray[228].HasDefault := False;
+   LangArray[228].DefaultKey := #00;
+   LangArray[228].Keys       := '';
+   LangArray[228].TxtColor   := 0;
+
+   LangArray[229].TextStr    := StringNew('File Areas: ');
+   LangArray[229].HasDefault := False;
+   LangArray[229].DefaultKey := #00;
+   LangArray[229].Keys       := '';
+   LangArray[229].TxtColor   := 0;
+
+   LangArray[230].TextStr    := StringNew('Message Areas: ');
+   LangArray[230].HasDefault := False;
+   LangArray[230].DefaultKey := #00;
+   LangArray[230].Keys       := '';
+   LangArray[230].TxtColor   := 0;
+
+   LangArray[231].TextStr    := StringNew('That area does not exist!');
+   LangArray[231].HasDefault := False;
+   LangArray[231].DefaultKey := #00;
+   LangArray[231].Keys       := '';
+   LangArray[231].TxtColor   := 0;
+
+   LangArray[232].TextStr    := StringNew('Combined');
+   LangArray[232].HasDefault := False;
+   LangArray[232].DefaultKey := #00;
+   LangArray[232].Keys       := '';
+   LangArray[232].TxtColor   := 0;
+
+   LangArray[233].TextStr    := StringNew('File name pattern match (Enter=all files) : ');
+   LangArray[233].HasDefault := False;
+   LangArray[233].DefaultKey := #00;
+   LangArray[233].Keys       := '';
+   LangArray[233].TxtColor   := 0;
+
+   LangArray[234].TextStr    := StringNew('File Name      Size        Date');
+   LangArray[234].HasDefault := False;
+   LangArray[234].DefaultKey := #00;
+   LangArray[234].Keys       := '';
+   LangArray[234].TxtColor   := 0;
+
+   LangArray[235].TextStr    := StringNew('files');
+   LangArray[235].HasDefault := False;
+   LangArray[235].DefaultKey := #00;
+   LangArray[235].Keys       := '';
+   LangArray[235].TxtColor   := 0;
+
+   LangArray[236].TextStr    := StringNew('Select area: ');
+   LangArray[236].HasDefault := False;
+   LangArray[236].DefaultKey := #00;
+   LangArray[236].Keys       := '';
+   LangArray[236].TxtColor   := 0;
+
+   LangArray[237].TextStr    := StringNew('Enter keyword to use for search: ');
+   LangArray[237].HasDefault := False;
+   LangArray[237].DefaultKey := #00;
+   LangArray[237].Keys       := '';
+   LangArray[237].TxtColor   := 0;
+
+   LangArray[238].TextStr    := StringNew('File Search by Keyword;');
+   LangArray[238].HasDefault := False;
+   LangArray[238].DefaultKey := #00;
+   LangArray[238].Keys       := '';
+   LangArray[238].TxtColor   := 0;
+
+   LangArray[239].TextStr    := StringNew('Press P to Pause, S to Stop');
+   LangArray[239].HasDefault := False;
+   LangArray[239].DefaultKey := #00;
+   LangArray[239].Keys       := '';
+   LangArray[239].TxtColor   := 0;
+
+   LangArray[240].TextStr    := StringNew('Search Config File not installed, aborting');
+   LangArray[240].HasDefault := False;
+   LangArray[240].DefaultKey := #00;
+   LangArray[240].Keys       := '';
+   LangArray[240].TxtColor   := 0;
+
+   LangArray[241].TextStr    := StringNew('Enter the file name to find (wildcards valid): ');
+   LangArray[241].HasDefault := False;
+   LangArray[241].DefaultKey := #00;
+   LangArray[241].Keys       := '';
+   LangArray[241].TxtColor   := 0;
+
+   LangArray[242].TextStr    := StringNew('File Search by Name;');
+   LangArray[242].HasDefault := False;
+   LangArray[242].DefaultKey := #00;
+   LangArray[242].Keys       := '';
+   LangArray[242].TxtColor   := 0;
+
+   LangArray[243].TextStr    := StringNew('Archive to view: ');
+   LangArray[243].HasDefault := False;
+   LangArray[243].DefaultKey := #00;
+   LangArray[243].Keys       := '';
+   LangArray[243].TxtColor   := 0;
+
+   LangArray[244].TextStr    := StringNew('Unknown archive type!');
+   LangArray[244].HasDefault := False;
+   LangArray[244].DefaultKey := #00;
+   LangArray[244].Keys       := '';
+   LangArray[244].TxtColor   := 0;
+
+   LangArray[245].TextStr    := StringNew('Listing of archive');
+   LangArray[245].HasDefault := False;
+   LangArray[245].DefaultKey := #00;
+   LangArray[245].Keys       := '';
+   LangArray[245].TxtColor   := 0;
+
+   LangArray[246].TextStr    := StringNew('Filename      Original Size     Ratio Date        Time');
+   LangArray[246].HasDefault := False;
+   LangArray[246].DefaultKey := #00;
+   LangArray[246].Keys       := '';
+   LangArray[246].TxtColor   := 0;
+
+   LangArray[247].TextStr    := StringNew('MISSING');
+   LangArray[247].HasDefault := False;
+   LangArray[247].DefaultKey := #00;
+   LangArray[247].Keys       := '';
+   LangArray[247].TxtColor   := 0;
+
+   LangArray[248].TextStr    := StringNew('Search for files new since your last call');
+   LangArray[248].HasDefault := True;
+   LangArray[248].DefaultKey := 'Y';
+   LangArray[248].Keys       := '';
+   LangArray[248].TxtColor   := 0;
+
+   LangArray[249].TextStr    := StringNew('Show all files newer than');
+   LangArray[249].HasDefault := False;
+   LangArray[249].DefaultKey := #00;
+   LangArray[249].Keys       := '';
+   LangArray[249].TxtColor   := 0;
+
+   LangArray[250].TextStr    := StringNew('File Search by Date;');
+   LangArray[250].HasDefault := False;
+   LangArray[250].DefaultKey := #00;
+   LangArray[250].Keys       := '';
+   LangArray[250].TxtColor   := 0;
+
+   LangArray[251].TextStr    := StringNew('Sunday');
+   LangArray[251].HasDefault := False;
+   LangArray[251].DefaultKey := #00;
+   LangArray[251].Keys       := '';
+   LangArray[251].TxtColor   := 0;
+
+   LangArray[252].TextStr    := StringNew('Monday');
+   LangArray[252].HasDefault := False;
+   LangArray[252].DefaultKey := #00;
+   LangArray[252].Keys       := '';
+   LangArray[252].TxtColor   := 0;
+
+   LangArray[253].TextStr    := StringNew('Tuesday');
+   LangArray[253].HasDefault := False;
+   LangArray[253].DefaultKey := #00;
+   LangArray[253].Keys       := '';
+   LangArray[253].TxtColor   := 0;
+
+   LangArray[254].TextStr    := StringNew('Wednesday');
+   LangArray[254].HasDefault := False;
+   LangArray[254].DefaultKey := #00;
+   LangArray[254].Keys       := '';
+   LangArray[254].TxtColor   := 0;
+
+   LangArray[255].TextStr    := StringNew('Thursday');
+   LangArray[255].HasDefault := False;
+   LangArray[255].DefaultKey := #00;
+   LangArray[255].Keys       := '';
+   LangArray[255].TxtColor   := 0;
+
+   LangArray[256].TextStr    := StringNew('Friday');
+   LangArray[256].HasDefault := False;
+   LangArray[256].DefaultKey := #00;
+   LangArray[256].Keys       := '';
+   LangArray[256].TxtColor   := 0;
+
+   LangArray[257].TextStr    := StringNew('Saturday');
+   LangArray[257].HasDefault := False;
+   LangArray[257].DefaultKey := #00;
+   LangArray[257].Keys       := '';
+   LangArray[257].TxtColor   := 0;
+
+   LangArray[258].TextStr    := StringNew('Press (Enter) to continue:');
+   LangArray[258].HasDefault := False;
+   LangArray[258].DefaultKey := #00;
+   LangArray[258].Keys       := '';
+   LangArray[258].TxtColor   := 0;
+
+   LangArray[259].TextStr    := StringNew('Checking your mail-box ... ');
+   LangArray[259].HasDefault := False;
+   LangArray[259].DefaultKey := #00;
+   LangArray[259].Keys       := '';
+   LangArray[259].TxtColor   := 0;
+
+   LangArray[260].TextStr    := StringNew('You have no new mail in your mail-box.');
+   LangArray[260].HasDefault := False;
+   LangArray[260].DefaultKey := #00;
+   LangArray[260].Keys       := '';
+   LangArray[260].TxtColor   := 0;
+
+   LangArray[261].TextStr    := StringNew('You have the following mail:');
+   LangArray[261].HasDefault := False;
+   LangArray[261].DefaultKey := #00;
+   LangArray[261].Keys       := '';
+   LangArray[261].TxtColor   := 0;
+
+   LangArray[262].TextStr    := StringNew('message');
+   LangArray[262].HasDefault := False;
+   LangArray[262].DefaultKey := #00;
+   LangArray[262].Keys       := '';
+   LangArray[262].TxtColor   := 0;
+
+   LangArray[263].TextStr    := StringNew('messages');
+   LangArray[263].HasDefault := False;
+   LangArray[263].DefaultKey := #00;
+   LangArray[263].Keys       := '';
+   LangArray[263].TxtColor   := 0;
+
+   LangArray[264].TextStr    := StringNew('Read');
+   LangArray[264].HasDefault := False;
+   LangArray[264].DefaultKey := #00;
+   LangArray[264].Keys       := 'R';
+   LangArray[264].TxtColor   := 0;
+
+   LangArray[265].TextStr    := StringNew('Scan mail');
+   LangArray[265].HasDefault := False;
+   LangArray[265].DefaultKey := #00;
+   LangArray[265].Keys       := 'S';
+   LangArray[265].TxtColor   := 0;
+
+   LangArray[266].TextStr    := StringNew('Quickscan mail');
+   LangArray[266].HasDefault := False;
+   LangArray[266].DefaultKey := #00;
+   LangArray[266].Keys       := 'Q';
+   LangArray[266].TxtColor   := 0;
+
+   LangArray[267].TextStr    := StringNew('Killing mail..');
+   LangArray[267].HasDefault := False;
+   LangArray[267].DefaultKey := #00;
+   LangArray[267].Keys       := 'K';
+   LangArray[267].TxtColor   := 0;
+
+   LangArray[268].TextStr    := StringNew('Marking as received..');
+   LangArray[268].HasDefault := False;
+   LangArray[268].DefaultKey := #00;
+   LangArray[268].Keys       := 'M';
+   LangArray[268].TxtColor   := 0;
+
+   LangArray[269].TextStr    := StringNew('Help');
+   LangArray[269].HasDefault := False;
+   LangArray[269].DefaultKey := #00;
+   LangArray[269].Keys       := '';
+   LangArray[269].TxtColor   := 0;
+
+   LangArray[270].TextStr    := StringNew('Would you like to read this mail now? ');
+   LangArray[270].HasDefault := False;
+   LangArray[270].DefaultKey := #00;
+   LangArray[270].Keys       := '';
+   LangArray[270].TxtColor   := 0;
+
+   LangArray[271].TextStr    := StringNew('Are you sure you wish to kill all mail addressed to you');
+   LangArray[271].HasDefault := True;
+   LangArray[271].DefaultKey := 'N';
+   LangArray[271].Keys       := '';
+   LangArray[271].TxtColor   := 0;
+
+   LangArray[272].TextStr    := StringNew('There is no message text!');
+   LangArray[272].HasDefault := False;
+   LangArray[272].DefaultKey := #00;
+   LangArray[272].Keys       := '';
+   LangArray[272].TxtColor   := 0;
+
+   LangArray[273].TextStr    := StringNew('Delete starting at line #');
+   LangArray[273].HasDefault := False;
+   LangArray[273].DefaultKey := #00;
+   LangArray[273].Keys       := '';
+   LangArray[273].TxtColor   := 0;
+
+   LangArray[274].TextStr    := StringNew('Delete ending   at line #');
+   LangArray[274].HasDefault := False;
+   LangArray[274].DefaultKey := #00;
+   LangArray[274].Keys       := '';
+   LangArray[274].TxtColor   := 0;
+
+   LangArray[275].TextStr    := StringNew('Enter line # to edit');
+   LangArray[275].HasDefault := False;
+   LangArray[275].DefaultKey := #00;
+   LangArray[275].Keys       := '';
+   LangArray[275].TxtColor   := 0;
+
+   LangArray[276].TextStr    := StringNew('Maximum length exceeded!');
+   LangArray[276].HasDefault := False;
+   LangArray[276].DefaultKey := #00;
+   LangArray[276].Keys       := '';
+   LangArray[276].TxtColor   := 0;
+
+   LangArray[277].TextStr    := StringNew('Enter line # to insert new text before');
+   LangArray[277].HasDefault := False;
+   LangArray[277].DefaultKey := #00;
+   LangArray[277].Keys       := '';
+   LangArray[277].TxtColor   := 0;
+
+   LangArray[278].TextStr    := StringNew('Enter line # to adjust');
+   LangArray[278].HasDefault := False;
+   LangArray[278].DefaultKey := #00;
+   LangArray[278].Keys       := '';
+   LangArray[278].TxtColor   := 0;
+
+   LangArray[279].TextStr    := StringNew('Line currently reads:');
+   LangArray[279].HasDefault := False;
+   LangArray[279].DefaultKey := #00;
+   LangArray[279].Keys       := '';
+   LangArray[279].TxtColor   := 0;
+
+   LangArray[280].TextStr    := StringNew('Text to replace : ');
+   LangArray[280].HasDefault := False;
+   LangArray[280].DefaultKey := #00;
+   LangArray[280].Keys       := '';
+   LangArray[280].TxtColor   := 0;
+
+   LangArray[281].TextStr    := StringNew('Replacement text: ');
+   LangArray[281].HasDefault := False;
+   LangArray[281].DefaultKey := #00;
+   LangArray[281].Keys       := '';
+   LangArray[281].TxtColor   := 0;
+
+   LangArray[282].TextStr    := StringNew('Line now reads:');
+   LangArray[282].HasDefault := False;
+   LangArray[282].DefaultKey := #00;
+   LangArray[282].Keys       := '';
+   LangArray[282].TxtColor   := 0;
+
+   LangArray[283].TextStr    := StringNew('Begin your message now. Words are wrapped automatically, blank line to end.');
+   LangArray[283].HasDefault := False;
+   LangArray[283].DefaultKey := #00;
+   LangArray[283].Keys       := '';
+   LangArray[283].TxtColor   := 0;
+
+   LangArray[284].TextStr    := StringNew('Maximum of');
+   LangArray[284].HasDefault := False;
+   LangArray[284].DefaultKey := #00;
+   LangArray[284].Keys       := '';
+   LangArray[284].TxtColor   := 0;
+
+   LangArray[285].TextStr    := StringNew('lines');
+   LangArray[285].HasDefault := False;
+   LangArray[285].DefaultKey := #00;
+   LangArray[285].Keys       := '';
+   LangArray[285].TxtColor   := 0;
+
+   LangArray[286].TextStr    := StringNew('characters per line');
+   LangArray[286].HasDefault := False;
+   LangArray[286].DefaultKey := #00;
+   LangArray[286].Keys       := '';
+   LangArray[286].TxtColor   := 0;
+
+   LangArray[287].TextStr    := StringNew('Functions available:');
+   LangArray[287].HasDefault := False;
+   LangArray[287].DefaultKey := #00;
+   LangArray[287].Keys       := '';
+   LangArray[287].TxtColor   := 0;
+
+   LangArray[288].TextStr    := StringNew('lines in text');
+   LangArray[288].HasDefault := False;
+   LangArray[288].DefaultKey := #00;
+   LangArray[288].Keys       := '';
+   LangArray[288].TxtColor   := 0;
+
+   LangArray[289].TextStr    := StringNew('Delete');
+   LangArray[289].HasDefault := False;
+   LangArray[289].DefaultKey := #00;
+   LangArray[289].Keys       := 'D';
+   LangArray[289].TxtColor   := 0;
+
+   LangArray[290].TextStr    := StringNew('Edit line');
+   LangArray[290].HasDefault := False;
+   LangArray[290].DefaultKey := #00;
+   LangArray[290].Keys       := 'E';
+   LangArray[290].TxtColor   := 0;
+
+   LangArray[291].TextStr    := StringNew('Replace');
+   LangArray[291].HasDefault := False;
+   LangArray[291].DefaultKey := #00;
+   LangArray[291].Keys       := 'R';
+   LangArray[291].TxtColor   := 0;
+
+   LangArray[292].TextStr    := StringNew('Insert');
+   LangArray[292].HasDefault := False;
+   LangArray[292].DefaultKey := #00;
+   LangArray[292].Keys       := 'I';
+   LangArray[292].TxtColor   := 0;
+
+   LangArray[293].TextStr    := StringNew('Help');
+   LangArray[293].HasDefault := False;
+   LangArray[293].DefaultKey := #00;
+   LangArray[293].Keys       := 'H';
+   LangArray[293].TxtColor   := 0;
+
+   LangArray[294].TextStr    := StringNew('Continue');
+   LangArray[294].HasDefault := False;
+   LangArray[294].DefaultKey := #00;
+   LangArray[294].Keys       := 'C';
+   LangArray[294].TxtColor   := 0;
+
+   LangArray[295].TextStr    := StringNew('List text');
+   LangArray[295].HasDefault := False;
+   LangArray[295].DefaultKey := #00;
+   LangArray[295].Keys       := 'L';
+   LangArray[295].TxtColor   := 0;
+
+   LangArray[296].TextStr    := StringNew('Save');
+   LangArray[296].HasDefault := False;
+   LangArray[296].DefaultKey := #00;
+   LangArray[296].Keys       := 'S';
+   LangArray[296].TxtColor   := 0;
+
+   LangArray[297].TextStr    := StringNew('Quit');
+   LangArray[297].HasDefault := False;
+   LangArray[297].DefaultKey := #00;
+   LangArray[297].Keys       := 'Q';
+   LangArray[297].TxtColor   := 0;
+
+   LangArray[298].TextStr    := StringNew('Select: ');
+   LangArray[298].HasDefault := False;
+   LangArray[298].DefaultKey := #00;
+   LangArray[298].Keys       := '';
+   LangArray[298].TxtColor   := 0;
+
+   LangArray[299].TextStr    := StringNew('Are you sure');
+   LangArray[299].HasDefault := True;
+   LangArray[299].DefaultKey := 'N';
+   LangArray[299].Keys       := '';
+   LangArray[299].TxtColor   := 0;
+
+end;
+
+(*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-*)
+
+procedure LoadralDefaults_2(var LangArray: DefaultLangArrayRec);
+begin;
+   LangArray[300].TextStr    := StringNew('Send files with this message');
+   LangArray[300].HasDefault := True;
+   LangArray[300].DefaultKey := 'N';
+   LangArray[300].Keys       := '';
+   LangArray[300].TxtColor   := 0;
+
+   LangArray[301].TextStr    := StringNew('Saving message to disk.. ');
+   LangArray[301].HasDefault := False;
+   LangArray[301].DefaultKey := #00;
+   LangArray[301].Keys       := '';
+   LangArray[301].TxtColor   := 0;
+
+   LangArray[302].TextStr    := StringNew('Subject: ');
+   LangArray[302].HasDefault := False;
+   LangArray[302].DefaultKey := #00;
+   LangArray[302].Keys       := '';
+   LangArray[302].TxtColor   := 0;
+
+   LangArray[303].TextStr    := StringNew('Enter the name to use : ');
+   LangArray[303].HasDefault := False;
+   LangArray[303].DefaultKey := #00;
+   LangArray[303].Keys       := '';
+   LangArray[303].TxtColor   := 0;
+
+   LangArray[304].TextStr    := StringNew('Verifying user ... ');
+   LangArray[304].HasDefault := False;
+   LangArray[304].DefaultKey := #00;
+   LangArray[304].Keys       := '';
+   LangArray[304].TxtColor   := 0;
+
+   LangArray[305].TextStr    := StringNew('You can''t use another user''s name!');
+   LangArray[305].HasDefault := False;
+   LangArray[305].DefaultKey := #00;
+   LangArray[305].Keys       := '';
+   LangArray[305].TxtColor   := 0;
+
+   LangArray[306].TextStr    := StringNew('You can''t use that name, try another');
+   LangArray[306].HasDefault := False;
+   LangArray[306].DefaultKey := #00;
+   LangArray[306].Keys       := '';
+   LangArray[306].TxtColor   := 0;
+
+   LangArray[307].TextStr    := StringNew('To     : ');
+   LangArray[307].HasDefault := False;
+   LangArray[307].DefaultKey := #00;
+   LangArray[307].Keys       := '';
+   LangArray[307].TxtColor   := 0;
+
+   LangArray[308].TextStr    := StringNew('That is not a valid user of this system. Browse the user-list');
+   LangArray[308].HasDefault := True;
+   LangArray[308].DefaultKey := 'Y';
+   LangArray[308].Keys       := '';
+   LangArray[308].TxtColor   := 0;
+
+   LangArray[309].TextStr    := StringNew('You can''t post a message to SYSOP in an EchoMail conference!');
+   LangArray[309].HasDefault := False;
+   LangArray[309].DefaultKey := #00;
+   LangArray[309].Keys       := '';
+   LangArray[309].TxtColor   := 0;
+
+   LangArray[310].TextStr    := StringNew('Address: ');
+   LangArray[310].HasDefault := False;
+   LangArray[310].DefaultKey := #00;
+   LangArray[310].Keys       := '';
+   LangArray[310].TxtColor   := 0;
+
+   LangArray[311].TextStr    := StringNew('Area to forward message in:');
+   LangArray[311].HasDefault := False;
+   LangArray[311].DefaultKey := #00;
+   LangArray[311].Keys       := '';
+   LangArray[311].TxtColor   := 0;
+
+   LangArray[312].TextStr    := StringNew('Area to post message in:');
+   LangArray[312].HasDefault := False;
+   LangArray[312].DefaultKey := #00;
+   LangArray[312].Keys       := '';
+   LangArray[312].TxtColor   := 0;
+
+   LangArray[313].TextStr    := StringNew('Reply via personal NetMail');
+   LangArray[313].HasDefault := True;
+   LangArray[313].DefaultKey := 'N';
+   LangArray[313].Keys       := '';
+   LangArray[313].TxtColor   := 0;
+
+   LangArray[314].TextStr    := StringNew('You are not permitted to post messages in this area.');
+   LangArray[314].HasDefault := False;
+   LangArray[314].DefaultKey := #00;
+   LangArray[314].Keys       := '';
+   LangArray[314].TxtColor   := 0;
+
+   LangArray[315].TextStr    := StringNew('Sorry, you do not have sufficient credit for this destination.');
+   LangArray[315].HasDefault := False;
+   LangArray[315].DefaultKey := #00;
+   LangArray[315].Keys       := '';
+   LangArray[315].TxtColor   := 0;
+
+   LangArray[316].TextStr    := StringNew('Forwarding message from');
+   LangArray[316].HasDefault := False;
+   LangArray[316].DefaultKey := #00;
+   LangArray[316].Keys       := '';
+   LangArray[316].TxtColor   := 0;
+
+   LangArray[317].TextStr    := StringNew('Replying to message in');
+   LangArray[317].HasDefault := False;
+   LangArray[317].DefaultKey := #00;
+   LangArray[317].Keys       := '';
+   LangArray[317].TxtColor   := 0;
+
+   LangArray[318].TextStr    := StringNew('Posting message in');
+   LangArray[318].HasDefault := False;
+   LangArray[318].DefaultKey := #00;
+   LangArray[318].Keys       := '';
+   LangArray[318].TxtColor   := 0;
+
+   LangArray[319].TextStr    := StringNew('area');
+   LangArray[319].HasDefault := False;
+   LangArray[319].DefaultKey := #00;
+   LangArray[319].Keys       := '';
+   LangArray[319].TxtColor   := 0;
+
+   LangArray[320].TextStr    := StringNew('Scanning user-file ...');
+   LangArray[320].HasDefault := False;
+   LangArray[320].DefaultKey := #00;
+   LangArray[320].Keys       := '';
+   LangArray[320].TxtColor   := 0;
+
+   LangArray[321].TextStr    := StringNew('Use an alias');
+   LangArray[321].HasDefault := True;
+   LangArray[321].DefaultKey := 'N';
+   LangArray[321].Keys       := '';
+   LangArray[321].TxtColor   := 0;
+
+   LangArray[322].TextStr    := StringNew('From   : ');
+   LangArray[322].HasDefault := False;
+   LangArray[322].DefaultKey := #00;
+   LangArray[322].Keys       := '';
+   LangArray[322].TxtColor   := 0;
+
+   LangArray[323].TextStr    := StringNew('on');
+   LangArray[323].HasDefault := False;
+   LangArray[323].DefaultKey := #00;
+   LangArray[323].Keys       := '';
+   LangArray[323].TxtColor   := 0;
+
+   LangArray[324].TextStr    := StringNew('Subject: ');
+   LangArray[324].HasDefault := False;
+   LangArray[324].DefaultKey := #00;
+   LangArray[324].Keys       := '';
+   LangArray[324].TxtColor   := 0;
+
+   LangArray[325].TextStr    := StringNew('Change anything');
+   LangArray[325].HasDefault := True;
+   LangArray[325].DefaultKey := 'N';
+   LangArray[325].Keys       := '';
+   LangArray[325].TxtColor   := 0;
+
+   LangArray[326].TextStr    := StringNew('(S)ubject, or (A)bort message, (Enter)=Nothing:');
+   LangArray[326].HasDefault := False;
+   LangArray[326].DefaultKey := #00;
+   LangArray[326].Keys       := 'SA';
+   LangArray[326].TxtColor   := 0;
+
+   LangArray[327].TextStr    := StringNew('(T)o name,');
+   LangArray[327].HasDefault := False;
+   LangArray[327].DefaultKey := #00;
+   LangArray[327].Keys       := 'T';
+   LangArray[327].TxtColor   := 0;
+
+   LangArray[328].TextStr    := StringNew('What do you want to change?');
+   LangArray[328].HasDefault := False;
+   LangArray[328].DefaultKey := #00;
+   LangArray[328].Keys       := '';
+   LangArray[328].TxtColor   := 0;
+
+   LangArray[329].TextStr    := StringNew('To name');
+   LangArray[329].HasDefault := False;
+   LangArray[329].DefaultKey := #00;
+   LangArray[329].Keys       := '';
+   LangArray[329].TxtColor   := 0;
+
+   LangArray[330].TextStr    := StringNew('Subject name');
+   LangArray[330].HasDefault := False;
+   LangArray[330].DefaultKey := #00;
+   LangArray[330].Keys       := '';
+   LangArray[330].TxtColor   := 0;
+
+   LangArray[331].TextStr    := StringNew('Abort');
+   LangArray[331].HasDefault := False;
+   LangArray[331].DefaultKey := #00;
+   LangArray[331].Keys       := '';
+   LangArray[331].TxtColor   := 0;
+
+   LangArray[332].TextStr    := StringNew('Private');
+   LangArray[332].HasDefault := True;
+   LangArray[332].DefaultKey := 'N';
+   LangArray[332].Keys       := '';
+   LangArray[332].TxtColor   := 0;
+
+   LangArray[333].TextStr    := StringNew('Delete message after sent to destination');
+   LangArray[333].HasDefault := True;
+   LangArray[333].DefaultKey := 'Y';
+   LangArray[333].Keys       := '';
+   LangArray[333].TxtColor   := 0;
+
+   LangArray[334].TextStr    := StringNew('Send message with ''crash'' priority');
+   LangArray[334].HasDefault := True;
+   LangArray[334].DefaultKey := 'N';
+   LangArray[334].Keys       := '';
+   LangArray[334].TxtColor   := 0;
+
+   LangArray[335].TextStr    := StringNew('Attach files with message');
+   LangArray[335].HasDefault := True;
+   LangArray[335].DefaultKey := 'N';
+   LangArray[335].Keys       := '';
+   LangArray[335].TxtColor   := 0;
+
+   LangArray[336].TextStr    := StringNew('File(s) to attach: ');
+   LangArray[336].HasDefault := False;
+   LangArray[336].DefaultKey := #00;
+   LangArray[336].Keys       := '';
+   LangArray[336].TxtColor   := 0;
+
+   LangArray[337].TextStr    := StringNew('Quote text from original message');
+   LangArray[337].HasDefault := True;
+   LangArray[337].DefaultKey := 'N';
+   LangArray[337].Keys       := '';
+   LangArray[337].TxtColor   := 0;
+
+   LangArray[338].TextStr    := StringNew('Quoting reply text ... ');
+   LangArray[338].HasDefault := False;
+   LangArray[338].DefaultKey := #00;
+   LangArray[338].Keys       := '';
+   LangArray[338].TxtColor   := 0;
+
+   LangArray[339].TextStr    := StringNew('Upload a prepared message');
+   LangArray[339].HasDefault := True;
+   LangArray[339].DefaultKey := 'N';
+   LangArray[339].Keys       := '';
+   LangArray[339].TxtColor   := 0;
+
+   LangArray[340].TextStr    := StringNew('Message aborted.');
+   LangArray[340].HasDefault := False;
+   LangArray[340].DefaultKey := #00;
+   LangArray[340].Keys       := '';
+   LangArray[340].TxtColor   := 0;
+
+   LangArray[341].TextStr    := StringNew('Message larger than 20k, aborted.');
+   LangArray[341].HasDefault := False;
+   LangArray[341].DefaultKey := #00;
+   LangArray[341].Keys       := '';
+   LangArray[341].TxtColor   := 0;
+
+   LangArray[342].TextStr    := StringNew('Error in executing external message editor.');
+   LangArray[342].HasDefault := False;
+   LangArray[342].DefaultKey := #00;
+   LangArray[342].Keys       := '';
+   LangArray[342].TxtColor   := 0;
+
+   LangArray[343].TextStr    := StringNew('Inactivity time-out.');
+   LangArray[343].HasDefault := False;
+   LangArray[343].DefaultKey := #00;
+   LangArray[343].Keys       := '';
+   LangArray[343].TxtColor   := 0;
+
+   LangArray[344].TextStr    := StringNew('(Deleted)');
+   LangArray[344].HasDefault := False;
+   LangArray[344].DefaultKey := #00;
+   LangArray[344].Keys       := '';
+   LangArray[344].TxtColor   := 0;
+
+   LangArray[345].TextStr    := StringNew('(Pvt)');
+   LangArray[345].HasDefault := False;
+   LangArray[345].DefaultKey := #00;
+   LangArray[345].Keys       := '';
+   LangArray[345].TxtColor   := 0;
+
+   LangArray[346].TextStr    := StringNew('(Rcvd)');
+   LangArray[346].HasDefault := False;
+   LangArray[346].DefaultKey := #00;
+   LangArray[346].Keys       := '';
+   LangArray[346].TxtColor   := 0;
+
+   LangArray[347].TextStr    := StringNew('(Attach)');
+   LangArray[347].HasDefault := False;
+   LangArray[347].DefaultKey := #00;
+   LangArray[347].Keys       := '';
+   LangArray[347].TxtColor   := 0;
+
+   LangArray[348].TextStr    := StringNew('(Kill/Sent)');
+   LangArray[348].HasDefault := False;
+   LangArray[348].DefaultKey := #00;
+   LangArray[348].Keys       := '';
+   LangArray[348].TxtColor   := 0;
+
+   LangArray[349].TextStr    := StringNew('(Sent)');
+   LangArray[349].HasDefault := False;
+   LangArray[349].DefaultKey := #00;
+   LangArray[349].Keys       := '';
+   LangArray[349].TxtColor   := 0;
+
+   LangArray[350].TextStr    := StringNew('(Crash)');
+   LangArray[350].HasDefault := False;
+   LangArray[350].DefaultKey := #00;
+   LangArray[350].Keys       := '';
+   LangArray[350].TxtColor   := 0;
+
+   LangArray[351].TextStr    := StringNew('(ReqRec)');
+   LangArray[351].HasDefault := False;
+   LangArray[351].DefaultKey := #00;
+   LangArray[351].Keys       := '';
+   LangArray[351].TxtColor   := 0;
+
+   LangArray[352].TextStr    := StringNew('(Audit Req)');
+   LangArray[352].HasDefault := False;
+   LangArray[352].DefaultKey := #00;
+   LangArray[352].Keys       := '';
+   LangArray[352].TxtColor   := 0;
+
+   LangArray[353].TextStr    := StringNew('(RetRec)');
+   LangArray[353].HasDefault := False;
+   LangArray[353].DefaultKey := #00;
+   LangArray[353].Keys       := '';
+   LangArray[353].TxtColor   := 0;
+
+   LangArray[354].TextStr    := StringNew('   From: ');
+   LangArray[354].HasDefault := False;
+   LangArray[354].DefaultKey := #00;
+   LangArray[354].Keys       := '';
+   LangArray[354].TxtColor   := 0;
+
+   LangArray[355].TextStr    := StringNew('     To: ');
+   LangArray[355].HasDefault := False;
+   LangArray[355].DefaultKey := #00;
+   LangArray[355].Keys       := '';
+   LangArray[355].TxtColor   := 0;
+
+   LangArray[356].TextStr    := StringNew('Subject: ');
+   LangArray[356].HasDefault := False;
+   LangArray[356].DefaultKey := #00;
+   LangArray[356].Keys       := '';
+   LangArray[356].TxtColor   := 0;
+
+   LangArray[357].TextStr    := StringNew('There are files attached to this message; Press (F) to download them');
+   LangArray[357].HasDefault := False;
+   LangArray[357].DefaultKey := #00;
+   LangArray[357].Keys       := '';
+   LangArray[357].TxtColor   := 0;
+
+   LangArray[358].TextStr    := StringNew('Enclosed: ');
+   LangArray[358].HasDefault := False;
+   LangArray[358].DefaultKey := #00;
+   LangArray[358].Keys       := '';
+   LangArray[358].TxtColor   := 0;
+
+   LangArray[359].TextStr    := StringNew('Replies: ');
+   LangArray[359].HasDefault := False;
+   LangArray[359].DefaultKey := #00;
+   LangArray[359].Keys       := '';
+   LangArray[359].TxtColor   := 0;
+
+   LangArray[360].TextStr    := StringNew('Dt: ');
+   LangArray[360].HasDefault := False;
+   LangArray[360].DefaultKey := #00;
+   LangArray[360].Keys       := '';
+   LangArray[360].TxtColor   := 0;
+
+   LangArray[361].TextStr    := StringNew('By: ');
+   LangArray[361].HasDefault := False;
+   LangArray[361].DefaultKey := #00;
+   LangArray[361].Keys       := '';
+   LangArray[361].TxtColor   := 0;
+
+   LangArray[362].TextStr    := StringNew('To: ');
+   LangArray[362].HasDefault := False;
+   LangArray[362].DefaultKey := #00;
+   LangArray[362].Keys       := '';
+   LangArray[362].TxtColor   := 0;
+
+   LangArray[363].TextStr    := StringNew('Re: ');
+   LangArray[363].HasDefault := False;
+   LangArray[363].DefaultKey := #00;
+   LangArray[363].Keys       := '';
+   LangArray[363].TxtColor   := 0;
+
+   LangArray[364].TextStr    := StringNew('#     From                     To                       Subject');
+   LangArray[364].HasDefault := False;
+   LangArray[364].DefaultKey := #00;
+   LangArray[364].Keys       := '';
+   LangArray[364].TxtColor   := 0;
+
+   LangArray[365].TextStr    := StringNew('Message area');
+   LangArray[365].HasDefault := False;
+   LangArray[365].DefaultKey := #00;
+   LangArray[365].Keys       := '';
+   LangArray[365].TxtColor   := 0;
+
+   LangArray[366].TextStr    := StringNew('contains');
+   LangArray[366].HasDefault := False;
+   LangArray[366].DefaultKey := #00;
+   LangArray[366].Keys       := '';
+   LangArray[366].TxtColor   := 0;
+
+   LangArray[367].TextStr    := StringNew('Enter message number to read: ');
+   LangArray[367].HasDefault := False;
+   LangArray[367].DefaultKey := #00;
+   LangArray[367].Keys       := '';
+   LangArray[367].TxtColor   := 0;
+
+   LangArray[368].TextStr    := StringNew('Enter message number to start at (Enter=First/Last): ');
+   LangArray[368].HasDefault := False;
+   LangArray[368].DefaultKey := #00;
+   LangArray[368].Keys       := '';
+   LangArray[368].TxtColor   := 0;
+
+   LangArray[369].TextStr    := StringNew('Pause after each message');
+   LangArray[369].HasDefault := True;
+   LangArray[369].DefaultKey := 'Y';
+   LangArray[369].Keys       := '';
+   LangArray[369].TxtColor   := 0;
+
+   LangArray[370].TextStr    := StringNew('Mark messages for later reading');
+   LangArray[370].HasDefault := True;
+   LangArray[370].DefaultKey := 'Y';
+   LangArray[370].Keys       := '';
+   LangArray[370].TxtColor   := 0;
+
+   LangArray[371].TextStr    := StringNew('Clear currently marked messages');
+   LangArray[371].HasDefault := True;
+   LangArray[371].DefaultKey := 'Y';
+   LangArray[371].Keys       := '';
+   LangArray[371].TxtColor   := 0;
+
+   LangArray[372].TextStr    := StringNew('Mark this message? (yes/No/stop): ');
+   LangArray[372].HasDefault := False;
+   LangArray[372].DefaultKey := #00;
+   LangArray[372].Keys       := '';
+   LangArray[372].TxtColor   := 0;
+
+   LangArray[373].TextStr    := StringNew('End of messages');
+   LangArray[373].HasDefault := False;
+   LangArray[373].DefaultKey := #00;
+   LangArray[373].Keys       := '';
+   LangArray[373].TxtColor   := 0;
+
+   LangArray[374].TextStr    := StringNew('End of new mail');
+   LangArray[374].HasDefault := False;
+   LangArray[374].DefaultKey := #00;
+   LangArray[374].Keys       := '';
+   LangArray[374].TxtColor   := 0;
+
+   LangArray[375].TextStr    := StringNew('There are no messages in this area');
+   LangArray[375].HasDefault := False;
+   LangArray[375].DefaultKey := #00;
+   LangArray[375].Keys       := '';
+   LangArray[375].TxtColor   := 0;
+
+   LangArray[376].TextStr    := StringNew('You do not have read access to this message area.');
+   LangArray[376].HasDefault := False;
+   LangArray[376].DefaultKey := #00;
+   LangArray[376].Keys       := '';
+   LangArray[376].TxtColor   := 0;
+
+   LangArray[377].TextStr    := StringNew('Device/filename to export file to: ');
+   LangArray[377].HasDefault := False;
+   LangArray[377].DefaultKey := #00;
+   LangArray[377].Keys       := '';
+   LangArray[377].TxtColor   := 0;
+
+   LangArray[378].TextStr    := StringNew('Cannot create file!');
+   LangArray[378].HasDefault := False;
+   LangArray[378].DefaultKey := #00;
+   LangArray[378].Keys       := '';
+   LangArray[378].TxtColor   := 0;
+
+   LangArray[379].TextStr    := StringNew('Exporting.. ');
+   LangArray[379].HasDefault := False;
+   LangArray[379].DefaultKey := #00;
+   LangArray[379].Keys       := '';
+   LangArray[379].TxtColor   := 0;
+
+   LangArray[380].TextStr    := StringNew('   Date: ');
+   LangArray[380].HasDefault := False;
+   LangArray[380].DefaultKey := #00;
+   LangArray[380].Keys       := '';
+   LangArray[380].TxtColor   := 0;
+
+   LangArray[381].TextStr    := StringNew('Local');
+   LangArray[381].HasDefault := False;
+   LangArray[381].DefaultKey := #00;
+   LangArray[381].Keys       := '';
+   LangArray[381].TxtColor   := 0;
+
+   LangArray[382].TextStr    := StringNew('NetMail');
+   LangArray[382].HasDefault := False;
+   LangArray[382].DefaultKey := #00;
+   LangArray[382].Keys       := '';
+   LangArray[382].TxtColor   := 0;
+
+   LangArray[383].TextStr    := StringNew('EchoMail');
+   LangArray[383].HasDefault := False;
+   LangArray[383].DefaultKey := #00;
+   LangArray[383].Keys       := '';
+   LangArray[383].TxtColor   := 0;
+
+   LangArray[384].TextStr    := StringNew('Jan');
+   LangArray[384].HasDefault := False;
+   LangArray[384].DefaultKey := #00;
+   LangArray[384].Keys       := '';
+   LangArray[384].TxtColor   := 0;
+
+   LangArray[385].TextStr    := StringNew('Feb');
+   LangArray[385].HasDefault := False;
+   LangArray[385].DefaultKey := #00;
+   LangArray[385].Keys       := '';
+   LangArray[385].TxtColor   := 0;
+
+   LangArray[386].TextStr    := StringNew('Mar');
+   LangArray[386].HasDefault := False;
+   LangArray[386].DefaultKey := #00;
+   LangArray[386].Keys       := '';
+   LangArray[386].TxtColor   := 0;
+
+   LangArray[387].TextStr    := StringNew('Apr');
+   LangArray[387].HasDefault := False;
+   LangArray[387].DefaultKey := #00;
+   LangArray[387].Keys       := '';
+   LangArray[387].TxtColor   := 0;
+
+   LangArray[388].TextStr    := StringNew('May');
+   LangArray[388].HasDefault := False;
+   LangArray[388].DefaultKey := #00;
+   LangArray[388].Keys       := '';
+   LangArray[388].TxtColor   := 0;
+
+   LangArray[389].TextStr    := StringNew('Jun');
+   LangArray[389].HasDefault := False;
+   LangArray[389].DefaultKey := #00;
+   LangArray[389].Keys       := '';
+   LangArray[389].TxtColor   := 0;
+
+   LangArray[390].TextStr    := StringNew('Jul');
+   LangArray[390].HasDefault := False;
+   LangArray[390].DefaultKey := #00;
+   LangArray[390].Keys       := '';
+   LangArray[390].TxtColor   := 0;
+
+   LangArray[391].TextStr    := StringNew('Aug');
+   LangArray[391].HasDefault := False;
+   LangArray[391].DefaultKey := #00;
+   LangArray[391].Keys       := '';
+   LangArray[391].TxtColor   := 0;
+
+   LangArray[392].TextStr    := StringNew('Sep');
+   LangArray[392].HasDefault := False;
+   LangArray[392].DefaultKey := #00;
+   LangArray[392].Keys       := '';
+   LangArray[392].TxtColor   := 0;
+
+   LangArray[393].TextStr    := StringNew('Oct');
+   LangArray[393].HasDefault := False;
+   LangArray[393].DefaultKey := #00;
+   LangArray[393].Keys       := '';
+   LangArray[393].TxtColor   := 0;
+
+   LangArray[394].TextStr    := StringNew('Nov');
+   LangArray[394].HasDefault := False;
+   LangArray[394].DefaultKey := #00;
+   LangArray[394].Keys       := '';
+   LangArray[394].TxtColor   := 0;
+
+   LangArray[395].TextStr    := StringNew('Dec');
+   LangArray[395].HasDefault := False;
+   LangArray[395].DefaultKey := #00;
+   LangArray[395].Keys       := '';
+   LangArray[395].TxtColor   := 0;
+
+   LangArray[396].TextStr    := StringNew('Toggle message attributes:');
+   LangArray[396].HasDefault := False;
+   LangArray[396].DefaultKey := #00;
+   LangArray[396].Keys       := '';
+   LangArray[396].TxtColor   := 0;
+
+   LangArray[397].TextStr    := StringNew('Select attribute to toggle:');
+   LangArray[397].HasDefault := False;
+   LangArray[397].DefaultKey := #00;
+   LangArray[397].Keys       := '';
+   LangArray[397].TxtColor   := 0;
+
+   LangArray[398].TextStr    := StringNew('(NetMail)');
+   LangArray[398].HasDefault := False;
+   LangArray[398].DefaultKey := #00;
+   LangArray[398].Keys       := '';
+   LangArray[398].TxtColor   := 0;
+
+   LangArray[399].TextStr    := StringNew('(Local)');
+   LangArray[399].HasDefault := False;
+   LangArray[399].DefaultKey := #00;
+   LangArray[399].Keys       := '';
+   LangArray[399].TxtColor   := 0;
+
+   LangArray[400].TextStr    := StringNew('SYSOP Message Adjustment Menu');
+   LangArray[400].HasDefault := False;
+   LangArray[400].DefaultKey := #00;
+   LangArray[400].Keys       := '';
+   LangArray[400].TxtColor   := 0;
+
+   LangArray[401].TextStr    := StringNew('New message area: #');
+   LangArray[401].HasDefault := False;
+   LangArray[401].DefaultKey := #00;
+   LangArray[401].Keys       := '';
+   LangArray[401].TxtColor   := 0;
+
+   LangArray[402].TextStr    := StringNew(' .. Area no.   : ');
+   LangArray[402].HasDefault := False;
+   LangArray[402].DefaultKey := #00;
+   LangArray[402].Keys       := '';
+   LangArray[402].TxtColor   := 0;
+
+   LangArray[403].TextStr    := StringNew(' .. From       : ');
+   LangArray[403].HasDefault := False;
+   LangArray[403].DefaultKey := #00;
+   LangArray[403].Keys       := '';
+   LangArray[403].TxtColor   := 0;
+
+   LangArray[404].TextStr    := StringNew(' .. To         : ');
+   LangArray[404].HasDefault := False;
+   LangArray[404].DefaultKey := #00;
+   LangArray[404].Keys       := '';
+   LangArray[404].TxtColor   := 0;
+
+   LangArray[405].TextStr    := StringNew(' .. Subject    : ');
+   LangArray[405].HasDefault := False;
+   LangArray[405].DefaultKey := #00;
+   LangArray[405].Keys       := '';
+   LangArray[405].TxtColor   := 0;
+
+   LangArray[406].TextStr    := StringNew(' .. Attributes : ');
+   LangArray[406].HasDefault := False;
+   LangArray[406].DefaultKey := #00;
+   LangArray[406].Keys       := '';
+   LangArray[406].TxtColor   := 0;
+
+   LangArray[407].TextStr    := StringNew(' .. Exported   : ');
+   LangArray[407].HasDefault := False;
+   LangArray[407].DefaultKey := #00;
+   LangArray[407].Keys       := '';
+   LangArray[407].TxtColor   := 0;
+
+   LangArray[408].TextStr    := StringNew(' .. Ext Attrib : ');
+   LangArray[408].HasDefault := False;
+   LangArray[408].DefaultKey := #00;
+   LangArray[408].Keys       := '';
+   LangArray[408].TxtColor   := 0;
+
+   LangArray[409].TextStr    := StringNew('.. Save and exit');
+   LangArray[409].HasDefault := False;
+   LangArray[409].DefaultKey := #00;
+   LangArray[409].Keys       := 'X';
+   LangArray[409].TxtColor   := 0;
+
+   LangArray[410].TextStr    := StringNew('.. Quit (without saving)');
+   LangArray[410].HasDefault := False;
+   LangArray[410].DefaultKey := #00;
+   LangArray[410].Keys       := 'Q';
+   LangArray[410].TxtColor   := 0;
+
+   LangArray[411].TextStr    := StringNew(' ... Kill/sent   : ');
+   LangArray[411].HasDefault := False;
+   LangArray[411].DefaultKey := #00;
+   LangArray[411].Keys       := '';
+   LangArray[411].TxtColor   := 0;
+
+   LangArray[412].TextStr    := StringNew(' ... Exported    : ');
+   LangArray[412].HasDefault := False;
+   LangArray[412].DefaultKey := #00;
+   LangArray[412].Keys       := '';
+   LangArray[412].TxtColor   := 0;
+
+   LangArray[413].TextStr    := StringNew(' ... File-attach : ');
+   LangArray[413].HasDefault := False;
+   LangArray[413].DefaultKey := #00;
+   LangArray[413].Keys       := '';
+   LangArray[413].TxtColor   := 0;
+
+   LangArray[414].TextStr    := StringNew(' ... Crash       : ');
+   LangArray[414].HasDefault := False;
+   LangArray[414].DefaultKey := #00;
+   LangArray[414].Keys       := '';
+   LangArray[414].TxtColor   := 0;
+
+   LangArray[415].TextStr    := StringNew(' ... Req receipt : ');
+   LangArray[415].HasDefault := False;
+   LangArray[415].DefaultKey := #00;
+   LangArray[415].Keys       := '';
+   LangArray[415].TxtColor   := 0;
+
+   LangArray[416].TextStr    := StringNew(' ... Audit req   : ');
+   LangArray[416].HasDefault := False;
+   LangArray[416].DefaultKey := #00;
+   LangArray[416].Keys       := '';
+   LangArray[416].TxtColor   := 0;
+
+   LangArray[417].TextStr    := StringNew(' ... Ret receipt : ');
+   LangArray[417].HasDefault := False;
+   LangArray[417].DefaultKey := #00;
+   LangArray[417].Keys       := '';
+   LangArray[417].TxtColor   := 0;
+
+   LangArray[418].TextStr    := StringNew(' ... Deleted  : ');
+   LangArray[418].HasDefault := False;
+   LangArray[418].DefaultKey := #00;
+   LangArray[418].Keys       := '';
+   LangArray[418].TxtColor   := 0;
+
+   LangArray[419].TextStr    := StringNew(' ... Netmail  : ');
+   LangArray[419].HasDefault := False;
+   LangArray[419].DefaultKey := #00;
+   LangArray[419].Keys       := '';
+   LangArray[419].TxtColor   := 0;
+
+   LangArray[420].TextStr    := StringNew(' ... Private  : ');
+   LangArray[420].HasDefault := False;
+   LangArray[420].DefaultKey := #00;
+   LangArray[420].Keys       := '';
+   LangArray[420].TxtColor   := 0;
+
+   LangArray[421].TextStr    := StringNew(' ... Received : ');
+   LangArray[421].HasDefault := False;
+   LangArray[421].DefaultKey := #00;
+   LangArray[421].Keys       := '';
+   LangArray[421].TxtColor   := 0;
+
+   LangArray[422].TextStr    := StringNew(' ... Local    : ');
+   LangArray[422].HasDefault := False;
+   LangArray[422].DefaultKey := #00;
+   LangArray[422].Keys       := '';
+   LangArray[422].TxtColor   := 0;
+
+   LangArray[423].TextStr    := StringNew('Please enter your current password: ');
+   LangArray[423].HasDefault := False;
+   LangArray[423].DefaultKey := #00;
+   LangArray[423].Keys       := '';
+   LangArray[423].TxtColor   := 0;
+
+   LangArray[424].TextStr    := StringNew('(A)gain');
+   LangArray[424].HasDefault := False;
+   LangArray[424].DefaultKey := #00;
+   LangArray[424].Keys       := 'A';
+   LangArray[424].TxtColor   := 0;
+
+   LangArray[425].TextStr    := StringNew('(N)ext');
+   LangArray[425].HasDefault := False;
+   LangArray[425].DefaultKey := #00;
+   LangArray[425].Keys       := 'N';
+   LangArray[425].TxtColor   := 0;
+
+   LangArray[426].TextStr    := StringNew('(L)ast');
+   LangArray[426].HasDefault := False;
+   LangArray[426].DefaultKey := #00;
+   LangArray[426].Keys       := 'L';
+   LangArray[426].TxtColor   := 0;
+
+   LangArray[427].TextStr    := StringNew('(R)eply');
+   LangArray[427].HasDefault := False;
+   LangArray[427].DefaultKey := #00;
+   LangArray[427].Keys       := 'R';
+   LangArray[427].TxtColor   := 0;
+
+   LangArray[428].TextStr    := StringNew('(E)nter');
+   LangArray[428].HasDefault := False;
+   LangArray[428].DefaultKey := #00;
+   LangArray[428].Keys       := 'E';
+   LangArray[428].TxtColor   := 0;
+
+   LangArray[429].TextStr    := StringNew('(S)top');
+   LangArray[429].HasDefault := False;
+   LangArray[429].DefaultKey := #00;
+   LangArray[429].Keys       := 'S';
+   LangArray[429].TxtColor   := 0;
+
+   LangArray[430].TextStr    := StringNew('(D)elete');
+   LangArray[430].HasDefault := False;
+   LangArray[430].DefaultKey := #00;
+   LangArray[430].Keys       := 'D';
+   LangArray[430].TxtColor   := 0;
+
+   LangArray[431].TextStr    := StringNew('(F)iles');
+   LangArray[431].HasDefault := False;
+   LangArray[431].DefaultKey := #00;
+   LangArray[431].Keys       := 'F';
+   LangArray[431].TxtColor   := 0;
+
+   LangArray[432].TextStr    := StringNew('Read Replies');
+   LangArray[432].HasDefault := False;
+   LangArray[432].DefaultKey := #00;
+   LangArray[432].Keys       := '';
+   LangArray[432].TxtColor   := 0;
+
+   LangArray[433].TextStr    := StringNew('Read Reply');
+   LangArray[433].HasDefault := False;
+   LangArray[433].DefaultKey := #00;
+   LangArray[433].Keys       := '';
+   LangArray[433].TxtColor   := 0;
+
+   LangArray[434].TextStr    := StringNew('Again');
+   LangArray[434].HasDefault := False;
+   LangArray[434].DefaultKey := #00;
+   LangArray[434].Keys       := '';
+   LangArray[434].TxtColor   := 0;
+
+   LangArray[435].TextStr    := StringNew('Next');
+   LangArray[435].HasDefault := False;
+   LangArray[435].DefaultKey := #00;
+   LangArray[435].Keys       := '';
+   LangArray[435].TxtColor   := 0;
+
+   LangArray[436].TextStr    := StringNew('Last');
+   LangArray[436].HasDefault := False;
+   LangArray[436].DefaultKey := #00;
+   LangArray[436].Keys       := '';
+   LangArray[436].TxtColor   := 0;
+
+   LangArray[437].TextStr    := StringNew('Delete');
+   LangArray[437].HasDefault := False;
+   LangArray[437].DefaultKey := #00;
+   LangArray[437].Keys       := '';
+   LangArray[437].TxtColor   := 0;
+
+   LangArray[438].TextStr    := StringNew('Reply');
+   LangArray[438].HasDefault := False;
+   LangArray[438].DefaultKey := #00;
+   LangArray[438].Keys       := '';
+   LangArray[438].TxtColor   := 0;
+
+   LangArray[439].TextStr    := StringNew('Enter');
+   LangArray[439].HasDefault := False;
+   LangArray[439].DefaultKey := #00;
+   LangArray[439].Keys       := '';
+   LangArray[439].TxtColor   := 0;
+
+   LangArray[440].TextStr    := StringNew('Kludge toggle');
+   LangArray[440].HasDefault := False;
+   LangArray[440].DefaultKey := #00;
+   LangArray[440].Keys       := '';
+   LangArray[440].TxtColor   := 0;
+
+   LangArray[441].TextStr    := StringNew('Unreceive');
+   LangArray[441].HasDefault := False;
+   LangArray[441].DefaultKey := #00;
+   LangArray[441].Keys       := '';
+   LangArray[441].TxtColor   := 0;
+
+   LangArray[442].TextStr    := StringNew('Usrsec');
+   LangArray[442].HasDefault := False;
+   LangArray[442].DefaultKey := #00;
+   LangArray[442].Keys       := '';
+   LangArray[442].TxtColor   := 0;
+
+   LangArray[443].TextStr    := StringNew('Export');
+   LangArray[443].HasDefault := False;
+   LangArray[443].DefaultKey := #00;
+   LangArray[443].Keys       := '';
+   LangArray[443].TxtColor   := 0;
+
+   LangArray[444].TextStr    := StringNew('Forward');
+   LangArray[444].HasDefault := False;
+   LangArray[444].DefaultKey := #00;
+   LangArray[444].Keys       := '';
+   LangArray[444].TxtColor   := 0;
+
+   LangArray[445].TextStr    := StringNew('Stop');
+   LangArray[445].HasDefault := False;
+   LangArray[445].DefaultKey := #00;
+   LangArray[445].Keys       := 'S';
+   LangArray[445].TxtColor   := 0;
+
+   LangArray[446].TextStr    := StringNew('(F)orward');
+   LangArray[446].HasDefault := False;
+   LangArray[446].DefaultKey := #00;
+   LangArray[446].Keys       := 'F';
+   LangArray[446].TxtColor   := 0;
+
+   LangArray[447].TextStr    := StringNew('(R)everse');
+   LangArray[447].HasDefault := False;
+   LangArray[447].DefaultKey := #00;
+   LangArray[447].Keys       := 'R';
+   LangArray[447].TxtColor   := 0;
+
+   LangArray[448].TextStr    := StringNew('(I)ndividual');
+   LangArray[448].HasDefault := False;
+   LangArray[448].DefaultKey := #00;
+   LangArray[448].Keys       := 'I';
+   LangArray[448].TxtColor   := 0;
+
+   LangArray[449].TextStr    := StringNew('(H)elp');
+   LangArray[449].HasDefault := False;
+   LangArray[449].DefaultKey := #00;
+   LangArray[449].Keys       := 'H';
+   LangArray[449].TxtColor   := 0;
+
+end;
+
+(*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-*)
+
+procedure LoadralDefaults_3(var LangArray: DefaultLangArrayRec);
+begin;
+   LangArray[450].TextStr    := StringNew('(M)arked');
+   LangArray[450].HasDefault := False;
+   LangArray[450].DefaultKey := #00;
+   LangArray[450].Keys       := 'M';
+   LangArray[450].TxtColor   := 0;
+
+   LangArray[451].TextStr    := StringNew('(N)ew msgs');
+   LangArray[451].HasDefault := False;
+   LangArray[451].DefaultKey := #00;
+   LangArray[451].Keys       := 'N';
+   LangArray[451].TxtColor   := 0;
+
+   LangArray[452].TextStr    := StringNew('(S)elected');
+   LangArray[452].HasDefault := False;
+   LangArray[452].DefaultKey := #00;
+   LangArray[452].Keys       := 'S';
+   LangArray[452].TxtColor   := 0;
+
+   LangArray[453].TextStr    := StringNew('Forward');
+   LangArray[453].HasDefault := False;
+   LangArray[453].DefaultKey := #00;
+   LangArray[453].Keys       := '';
+   LangArray[453].TxtColor   := 0;
+
+   LangArray[454].TextStr    := StringNew('Reverse');
+   LangArray[454].HasDefault := False;
+   LangArray[454].DefaultKey := #00;
+   LangArray[454].Keys       := '';
+   LangArray[454].TxtColor   := 0;
+
+   LangArray[455].TextStr    := StringNew('Individual');
+   LangArray[455].HasDefault := False;
+   LangArray[455].DefaultKey := #00;
+   LangArray[455].Keys       := '';
+   LangArray[455].TxtColor   := 0;
+
+   LangArray[456].TextStr    := StringNew('Marked');
+   LangArray[456].HasDefault := False;
+   LangArray[456].DefaultKey := #00;
+   LangArray[456].Keys       := '';
+   LangArray[456].TxtColor   := 0;
+
+   LangArray[457].TextStr    := StringNew('New messages');
+   LangArray[457].HasDefault := False;
+   LangArray[457].DefaultKey := #00;
+   LangArray[457].Keys       := '';
+   LangArray[457].TxtColor   := 0;
+
+   LangArray[458].TextStr    := StringNew('Quit');
+   LangArray[458].HasDefault := False;
+   LangArray[458].DefaultKey := #00;
+   LangArray[458].Keys       := '';
+   LangArray[458].TxtColor   := 0;
+
+   LangArray[459].TextStr    := StringNew('(Q)uit');
+   LangArray[459].HasDefault := False;
+   LangArray[459].DefaultKey := #00;
+   LangArray[459].Keys       := 'Q';
+   LangArray[459].TxtColor   := 0;
+
+   LangArray[460].TextStr    := StringNew('Selected read');
+   LangArray[460].HasDefault := False;
+   LangArray[460].DefaultKey := #00;
+   LangArray[460].Keys       := '';
+   LangArray[460].TxtColor   := 0;
+
+   LangArray[461].TextStr    := StringNew('Read messages according to what criteria:');
+   LangArray[461].HasDefault := False;
+   LangArray[461].DefaultKey := #00;
+   LangArray[461].Keys       := '';
+   LangArray[461].TxtColor   := 0;
+
+   LangArray[462].TextStr    := StringNew('(F)rom name');
+   LangArray[462].HasDefault := False;
+   LangArray[462].DefaultKey := #00;
+   LangArray[462].Keys       := 'F';
+   LangArray[462].TxtColor   := 0;
+
+   LangArray[463].TextStr    := StringNew('(T)o name');
+   LangArray[463].HasDefault := False;
+   LangArray[463].DefaultKey := #00;
+   LangArray[463].Keys       := 'T';
+   LangArray[463].TxtColor   := 0;
+
+   LangArray[464].TextStr    := StringNew('(S)ubject');
+   LangArray[464].HasDefault := False;
+   LangArray[464].DefaultKey := #00;
+   LangArray[464].Keys       := 'S';
+   LangArray[464].TxtColor   := 0;
+
+   LangArray[465].TextStr    := StringNew('(Q)uit');
+   LangArray[465].HasDefault := False;
+   LangArray[465].DefaultKey := #00;
+   LangArray[465].Keys       := 'Q';
+   LangArray[465].TxtColor   := 0;
+
+   LangArray[466].TextStr    := StringNew('To name');
+   LangArray[466].HasDefault := False;
+   LangArray[466].DefaultKey := #00;
+   LangArray[466].Keys       := '';
+   LangArray[466].TxtColor   := 0;
+
+   LangArray[467].TextStr    := StringNew('Enter ''To'' search-string: ');
+   LangArray[467].HasDefault := False;
+   LangArray[467].DefaultKey := #00;
+   LangArray[467].Keys       := '';
+   LangArray[467].TxtColor   := 0;
+
+   LangArray[468].TextStr    := StringNew('From name');
+   LangArray[468].HasDefault := False;
+   LangArray[468].DefaultKey := #00;
+   LangArray[468].Keys       := '';
+   LangArray[468].TxtColor   := 0;
+
+   LangArray[469].TextStr    := StringNew('Enter ''From'' search-string: ');
+   LangArray[469].HasDefault := False;
+   LangArray[469].DefaultKey := #00;
+   LangArray[469].Keys       := '';
+   LangArray[469].TxtColor   := 0;
+
+   LangArray[470].TextStr    := StringNew('Subject');
+   LangArray[470].HasDefault := False;
+   LangArray[470].DefaultKey := #00;
+   LangArray[470].Keys       := '';
+   LangArray[470].TxtColor   := 0;
+
+   LangArray[471].TextStr    := StringNew('Enter subject search-string: ');
+   LangArray[471].HasDefault := False;
+   LangArray[471].DefaultKey := #00;
+   LangArray[471].Keys       := '';
+   LangArray[471].TxtColor   := 0;
+
+   LangArray[472].TextStr    := StringNew('/');
+   LangArray[472].HasDefault := False;
+   LangArray[472].DefaultKey := #00;
+   LangArray[472].Keys       := '';
+   LangArray[472].TxtColor   := 0;
+
+   LangArray[473].TextStr    := StringNew('Loading, one moment..');
+   LangArray[473].HasDefault := False;
+   LangArray[473].DefaultKey := #00;
+   LangArray[473].Keys       := '';
+   LangArray[473].TxtColor   := 0;
+
+   LangArray[474].TextStr    := StringNew('Error in archive or unknown archive format');
+   LangArray[474].HasDefault := False;
+   LangArray[474].DefaultKey := #00;
+   LangArray[474].Keys       := '';
+   LangArray[474].TxtColor   := 0;
+
+   LangArray[475].TextStr    := StringNew('You do not have download access for this file area!');
+   LangArray[475].HasDefault := False;
+   LangArray[475].DefaultKey := #00;
+   LangArray[475].Keys       := '';
+   LangArray[475].TxtColor   := 0;
+
+   LangArray[476].TextStr    := StringNew('File is already attached. Replace it');
+   LangArray[476].HasDefault := True;
+   LangArray[476].DefaultKey := 'Y';
+   LangArray[476].Keys       := '';
+   LangArray[476].TxtColor   := 0;
+
+   LangArray[477].TextStr    := StringNew('DD-MM-YY');
+   LangArray[477].HasDefault := False;
+   LangArray[477].DefaultKey := #00;
+   LangArray[477].Keys       := '';
+   LangArray[477].TxtColor   := 0;
+
+   LangArray[478].TextStr    := StringNew('MM-DD-YY');
+   LangArray[478].HasDefault := False;
+   LangArray[478].DefaultKey := #00;
+   LangArray[478].Keys       := '';
+   LangArray[478].TxtColor   := 0;
+
+   LangArray[479].TextStr    := StringNew('YY-MM-DD');
+   LangArray[479].HasDefault := False;
+   LangArray[479].DefaultKey := #00;
+   LangArray[479].Keys       := '';
+   LangArray[479].TxtColor   := 0;
+
+   LangArray[480].TextStr    := StringNew('DD-Mmm-YY');
+   LangArray[480].HasDefault := False;
+   LangArray[480].DefaultKey := #00;
+   LangArray[480].Keys       := '';
+   LangArray[480].TxtColor   := 0;
+
+   LangArray[481].TextStr    := StringNew('Available date formats:');
+   LangArray[481].HasDefault := False;
+   LangArray[481].DefaultKey := #00;
+   LangArray[481].Keys       := '';
+   LangArray[481].TxtColor   := 0;
+
+   LangArray[482].TextStr    := StringNew('You do not have upload access for this file area!');
+   LangArray[482].HasDefault := False;
+   LangArray[482].DefaultKey := #00;
+   LangArray[482].Keys       := '';
+   LangArray[482].TxtColor   := 0;
+
+   LangArray[483].TextStr    := StringNew('ANSI graphics are required for the full screen editor. Use it');
+   LangArray[483].HasDefault := True;
+   LangArray[483].DefaultKey := 'N';
+   LangArray[483].Keys       := '';
+   LangArray[483].TxtColor   := 0;
+
+   LangArray[484].TextStr    := StringNew('Automatic message forwarding disabled');
+   LangArray[484].HasDefault := False;
+   LangArray[484].DefaultKey := #00;
+   LangArray[484].Keys       := '';
+   LangArray[484].TxtColor   := 0;
+
+   LangArray[485].TextStr    := StringNew('Automatic message forwarding enabled');
+   LangArray[485].HasDefault := False;
+   LangArray[485].DefaultKey := #00;
+   LangArray[485].Keys       := '';
+   LangArray[485].TxtColor   := 0;
+
+   LangArray[486].TextStr    := StringNew('User not found. Try again, or (Enter) to quit');
+   LangArray[486].HasDefault := False;
+   LangArray[486].DefaultKey := #00;
+   LangArray[486].Keys       := '';
+   LangArray[486].TxtColor   := 0;
+
+   LangArray[487].TextStr    := StringNew('Nominate a user to receive your mail: ');
+   LangArray[487].HasDefault := False;
+   LangArray[487].DefaultKey := #00;
+   LangArray[487].Keys       := '';
+   LangArray[487].TxtColor   := 0;
+
+   LangArray[488].TextStr    := StringNew('This message has files attached. Forward them as well');
+   LangArray[488].HasDefault := True;
+   LangArray[488].DefaultKey := 'Y';
+   LangArray[488].Keys       := '';
+   LangArray[488].TxtColor   := 0;
+
+   LangArray[489].TextStr    := StringNew('Nobody');
+   LangArray[489].HasDefault := False;
+   LangArray[489].DefaultKey := #00;
+   LangArray[489].Keys       := '';
+   LangArray[489].TxtColor   := 0;
+
+   LangArray[490].TextStr    := StringNew('Local upload.');
+   LangArray[490].HasDefault := False;
+   LangArray[490].DefaultKey := #00;
+   LangArray[490].Keys       := '';
+   LangArray[490].TxtColor   := 0;
+
+   LangArray[491].TextStr    := StringNew('That file already exists here!');
+   LangArray[491].HasDefault := False;
+   LangArray[491].DefaultKey := #00;
+   LangArray[491].Keys       := '';
+   LangArray[491].TxtColor   := 0;
+
+   LangArray[492].TextStr    := StringNew('That file may not be uploaded.');
+   LangArray[492].HasDefault := False;
+   LangArray[492].DefaultKey := #00;
+   LangArray[492].Keys       := '';
+   LangArray[492].TxtColor   := 0;
+
+   LangArray[493].TextStr    := StringNew('archive contains encrypted files, or a comment.');
+   LangArray[493].HasDefault := False;
+   LangArray[493].DefaultKey := #00;
+   LangArray[493].Keys       := '';
+   LangArray[493].TxtColor   := 0;
+
+   LangArray[494].TextStr    := StringNew('Local download.');
+   LangArray[494].HasDefault := False;
+   LangArray[494].DefaultKey := #00;
+   LangArray[494].Keys       := '';
+   LangArray[494].TxtColor   := 0;
+
+   LangArray[495].TextStr    := StringNew('Could not copy');
+   LangArray[495].HasDefault := False;
+   LangArray[495].DefaultKey := #00;
+   LangArray[495].Keys       := '';
+   LangArray[495].TxtColor   := 0;
+
+   LangArray[496].TextStr    := StringNew('on node');
+   LangArray[496].HasDefault := False;
+   LangArray[496].DefaultKey := #00;
+   LangArray[496].Keys       := '';
+   LangArray[496].TxtColor   := 0;
+
+   LangArray[497].TextStr    := StringNew('***MESSAGE*** from');
+   LangArray[497].HasDefault := False;
+   LangArray[497].DefaultKey := #00;
+   LangArray[497].Keys       := '';
+   LangArray[497].TxtColor   := 0;
+
+   LangArray[498].TextStr    := StringNew('Invalid date. Please make sure you use the correct format.');
+   LangArray[498].HasDefault := False;
+   LangArray[498].DefaultKey := #00;
+   LangArray[498].Keys       := '';
+   LangArray[498].TxtColor   := 0;
+
+   LangArray[499].TextStr    := StringNew('This conference is read-only - you may only use netmail to reply.');
+   LangArray[499].HasDefault := False;
+   LangArray[499].DefaultKey := #00;
+   LangArray[499].Keys       := '';
+   LangArray[499].TxtColor   := 0;
+
+   LangArray[500].TextStr    := StringNew('Original message does not contain sufficient information for a netmail reply.');
+   LangArray[500].HasDefault := False;
+   LangArray[500].DefaultKey := #00;
+   LangArray[500].Keys       := '';
+   LangArray[500].TxtColor   := 0;
+
+   LangArray[501].TextStr    := StringNew('Message-base is in use. Retry');
+   LangArray[501].HasDefault := True;
+   LangArray[501].DefaultKey := 'Y';
+   LangArray[501].Keys       := '';
+   LangArray[501].TxtColor   := 0;
+
+   LangArray[502].TextStr    := StringNew('Delete');
+   LangArray[502].HasDefault := True;
+   LangArray[502].DefaultKey := 'N';
+   LangArray[502].Keys       := '';
+   LangArray[502].TxtColor   := 0;
+
+   LangArray[503].TextStr    := StringNew('Are you sure');
+   LangArray[503].HasDefault := True;
+   LangArray[503].DefaultKey := 'N';
+   LangArray[503].Keys       := '';
+   LangArray[503].TxtColor   := 0;
+
+   LangArray[504].TextStr    := StringNew('Deleted');
+   LangArray[504].HasDefault := False;
+   LangArray[504].DefaultKey := #00;
+   LangArray[504].Keys       := '';
+   LangArray[504].TxtColor   := 0;
+
+   LangArray[505].TextStr    := StringNew('Show extended information (N=normal list)');
+   LangArray[505].HasDefault := True;
+   LangArray[505].DefaultKey := 'N';
+   LangArray[505].Keys       := '';
+   LangArray[505].TxtColor   := 0;
+
+   LangArray[506].TextStr    := StringNew('Name     Private Moderator            Description');
+   LangArray[506].HasDefault := False;
+   LangArray[506].DefaultKey := #00;
+   LangArray[506].Keys       := '';
+   LangArray[506].TxtColor   := 0;
+
+   LangArray[507].TextStr    := StringNew('Name        : ');
+   LangArray[507].HasDefault := False;
+   LangArray[507].DefaultKey := #00;
+   LangArray[507].Keys       := '';
+   LangArray[507].TxtColor   := 0;
+
+   LangArray[508].TextStr    := StringNew('password=');
+   LangArray[508].HasDefault := False;
+   LangArray[508].DefaultKey := #00;
+   LangArray[508].Keys       := '';
+   LangArray[508].TxtColor   := 0;
+
+   LangArray[509].TextStr    := StringNew('requires password');
+   LangArray[509].HasDefault := False;
+   LangArray[509].DefaultKey := #00;
+   LangArray[509].Keys       := '';
+   LangArray[509].TxtColor   := 0;
+
+   LangArray[510].TextStr    := StringNew('Private     : ');
+   LangArray[510].HasDefault := False;
+   LangArray[510].DefaultKey := #00;
+   LangArray[510].Keys       := '';
+   LangArray[510].TxtColor   := 0;
+
+   LangArray[511].TextStr    := StringNew('Moderator   : ');
+   LangArray[511].HasDefault := False;
+   LangArray[511].DefaultKey := #00;
+   LangArray[511].Keys       := '';
+   LangArray[511].TxtColor   := 0;
+
+   LangArray[512].TextStr    := StringNew('Parent      : ');
+   LangArray[512].HasDefault := False;
+   LangArray[512].DefaultKey := #00;
+   LangArray[512].Keys       := '';
+   LangArray[512].TxtColor   := 0;
+
+   LangArray[513].TextStr    := StringNew('Language    : ');
+   LangArray[513].HasDefault := False;
+   LangArray[513].DefaultKey := #00;
+   LangArray[513].Keys       := '';
+   LangArray[513].TxtColor   := 0;
+
+   LangArray[514].TextStr    := StringNew('Nodes       : ');
+   LangArray[514].HasDefault := False;
+   LangArray[514].DefaultKey := #00;
+   LangArray[514].Keys       := '';
+   LangArray[514].TxtColor   := 0;
+
+   LangArray[515].TextStr    := StringNew('Description : ');
+   LangArray[515].HasDefault := False;
+   LangArray[515].DefaultKey := #00;
+   LangArray[515].Keys       := '';
+   LangArray[515].TxtColor   := 0;
+
+   LangArray[516].TextStr    := StringNew('Users currently participating in conference');
+   LangArray[516].HasDefault := False;
+   LangArray[516].DefaultKey := #00;
+   LangArray[516].Keys       := '';
+   LangArray[516].TxtColor   := 0;
+
+   LangArray[517].TextStr    := StringNew('(Read Only)');
+   LangArray[517].HasDefault := False;
+   LangArray[517].DefaultKey := #00;
+   LangArray[517].Keys       := '';
+   LangArray[517].TxtColor   := 0;
+
+   LangArray[518].TextStr    := StringNew('(read-only access)');
+   LangArray[518].HasDefault := False;
+   LangArray[518].DefaultKey := #00;
+   LangArray[518].Keys       := '';
+   LangArray[518].TxtColor   := 0;
+
+   LangArray[519].TextStr    := StringNew('start typing to send a message');
+   LangArray[519].HasDefault := False;
+   LangArray[519].DefaultKey := #00;
+   LangArray[519].Keys       := '';
+   LangArray[519].TxtColor   := 0;
+
+   LangArray[520].TextStr    := StringNew('This conference no longer exists!');
+   LangArray[520].HasDefault := False;
+   LangArray[520].DefaultKey := #00;
+   LangArray[520].Keys       := '';
+   LangArray[520].TxtColor   := 0;
+
+   LangArray[521].TextStr    := StringNew('Your access to this conference has been terminated by the moderator.');
+   LangArray[521].HasDefault := False;
+   LangArray[521].DefaultKey := #00;
+   LangArray[521].Keys       := '';
+   LangArray[521].TxtColor   := 0;
+
+   LangArray[522].TextStr    := StringNew('has entered the conference.');
+   LangArray[522].HasDefault := False;
+   LangArray[522].DefaultKey := #00;
+   LangArray[522].Keys       := '';
+   LangArray[522].TxtColor   := 0;
+
+   LangArray[523].TextStr    := StringNew('Conference');
+   LangArray[523].HasDefault := False;
+   LangArray[523].DefaultKey := #00;
+   LangArray[523].Keys       := '';
+   LangArray[523].TxtColor   := 0;
+
+   LangArray[524].TextStr    := StringNew('ESCAPE or CTRL-X for help');
+   LangArray[524].HasDefault := False;
+   LangArray[524].DefaultKey := #00;
+   LangArray[524].Keys       := '';
+   LangArray[524].TxtColor   := 0;
+
+   LangArray[525].TextStr    := StringNew('moderator');
+   LangArray[525].HasDefault := False;
+   LangArray[525].DefaultKey := #00;
+   LangArray[525].Keys       := '';
+   LangArray[525].TxtColor   := 0;
+
+   LangArray[526].TextStr    := StringNew('Sorry, help is not currently available.');
+   LangArray[526].HasDefault := False;
+   LangArray[526].DefaultKey := #00;
+   LangArray[526].Keys       := '';
+   LangArray[526].TxtColor   := 0;
+
+   LangArray[527].TextStr    := StringNew('No active conferences.');
+   LangArray[527].HasDefault := False;
+   LangArray[527].DefaultKey := #00;
+   LangArray[527].Keys       := '';
+   LangArray[527].TxtColor   := 0;
+
+   LangArray[528].TextStr    := StringNew('Returning to ');
+   LangArray[528].HasDefault := False;
+   LangArray[528].DefaultKey := #00;
+   LangArray[528].Keys       := '';
+   LangArray[528].TxtColor   := 0;
+
+   LangArray[529].TextStr    := StringNew('Change moderator to: ');
+   LangArray[529].HasDefault := False;
+   LangArray[529].DefaultKey := #00;
+   LangArray[529].Keys       := '';
+   LangArray[529].TxtColor   := 0;
+
+   LangArray[530].TextStr    := StringNew('Remove which user: ');
+   LangArray[530].HasDefault := False;
+   LangArray[530].DefaultKey := #00;
+   LangArray[530].Keys       := '';
+   LangArray[530].TxtColor   := 0;
+
+   LangArray[531].TextStr    := StringNew('That user is not in this conference!');
+   LangArray[531].HasDefault := False;
+   LangArray[531].DefaultKey := #00;
+   LangArray[531].Keys       := '';
+   LangArray[531].TxtColor   := 0;
+
+   LangArray[532].TextStr    := StringNew('You only have read access to this conference!');
+   LangArray[532].HasDefault := False;
+   LangArray[532].DefaultKey := #00;
+   LangArray[532].Keys       := '';
+   LangArray[532].TxtColor   := 0;
+
+   LangArray[533].TextStr    := StringNew('Request to join conference from');
+   LangArray[533].HasDefault := False;
+   LangArray[533].DefaultKey := #00;
+   LangArray[533].Keys       := '';
+   LangArray[533].TxtColor   := 0;
+
+   LangArray[534].TextStr    := StringNew('Node');
+   LangArray[534].HasDefault := False;
+   LangArray[534].DefaultKey := #00;
+   LangArray[534].Keys       := '';
+   LangArray[534].TxtColor   := 0;
+
+   LangArray[535].TextStr    := StringNew('Authorise');
+   LangArray[535].HasDefault := True;
+   LangArray[535].DefaultKey := 'Y';
+   LangArray[535].Keys       := '';
+   LangArray[535].TxtColor   := 0;
+
+   LangArray[536].TextStr    := StringNew('Read-only');
+   LangArray[536].HasDefault := True;
+   LangArray[536].DefaultKey := 'N';
+   LangArray[536].Keys       := '';
+   LangArray[536].TxtColor   := 0;
+
+   LangArray[537].TextStr    := StringNew('This conference has been terminated by the system operator/moderator.');
+   LangArray[537].HasDefault := False;
+   LangArray[537].DefaultKey := #00;
+   LangArray[537].Keys       := '';
+   LangArray[537].TxtColor   := 0;
+
+   LangArray[538].TextStr    := StringNew('Your access to this conference has been terminated by the moderator.');
+   LangArray[538].HasDefault := False;
+   LangArray[538].DefaultKey := #00;
+   LangArray[538].Keys       := '';
+   LangArray[538].TxtColor   := 0;
+
+   LangArray[539].TextStr    := StringNew('has left the conference.');
+   LangArray[539].HasDefault := False;
+   LangArray[539].DefaultKey := #00;
+   LangArray[539].Keys       := '';
+   LangArray[539].TxtColor   := 0;
+
+   LangArray[540].TextStr    := StringNew('Create a real-time conference.');
+   LangArray[540].HasDefault := False;
+   LangArray[540].DefaultKey := #00;
+   LangArray[540].Keys       := '';
+   LangArray[540].TxtColor   := 0;
+
+   LangArray[541].TextStr    := StringNew('Conference name: ');
+   LangArray[541].HasDefault := False;
+   LangArray[541].DefaultKey := #00;
+   LangArray[541].Keys       := '';
+   LangArray[541].TxtColor   := 0;
+
+   LangArray[542].TextStr    := StringNew('Conference already exists, select another name.');
+   LangArray[542].HasDefault := False;
+   LangArray[542].DefaultKey := #00;
+   LangArray[542].Keys       := '';
+   LangArray[542].TxtColor   := 0;
+
+   LangArray[543].TextStr    := StringNew('You may not use that conference name, please choose another.');
+   LangArray[543].HasDefault := False;
+   LangArray[543].DefaultKey := #00;
+   LangArray[543].Keys       := '';
+   LangArray[543].TxtColor   := 0;
+
+   LangArray[544].TextStr    := StringNew('Allow access to this conference from the global conference list');
+   LangArray[544].HasDefault := True;
+   LangArray[544].DefaultKey := 'Y';
+   LangArray[544].Keys       := '';
+   LangArray[544].TxtColor   := 0;
+
+   LangArray[545].TextStr    := StringNew('Description    : ');
+   LangArray[545].HasDefault := False;
+   LangArray[545].DefaultKey := #00;
+   LangArray[545].Keys       := '';
+   LangArray[545].TxtColor   := 0;
+
+   LangArray[546].TextStr    := StringNew('Private (require permission to join)');
+   LangArray[546].HasDefault := True;
+   LangArray[546].DefaultKey := 'N';
+   LangArray[546].Keys       := '';
+   LangArray[546].TxtColor   := 0;
+
+   LangArray[547].TextStr    := StringNew('Unlisted (do not display in global conference list)');
+   LangArray[547].HasDefault := True;
+   LangArray[547].DefaultKey := 'N';
+   LangArray[547].Keys       := '';
+   LangArray[547].TxtColor   := 0;
+
+   LangArray[548].TextStr    := StringNew('Permanent (keep active after last user has left)');
+   LangArray[548].HasDefault := True;
+   LangArray[548].DefaultKey := 'N';
+   LangArray[548].Keys       := '';
+   LangArray[548].TxtColor   := 0;
+
+   LangArray[549].TextStr    := StringNew('Moderator: ');
+   LangArray[549].HasDefault := False;
+   LangArray[549].DefaultKey := #00;
+   LangArray[549].Keys       := '';
+   LangArray[549].TxtColor   := 0;
+
+   LangArray[550].TextStr    := StringNew('Language : ');
+   LangArray[550].HasDefault := False;
+   LangArray[550].DefaultKey := #00;
+   LangArray[550].Keys       := '';
+   LangArray[550].TxtColor   := 0;
+
+   LangArray[551].TextStr    := StringNew('Password (Enter=none): ');
+   LangArray[551].HasDefault := False;
+   LangArray[551].DefaultKey := #00;
+   LangArray[551].Keys       := '';
+   LangArray[551].TxtColor   := 0;
+
+   LangArray[552].TextStr    := StringNew('Join the conference now');
+   LangArray[552].HasDefault := True;
+   LangArray[552].DefaultKey := 'Y';
+   LangArray[552].Keys       := '';
+   LangArray[552].TxtColor   := 0;
+
+   LangArray[553].TextStr    := StringNew('Created conference');
+   LangArray[553].HasDefault := False;
+   LangArray[553].DefaultKey := #00;
+   LangArray[553].Keys       := '';
+   LangArray[553].TxtColor   := 0;
+
+   LangArray[554].TextStr    := StringNew('You are already in that conference!');
+   LangArray[554].HasDefault := False;
+   LangArray[554].DefaultKey := #00;
+   LangArray[554].Keys       := '';
+   LangArray[554].TxtColor   := 0;
+
+   LangArray[555].TextStr    := StringNew('You cannot join that conference!');
+   LangArray[555].HasDefault := False;
+   LangArray[555].DefaultKey := #00;
+   LangArray[555].Keys       := '';
+   LangArray[555].TxtColor   := 0;
+
+   LangArray[556].TextStr    := StringNew('The moderator is unavailable at the moment, try later..');
+   LangArray[556].HasDefault := False;
+   LangArray[556].DefaultKey := #00;
+   LangArray[556].Keys       := '';
+   LangArray[556].TxtColor   := 0;
+
+   LangArray[557].TextStr    := StringNew('Requesting permission to join from the moderator..');
+   LangArray[557].HasDefault := False;
+   LangArray[557].DefaultKey := #00;
+   LangArray[557].Keys       := '';
+   LangArray[557].TxtColor   := 0;
+
+   LangArray[558].TextStr    := StringNew('The moderator has not yet responded, please try again later.');
+   LangArray[558].HasDefault := False;
+   LangArray[558].DefaultKey := #00;
+   LangArray[558].Keys       := '';
+   LangArray[558].TxtColor   := 0;
+
+   LangArray[559].TextStr    := StringNew('Sorry, the moderator has denied your request.');
+   LangArray[559].HasDefault := False;
+   LangArray[559].DefaultKey := #00;
+   LangArray[559].Keys       := '';
+   LangArray[559].TxtColor   := 0;
+
+   LangArray[560].TextStr    := StringNew('You cannot delete that conference!');
+   LangArray[560].HasDefault := False;
+   LangArray[560].DefaultKey := #00;
+   LangArray[560].Keys       := '';
+   LangArray[560].TxtColor   := 0;
+
+   LangArray[561].TextStr    := StringNew('(H)elp');
+   LangArray[561].HasDefault := False;
+   LangArray[561].DefaultKey := #00;
+   LangArray[561].Keys       := 'H';
+   LangArray[561].TxtColor   := 0;
+
+   LangArray[562].TextStr    := StringNew('(N)otify (message to user)');
+   LangArray[562].HasDefault := False;
+   LangArray[562].DefaultKey := #00;
+   LangArray[562].Keys       := 'N';
+   LangArray[562].TxtColor   := 0;
+
+   LangArray[563].TextStr    := StringNew('(W)ho else in this conference');
+   LangArray[563].HasDefault := False;
+   LangArray[563].DefaultKey := #00;
+   LangArray[563].Keys       := 'W';
+   LangArray[563].TxtColor   := 0;
+
+   LangArray[564].TextStr    := StringNew('(S)pawn sub-conference');
+   LangArray[564].HasDefault := False;
+   LangArray[564].DefaultKey := #00;
+   LangArray[564].Keys       := 'S';
+   LangArray[564].TxtColor   := 0;
+
+   LangArray[565].TextStr    := StringNew('(L)ist accessible conferences');
+   LangArray[565].HasDefault := False;
+   LangArray[565].DefaultKey := #00;
+   LangArray[565].Keys       := 'L';
+   LangArray[565].TxtColor   := 0;
+
+   LangArray[566].TextStr    := StringNew('(J)oin another conference');
+   LangArray[566].HasDefault := False;
+   LangArray[566].DefaultKey := #00;
+   LangArray[566].Keys       := 'J';
+   LangArray[566].TxtColor   := 0;
+
+   LangArray[567].TextStr    := StringNew('(M)oderator change');
+   LangArray[567].HasDefault := False;
+   LangArray[567].DefaultKey := #00;
+   LangArray[567].Keys       := 'M';
+   LangArray[567].TxtColor   := 0;
+
+   LangArray[568].TextStr    := StringNew('(R)emove a user');
+   LangArray[568].HasDefault := False;
+   LangArray[568].DefaultKey := #00;
+   LangArray[568].Keys       := 'R';
+   LangArray[568].TxtColor   := 0;
+
+   LangArray[569].TextStr    := StringNew('(Q)uit this conference');
+   LangArray[569].HasDefault := False;
+   LangArray[569].DefaultKey := #00;
+   LangArray[569].Keys       := 'Q';
+   LangArray[569].TxtColor   := 0;
+
+   LangArray[570].TextStr    := StringNew('Select (Enter=quit): ');
+   LangArray[570].HasDefault := False;
+   LangArray[570].DefaultKey := #00;
+   LangArray[570].Keys       := '';
+   LangArray[570].TxtColor   := 0;
+
+   LangArray[571].TextStr    := StringNew('IRC');
+   LangArray[571].HasDefault := False;
+   LangArray[571].DefaultKey := #00;
+   LangArray[571].Keys       := '';
+   LangArray[571].TxtColor   := 0;
+
+   LangArray[572].TextStr    := StringNew('Is this a Handles-only conference');
+   LangArray[572].HasDefault := True;
+   LangArray[572].DefaultKey := 'N';
+   LangArray[572].Keys       := '';
+   LangArray[572].TxtColor   := 0;
+
+   LangArray[573].TextStr    := StringNew('Logging on');
+   LangArray[573].HasDefault := False;
+   LangArray[573].DefaultKey := #00;
+   LangArray[573].Keys       := '';
+   LangArray[573].TxtColor   := 0;
+
+   LangArray[574].TextStr    := StringNew('');
+   LangArray[574].HasDefault := False;
+   LangArray[574].DefaultKey := #00;
+   LangArray[574].Keys       := '';
+   LangArray[574].TxtColor   := 0;
+
+   LangArray[575].TextStr    := StringNew('');
+   LangArray[575].HasDefault := False;
+   LangArray[575].DefaultKey := #00;
+   LangArray[575].Keys       := '';
+   LangArray[575].TxtColor   := 0;
+
+   LangArray[576].TextStr    := StringNew('');
+   LangArray[576].HasDefault := False;
+   LangArray[576].DefaultKey := #00;
+   LangArray[576].Keys       := '';
+   LangArray[576].TxtColor   := 0;
+
+   LangArray[577].TextStr    := StringNew('');
+   LangArray[577].HasDefault := False;
+   LangArray[577].DefaultKey := #00;
+   LangArray[577].Keys       := '';
+   LangArray[577].TxtColor   := 0;
+
+   LangArray[578].TextStr    := StringNew('');
+   LangArray[578].HasDefault := False;
+   LangArray[578].DefaultKey := #00;
+   LangArray[578].Keys       := '';
+   LangArray[578].TxtColor   := 0;
+
+   LangArray[579].TextStr    := StringNew('');
+   LangArray[579].HasDefault := False;
+   LangArray[579].DefaultKey := #00;
+   LangArray[579].Keys       := '';
+   LangArray[579].TxtColor   := 0;
+
+   LangArray[580].TextStr    := StringNew('');
+   LangArray[580].HasDefault := False;
+   LangArray[580].DefaultKey := #00;
+   LangArray[580].Keys       := '';
+   LangArray[580].TxtColor   := 0;
+
+   LangArray[581].TextStr    := StringNew('');
+   LangArray[581].HasDefault := False;
+   LangArray[581].DefaultKey := #00;
+   LangArray[581].Keys       := '';
+   LangArray[581].TxtColor   := 0;
+
+   LangArray[582].TextStr    := StringNew('');
+   LangArray[582].HasDefault := False;
+   LangArray[582].DefaultKey := #00;
+   LangArray[582].Keys       := '';
+   LangArray[582].TxtColor   := 0;
+
+   LangArray[583].TextStr    := StringNew('');
+   LangArray[583].HasDefault := False;
+   LangArray[583].DefaultKey := #00;
+   LangArray[583].Keys       := '';
+   LangArray[583].TxtColor   := 0;
+
+   LangArray[584].TextStr    := StringNew('');
+   LangArray[584].HasDefault := False;
+   LangArray[584].DefaultKey := #00;
+   LangArray[584].Keys       := '';
+   LangArray[584].TxtColor   := 0;
+
+   LangArray[585].TextStr    := StringNew('');
+   LangArray[585].HasDefault := False;
+   LangArray[585].DefaultKey := #00;
+   LangArray[585].Keys       := '';
+   LangArray[585].TxtColor   := 0;
+
+   LangArray[586].TextStr    := StringNew('');
+   LangArray[586].HasDefault := False;
+   LangArray[586].DefaultKey := #00;
+   LangArray[586].Keys       := '';
+   LangArray[586].TxtColor   := 0;
+
+   LangArray[587].TextStr    := StringNew('');
+   LangArray[587].HasDefault := False;
+   LangArray[587].DefaultKey := #00;
+   LangArray[587].Keys       := '';
+   LangArray[587].TxtColor   := 0;
+
+   LangArray[588].TextStr    := StringNew('');
+   LangArray[588].HasDefault := False;
+   LangArray[588].DefaultKey := #00;
+   LangArray[588].Keys       := '';
+   LangArray[588].TxtColor   := 0;
+
+   LangArray[589].TextStr    := StringNew('');
+   LangArray[589].HasDefault := False;
+   LangArray[589].DefaultKey := #00;
+   LangArray[589].Keys       := '';
+   LangArray[589].TxtColor   := 0;
+
+   LangArray[590].TextStr    := StringNew('');
+   LangArray[590].HasDefault := False;
+   LangArray[590].DefaultKey := #00;
+   LangArray[590].Keys       := '';
+   LangArray[590].TxtColor   := 0;
+
+   LangArray[591].TextStr    := StringNew('');
+   LangArray[591].HasDefault := False;
+   LangArray[591].DefaultKey := #00;
+   LangArray[591].Keys       := '';
+   LangArray[591].TxtColor   := 0;
+
+   LangArray[592].TextStr    := StringNew('');
+   LangArray[592].HasDefault := False;
+   LangArray[592].DefaultKey := #00;
+   LangArray[592].Keys       := '';
+   LangArray[592].TxtColor   := 0;
+
+   LangArray[593].TextStr    := StringNew('');
+   LangArray[593].HasDefault := False;
+   LangArray[593].DefaultKey := #00;
+   LangArray[593].Keys       := '';
+   LangArray[593].TxtColor   := 0;
+
+   LangArray[594].TextStr    := StringNew('');
+   LangArray[594].HasDefault := False;
+   LangArray[594].DefaultKey := #00;
+   LangArray[594].Keys       := '';
+   LangArray[594].TxtColor   := 0;
+
+   LangArray[595].TextStr    := StringNew('');
+   LangArray[595].HasDefault := False;
+   LangArray[595].DefaultKey := #00;
+   LangArray[595].Keys       := '';
+   LangArray[595].TxtColor   := 0;
+
+   LangArray[596].TextStr    := StringNew('');
+   LangArray[596].HasDefault := False;
+   LangArray[596].DefaultKey := #00;
+   LangArray[596].Keys       := '';
+   LangArray[596].TxtColor   := 0;
+
+   LangArray[597].TextStr    := StringNew('');
+   LangArray[597].HasDefault := False;
+   LangArray[597].DefaultKey := #00;
+   LangArray[597].Keys       := '';
+   LangArray[597].TxtColor   := 0;
+
+   LangArray[598].TextStr    := StringNew('');
+   LangArray[598].HasDefault := False;
+   LangArray[598].DefaultKey := #00;
+   LangArray[598].Keys       := '';
+   LangArray[598].TxtColor   := 0;
+
+   LangArray[599].TextStr    := StringNew('');
+   LangArray[599].HasDefault := False;
+   LangArray[599].DefaultKey := #00;
+   LangArray[599].Keys       := '';
+   LangArray[599].TxtColor   := 0;
+
+
+end;
+(*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-*)
+
+procedure LoadralDefaults_4(var LangArray: DefaultLangArrayRec);
+begin;
+   LangArray[600].TextStr    := StringNew('');
+   LangArray[600].HasDefault := False;
+   LangArray[600].DefaultKey := #00;
+   LangArray[600].Keys       := '';
+   LangArray[600].TxtColor   := 0;
+
+   LangArray[601].TextStr    := StringNew('(Password)');
+   LangArray[601].HasDefault := False;
+   LangArray[601].DefaultKey := #00;
+   LangArray[601].Keys       := '';
+   LangArray[601].TxtColor   := 0;
+
+   LangArray[602].TextStr    := StringNew('(NotAvail)');
+   LangArray[602].HasDefault := False;
+   LangArray[602].DefaultKey := #00;
+   LangArray[602].Keys       := '';
+   LangArray[602].TxtColor   := 0;
+
+   LangArray[603].TextStr    := StringNew('More(Y/n/=/(T)ag/(V)iew/(E)dit)?');
+   LangArray[603].HasDefault := False;
+   LangArray[603].DefaultKey := #00;
+   LangArray[603].Keys       := 'YN=TVE';
+   LangArray[603].TxtColor   := 0;
+
+   LangArray[604].TextStr    := StringNew('TAG file numbers: ');
+   LangArray[604].HasDefault := False;
+   LangArray[604].DefaultKey := #00;
+   LangArray[604].Keys       := '';
+   LangArray[604].TxtColor   := 0;
+
+   LangArray[605].TextStr    := StringNew('Tagged: ');
+   LangArray[605].HasDefault := False;
+   LangArray[605].DefaultKey := #00;
+   LangArray[605].Keys       := '';
+   LangArray[605].TxtColor   := 0;
+
+   LangArray[606].TextStr    := StringNew('No tagged files!');
+   LangArray[606].HasDefault := False;
+   LangArray[606].DefaultKey := #00;
+   LangArray[606].Keys       := '';
+   LangArray[606].TxtColor   := 0;
+
+   LangArray[607].TextStr    := StringNew('Tagged file list (P to Pause, S to Stop):');
+   LangArray[607].HasDefault := False;
+   LangArray[607].DefaultKey := #00;
+   LangArray[607].Keys       := '';
+   LangArray[607].TxtColor   := 0;
+
+   LangArray[608].TextStr    := StringNew('(A)dd, (D)elete or (C)lear all entries (Enter to continue):');
+   LangArray[608].HasDefault := False;
+   LangArray[608].DefaultKey := #00;
+   LangArray[608].Keys       := 'ADC';
+   LangArray[608].TxtColor   := 0;
+
+   LangArray[609].TextStr    := StringNew('Delete: ');
+   LangArray[609].HasDefault := False;
+   LangArray[609].DefaultKey := #00;
+   LangArray[609].Keys       := '';
+   LangArray[609].TxtColor   := 0;
+
+   LangArray[610].TextStr    := StringNew('(Enter) to continue, (T)ag/(V)iew/(E)dit:');
+   LangArray[610].HasDefault := False;
+   LangArray[610].DefaultKey := #00;
+   LangArray[610].Keys       := 'TVE';
+   LangArray[610].TxtColor   := 0;
+
+   LangArray[611].TextStr    := StringNew('There are currently no tagged files.');
+   LangArray[611].HasDefault := False;
+   LangArray[611].DefaultKey := #00;
+   LangArray[611].Keys       := '';
+   LangArray[611].TxtColor   := 0;
+
+   LangArray[612].TextStr    := StringNew('Add to tag list (Yes/No/Quit):');
+   LangArray[612].HasDefault := False;
+   LangArray[612].DefaultKey := #00;
+   LangArray[612].Keys       := 'YNQ';
+   LangArray[612].TxtColor   := 0;
+
+   LangArray[613].TextStr    := StringNew('files added.');
+   LangArray[613].HasDefault := False;
+   LangArray[613].DefaultKey := #00;
+   LangArray[613].Keys       := '';
+   LangArray[613].TxtColor   := 0;
+
+   LangArray[614].TextStr    := StringNew('is already tagged.');
+   LangArray[614].HasDefault := False;
+   LangArray[614].DefaultKey := #00;
+   LangArray[614].Keys       := '';
+   LangArray[614].TxtColor   := 0;
+
+   LangArray[615].TextStr    := StringNew('Clear tag list');
+   LangArray[615].HasDefault := True;
+   LangArray[615].DefaultKey := 'N';
+   LangArray[615].Keys       := '';
+   LangArray[615].TxtColor   := 0;
+
+   LangArray[616].TextStr    := StringNew('Validate file passwords:');
+   LangArray[616].HasDefault := False;
+   LangArray[616].DefaultKey := #00;
+   LangArray[616].Keys       := '';
+   LangArray[616].TxtColor   := 0;
+
+   LangArray[617].TextStr    := StringNew('Download file descriptions');
+   LangArray[617].HasDefault := True;
+   LangArray[617].DefaultKey := 'Y';
+   LangArray[617].Keys       := '';
+   LangArray[617].TxtColor   := 0;
+
+   LangArray[618].TextStr    := StringNew('is not available for download.');
+   LangArray[618].HasDefault := False;
+   LangArray[618].DefaultKey := #00;
+   LangArray[618].Keys       := '';
+   LangArray[618].TxtColor   := 0;
+
+   LangArray[619].TextStr    := StringNew('credit limit!');
+   LangArray[619].HasDefault := False;
+   LangArray[619].DefaultKey := #00;
+   LangArray[619].Keys       := '';
+   LangArray[619].TxtColor   := 0;
+
+   LangArray[620].TextStr    := StringNew('Cost: ');
+   LangArray[620].HasDefault := False;
+   LangArray[620].DefaultKey := #00;
+   LangArray[620].Keys       := '';
+   LangArray[620].TxtColor   := 0;
+
+   LangArray[621].TextStr    := StringNew('is locked, and may not be moved or deleted.');
+   LangArray[621].HasDefault := False;
+   LangArray[621].DefaultKey := #00;
+   LangArray[621].Keys       := '';
+   LangArray[621].TxtColor   := 0;
+
+   LangArray[622].TextStr    := StringNew('(M)ove, (C)opy, (D)elete, (E)dit desc, (S)kip, (Q)uit:');
+   LangArray[622].HasDefault := False;
+   LangArray[622].DefaultKey := #00;
+   LangArray[622].Keys       := 'MCDESQ';
+   LangArray[622].TxtColor   := 0;
+
+   LangArray[623].TextStr    := StringNew('File-base is in use. Retry');
+   LangArray[623].HasDefault := True;
+   LangArray[623].DefaultKey := 'Y';
+   LangArray[623].Keys       := '';
+   LangArray[623].TxtColor   := 0;
+
+   LangArray[624].TextStr    := StringNew('Password-protect this file');
+   LangArray[624].HasDefault := True;
+   LangArray[624].DefaultKey := 'N';
+   LangArray[624].Keys       := '';
+   LangArray[624].TxtColor   := 0;
+
+   LangArray[625].TextStr    := StringNew('already exists in the target area!');
+   LangArray[625].HasDefault := False;
+   LangArray[625].DefaultKey := #00;
+   LangArray[625].Keys       := '';
+   LangArray[625].TxtColor   := 0;
+
+   LangArray[626].TextStr    := StringNew('One moment, transferring files from CD-ROM..');
+   LangArray[626].HasDefault := False;
+   LangArray[626].DefaultKey := #00;
+   LangArray[626].Keys       := '';
+   LangArray[626].TxtColor   := 0;
+
+   LangArray[627].TextStr    := StringNew('(D)elete or (C)lear all (Enter to continue):');
+   LangArray[627].HasDefault := False;
+   LangArray[627].DefaultKey := #00;
+   LangArray[627].Keys       := 'DC';
+   LangArray[627].TxtColor   := 0;
+
+   LangArray[628].TextStr    := StringNew('has just posted a message to you in area');
+   LangArray[628].HasDefault := False;
+   LangArray[628].DefaultKey := #00;
+   LangArray[628].Keys       := '';
+   LangArray[628].TxtColor   := 0;
+
+   LangArray[629].TextStr    := StringNew('Default protocol: ');
+   LangArray[629].HasDefault := False;
+   LangArray[629].DefaultKey := #00;
+   LangArray[629].Keys       := '';
+   LangArray[629].TxtColor   := 0;
+
+   LangArray[630].TextStr    := StringNew('Select your preferred file transfer protocol:');
+   LangArray[630].HasDefault := False;
+   LangArray[630].DefaultKey := #00;
+   LangArray[630].Keys       := '';
+   LangArray[630].TxtColor   := 0;
+
+   LangArray[631].TextStr    := StringNew('(S)tart transfer, (N)ew protocol, (A)bort:');
+   LangArray[631].HasDefault := False;
+   LangArray[631].DefaultKey := #00;
+   LangArray[631].Keys       := 'SNA';
+   LangArray[631].TxtColor   := 0;
+
+   LangArray[632].TextStr    := StringNew('Echomail in a mailbox scan will be ignored');
+   LangArray[632].HasDefault := False;
+   LangArray[632].DefaultKey := #00;
+   LangArray[632].Keys       := '';
+   LangArray[632].TxtColor   := 0;
+
+   LangArray[633].TextStr    := StringNew('Echomail in a mailbox scan will be displayed');
+   LangArray[633].HasDefault := False;
+   LangArray[633].DefaultKey := #00;
+   LangArray[633].Keys       := '';
+   LangArray[633].TxtColor   := 0;
+
+   LangArray[634].TextStr    := StringNew('Scan your uploads now');
+   LangArray[634].HasDefault := True;
+   LangArray[634].DefaultKey := 'Y';
+   LangArray[634].Keys       := '';
+   LangArray[634].TxtColor   := 0;
+
+   LangArray[635].TextStr    := StringNew('Please wait, scanning your uploads..');
+   LangArray[635].HasDefault := False;
+   LangArray[635].DefaultKey := #00;
+   LangArray[635].Keys       := '';
+   LangArray[635].TxtColor   := 0;
+
+   LangArray[636].TextStr    := StringNew('Passed.');
+   LangArray[636].HasDefault := False;
+   LangArray[636].DefaultKey := #00;
+   LangArray[636].Keys       := '';
+   LangArray[636].TxtColor   := 0;
+
+   LangArray[637].TextStr    := StringNew('Failed virus check.');
+   LangArray[637].HasDefault := False;
+   LangArray[637].DefaultKey := #00;
+   LangArray[637].Keys       := '';
+   LangArray[637].TxtColor   := 0;
+
+   LangArray[638].TextStr    := StringNew('One moment, fetching file descriptions..');
+   LangArray[638].HasDefault := False;
+   LangArray[638].DefaultKey := #00;
+   LangArray[638].Keys       := '';
+   LangArray[638].TxtColor   := 0;
+
+   LangArray[639].TextStr    := StringNew('Send carbon copies to other users');
+   LangArray[639].HasDefault := True;
+   LangArray[639].DefaultKey := 'N';
+   LangArray[639].Keys       := '';
+   LangArray[639].TxtColor   := 0;
+
+   LangArray[640].TextStr    := StringNew('File is a GIF: ');
+   LangArray[640].HasDefault := False;
+   LangArray[640].DefaultKey := #00;
+   LangArray[640].Keys       := '';
+   LangArray[640].TxtColor   := 0;
+
+   LangArray[641].TextStr    := StringNew('colours.');
+   LangArray[641].HasDefault := False;
+   LangArray[641].DefaultKey := #00;
+   LangArray[641].Keys       := '';
+   LangArray[641].TxtColor   := 0;
+
+   LangArray[642].TextStr    := StringNew('Sorry, but as a GUEST you may not change this setting.');
+   LangArray[642].HasDefault := False;
+   LangArray[642].DefaultKey := #00;
+   LangArray[642].Keys       := '';
+   LangArray[642].TxtColor   := 0;
+
+   LangArray[643].TextStr    := StringNew('Continue the search');
+   LangArray[643].HasDefault := True;
+   LangArray[643].DefaultKey := 'N';
+   LangArray[643].Keys       := '';
+   LangArray[643].TxtColor   := 0;
+
+   LangArray[644].TextStr    := StringNew('Invalid group number!');
+   LangArray[644].HasDefault := False;
+   LangArray[644].DefaultKey := #00;
+   LangArray[644].Keys       := '';
+   LangArray[644].TxtColor   := 0;
+
+   LangArray[645].TextStr    := StringNew('File groups:');
+   LangArray[645].HasDefault := False;
+   LangArray[645].DefaultKey := #00;
+   LangArray[645].Keys       := '';
+   LangArray[645].TxtColor   := 0;
+
+   LangArray[646].TextStr    := StringNew('Select group: ');
+   LangArray[646].HasDefault := False;
+   LangArray[646].DefaultKey := #00;
+   LangArray[646].Keys       := '';
+   LangArray[646].TxtColor   := 0;
+
+   LangArray[647].TextStr    := StringNew('Unable to access file: ');
+   LangArray[647].HasDefault := False;
+   LangArray[647].DefaultKey := #00;
+   LangArray[647].Keys       := '';
+   LangArray[647].TxtColor   := 0;
+
+   LangArray[648].TextStr    := StringNew('Show EchoMail in a mail-box check');
+   LangArray[648].HasDefault := True;
+   LangArray[648].DefaultKey := 'Y';
+   LangArray[648].Keys       := '';
+   LangArray[648].TxtColor   := 0;
+
+   LangArray[649].TextStr    := StringNew('Keyword');
+   LangArray[649].HasDefault := False;
+   LangArray[649].DefaultKey := #00;
+   LangArray[649].Keys       := '';
+   LangArray[649].TxtColor   := 0;
+
+   LangArray[650].TextStr    := StringNew('Enter message text search string: ');
+   LangArray[650].HasDefault := False;
+   LangArray[650].DefaultKey := #00;
+   LangArray[650].Keys       := '';
+   LangArray[650].TxtColor   := 0;
+
+   LangArray[651].TextStr    := StringNew('Unknown');
+   LangArray[651].HasDefault := False;
+   LangArray[651].DefaultKey := #00;
+   LangArray[651].Keys       := '';
+   LangArray[651].TxtColor   := 0;
+
+   LangArray[652].TextStr    := StringNew('Male');
+   LangArray[652].HasDefault := False;
+   LangArray[652].DefaultKey := #00;
+   LangArray[652].Keys       := '';
+   LangArray[652].TxtColor   := 0;
+
+   LangArray[653].TextStr    := StringNew('Female');
+   LangArray[653].HasDefault := False;
+   LangArray[653].DefaultKey := #00;
+   LangArray[653].Keys       := '';
+   LangArray[653].TxtColor   := 0;
+
+   LangArray[654].TextStr    := StringNew('What is your sex? (M)ale or (F)emale:');
+   LangArray[654].HasDefault := False;
+   LangArray[654].DefaultKey := #00;
+   LangArray[654].Keys       := 'MF';
+   LangArray[654].TxtColor   := 0;
+
+   LangArray[655].TextStr    := StringNew('Please enter your mailing address (3 lines):');
+   LangArray[655].HasDefault := False;
+   LangArray[655].DefaultKey := #00;
+   LangArray[655].Keys       := '';
+   LangArray[655].TxtColor   := 0;
+
+   LangArray[656].TextStr    := StringNew('Message groups:');
+   LangArray[656].HasDefault := False;
+   LangArray[656].DefaultKey := #00;
+   LangArray[656].Keys       := '';
+   LangArray[656].TxtColor   := 0;
+
+   LangArray[657].TextStr    := StringNew('No mailing address information on record!');
+   LangArray[657].HasDefault := False;
+   LangArray[657].DefaultKey := #00;
+   LangArray[657].Keys       := '';
+   LangArray[657].TxtColor   := 0;
+
+   LangArray[658].TextStr    := StringNew('Your mailing address is listed as follows:');
+   LangArray[658].HasDefault := False;
+   LangArray[658].DefaultKey := #00;
+   LangArray[658].Keys       := '';
+   LangArray[658].TxtColor   := 0;
+
+   LangArray[659].TextStr    := StringNew('Change your mailing address');
+   LangArray[659].HasDefault := True;
+   LangArray[659].DefaultKey := 'N';
+   LangArray[659].Keys       := '';
+   LangArray[659].TxtColor   := 0;
+
+   LangArray[660].TextStr    := StringNew('Original');
+   LangArray[660].HasDefault := False;
+   LangArray[660].DefaultKey := #00;
+   LangArray[660].Keys       := '';
+   LangArray[660].TxtColor   := 0;
+
+   LangArray[661].TextStr    := StringNew('Enter thread');
+   LangArray[661].HasDefault := False;
+   LangArray[661].DefaultKey := #00;
+   LangArray[661].Keys       := '';
+   LangArray[661].TxtColor   := 0;
+
+   LangArray[662].TextStr    := StringNew('Internet');
+   LangArray[662].HasDefault := False;
+   LangArray[662].DefaultKey := #00;
+   LangArray[662].Keys       := '';
+   LangArray[662].TxtColor   := 0;
+
+   LangArray[663].TextStr    := StringNew('Newsgroup');
+   LangArray[663].HasDefault := False;
+   LangArray[663].DefaultKey := #00;
+   LangArray[663].Keys       := '';
+   LangArray[663].TxtColor   := 0;
+
+   LangArray[664].TextStr    := StringNew('Sorry, this file is not currently available for viewing. Please try later.');
+   LangArray[664].HasDefault := False;
+   LangArray[664].DefaultKey := #00;
+   LangArray[664].Keys       := '';
+   LangArray[664].TxtColor   := 0;
+
+   LangArray[665].TextStr    := StringNew('Mailbox scan will check ALL message areas');
+   LangArray[665].HasDefault := False;
+   LangArray[665].DefaultKey := #00;
+   LangArray[665].Keys       := '';
+   LangArray[665].TxtColor   := 0;
+
+   LangArray[666].TextStr    := StringNew('Mailbox scan will check ONLY SELECTED areas');
+   LangArray[666].HasDefault := False;
+   LangArray[666].DefaultKey := #00;
+   LangArray[666].Keys       := '';
+   LangArray[666].TxtColor   := 0;
+
+   LangArray[667].TextStr    := StringNew('That is not a valid Internet address. Try again..');
+   LangArray[667].HasDefault := False;
+   LangArray[667].DefaultKey := #00;
+   LangArray[667].Keys       := '';
+   LangArray[667].TxtColor   := 0;
+
+   LangArray[668].TextStr    := StringNew('You have files tagged! Disconnect anyway');
+   LangArray[668].HasDefault := True;
+   LangArray[668].DefaultKey := 'N';
+   LangArray[668].Keys       := '';
+   LangArray[668].TxtColor   := 0;
+
+   LangArray[669].TextStr    := StringNew('Scanning messages, please wait..');
+   LangArray[669].HasDefault := False;
+   LangArray[669].DefaultKey := #00;
+   LangArray[669].Keys       := '';
+   LangArray[669].TxtColor   := 0;
+
+   LangArray[670].TextStr    := StringNew('You are currently in teleconference: ');
+   LangArray[670].HasDefault := False;
+   LangArray[670].DefaultKey := #00;
+   LangArray[670].Keys       := '';
+   LangArray[670].TxtColor   := 0;
+
+   LangArray[671].TextStr    := StringNew('Press ESC or CTRL-X for help, or start typing to chat.');
+   LangArray[671].HasDefault := False;
+   LangArray[671].DefaultKey := #00;
+   LangArray[671].Keys       := '';
+   LangArray[671].TxtColor   := 0;
+
+   LangArray[672].TextStr    := StringNew('Time limit for your current session is up! Please call back..');
+   LangArray[672].HasDefault := False;
+   LangArray[672].DefaultKey := #00;
+   LangArray[672].Keys       := '';
+   LangArray[672].TxtColor   := 0;
+
+   LangArray[673].TextStr    := StringNew('Unable to connect to %s.');
+   LangArray[673].HasDefault := False;
+   LangArray[673].DefaultKey := #00;
+   LangArray[673].Keys       := '';
+   LangArray[673].TxtColor   := 0;
+
+   LangArray[674].TextStr    := StringNew('Connecting to %s.');
+   LangArray[674].HasDefault := False;
+   LangArray[674].DefaultKey := #00;
+   LangArray[674].Keys       := '';
+   LangArray[674].TxtColor   := 0;
+
+   LangArray[675].TextStr    := StringNew('Server refused information');
+   LangArray[675].HasDefault := False;
+   LangArray[675].DefaultKey := #00;
+   LangArray[675].Keys       := '';
+   LangArray[675].TxtColor   := 0;
+
+   LangArray[676].TextStr    := StringNew('Connect to which IRC server: ');
+   LangArray[676].HasDefault := False;
+   LangArray[676].DefaultKey := #00;
+   LangArray[676].Keys       := '';
+   LangArray[676].TxtColor   := 0;
+
+   LangArray[677].TextStr    := StringNew('*** You''re not on a channel!');
+   LangArray[677].HasDefault := False;
+   LangArray[677].DefaultKey := #00;
+   LangArray[677].Keys       := '';
+   LangArray[677].TxtColor   := 0;
+
+   LangArray[678].TextStr    := StringNew('[03[[0B%s[03]: ');
+   LangArray[678].HasDefault := False;
+   LangArray[678].DefaultKey := #00;
+   LangArray[678].Keys       := '';
+   LangArray[678].TxtColor   := 0;
+
+   LangArray[679].TextStr    := StringNew('[03([0B%s[03) ');
+   LangArray[679].HasDefault := False;
+   LangArray[679].DefaultKey := #00;
+   LangArray[679].Keys       := '';
+   LangArray[679].TxtColor   := 0;
+
+   LangArray[680].TextStr    := StringNew('Your Sysop has forbidden access to this channel!');
+   LangArray[680].HasDefault := False;
+   LangArray[680].DefaultKey := #00;
+   LangArray[680].Keys       := '';
+   LangArray[680].TxtColor   := 0;
+
+   LangArray[681].TextStr    := StringNew('*** Disconnected from %s');
+   LangArray[681].HasDefault := False;
+   LangArray[681].DefaultKey := #00;
+   LangArray[681].Keys       := '';
+   LangArray[681].TxtColor   := 0;
+
+   LangArray[682].TextStr    := StringNew('Welcome new EleBBS user!');
+   LangArray[682].HasDefault := False;
+   LangArray[682].DefaultKey := #00;
+   LangArray[682].Keys       := '';
+   LangArray[682].TxtColor   := 0;
+
+   LangArray[683].TextStr    := StringNew('More(Y/n/=/(T)ag/(V)iew/(E)dit/S(k)ip)?');
+   LangArray[683].HasDefault := False;
+   LangArray[683].DefaultKey := #00;
+   LangArray[683].Keys       := 'YN=TVEK';
+   LangArray[683].TxtColor   := 0;
+
+   LangArray[684].TextStr    := StringNew('Unlimited');
+   LangArray[684].HasDefault := false;
+   LangArray[684].DefaultKey := #00;
+   LangArray[684].Keys       := '';
+   LangArray[684].TxtColor   := 0;
+
+   LangArray[685].TextStr    := StringNew('Please enter nickname to use (empty to quit):');
+   LangArray[685].HasDefault := false;
+   LangArray[685].DefaultKey := #00;
+   LangArray[685].Keys       := '';
+   LangArray[685].TxtColor   := 0;
+
+   LangArray[686].TextStr    := StringNew('DD-MM-YYYY');
+   LangArray[686].HasDefault := false;
+   LangArray[686].DefaultKey := #00;
+   LangArray[686].Keys       := '';
+   LangArray[686].TxtColor   := 0;
+
+   LangArray[687].TextStr    := StringNew('MM-DD-YYYY');
+   LangArray[687].HasDefault := false;
+   LangArray[687].DefaultKey := #00;
+   LangArray[687].Keys       := '';
+   LangArray[687].TxtColor   := 0;
+
+   LangArray[688].TextStr    := StringNew('YYYY-MM-DD');
+   LangArray[688].HasDefault := false;
+   LangArray[688].DefaultKey := #00;
+   LangArray[688].Keys       := '';
+   LangArray[688].TxtColor   := 0;
+
+   LangArray[689].TextStr    := StringNew('DD-Mmm-YYYY');
+   LangArray[689].HasDefault := false;
+   LangArray[689].DefaultKey := #00;
+   LangArray[689].Keys       := '';
+   LangArray[689].TxtColor   := 0;
+
+   LangArray[690].TextStr    := StringNew('Incoming DCC chat request, denying');
+   LangArray[690].HasDefault := false;
+   LangArray[690].DefaultKey := #00;
+   LangArray[690].Keys       := '';
+   LangArray[690].TxtColor   := 0;
+
+   LangArray[691].TextStr    := StringNew('%s tries to send %s (%s bytes). Use /DCC GET %s to start');
+   LangArray[691].HasDefault := false;
+   LangArray[691].DefaultKey := #00;
+   LangArray[691].Keys       := '';
+   LangArray[691].TxtColor   := 0;
+
+   LangArray[692].TextStr    := StringNew('Maximum number of DCC sessions reached, ignored');
+   LangArray[692].HasDefault := false;
+   LangArray[692].DefaultKey := #00;
+   LangArray[692].Keys       := '';
+   LangArray[692].TxtColor   := 0;
+
+   LangArray[693].TextStr    := StringNew('DCC transfer of %s finished successfully');
+   LangArray[693].HasDefault := false;
+   LangArray[693].DefaultKey := #00;
+   LangArray[693].Keys       := '';
+   LangArray[693].TxtColor   := 0;
+
+   LangArray[694].TextStr    := StringNew('DCC transfer of %s aborted');
+   LangArray[694].HasDefault := false;
+   LangArray[694].DefaultKey := #00;
+   LangArray[694].Keys       := '';
+   LangArray[694].TxtColor   := 0;
+
+   LangArray[695].TextStr    := StringNew('No such DCC session');
+   LangArray[695].HasDefault := false;
+   LangArray[695].DefaultKey := #00;
+   LangArray[695].Keys       := '';
+   LangArray[695].TxtColor   := 0;
+
+   LangArray[696].TextStr    := StringNew('File: %s from %s, bytes left: %s');
+   LangArray[696].HasDefault := false;
+   LangArray[696].DefaultKey := #00;
+   LangArray[696].Keys       := '';
+   LangArray[696].TxtColor   := 0;
+
+   LangArray[697].TextStr    := StringNew('Connecting to %s, to get %s');
+   LangArray[697].HasDefault := false;
+   LangArray[697].DefaultKey := #00;
+   LangArray[697].Keys       := '';
+   LangArray[697].TxtColor   := 0;
+
+   LangArray[698].TextStr    := StringNew('Connected to %s, downloading %s');
+   LangArray[698].HasDefault := false;
+   LangArray[698].DefaultKey := #00;
+   LangArray[698].Keys       := '';
+   LangArray[698].TxtColor   := 0;
+
+   LangArray[699].TextStr    := StringNew('Unable to connect to %s for %s');
+   LangArray[699].HasDefault := false;
+   LangArray[699].DefaultKey := #00;
+   LangArray[699].Keys       := '';
+   LangArray[699].TxtColor   := 0;
+
+   LangArray[700].TextStr    := StringNew('Nick      State              %    filename                     ');
+   LangArray[700].HasDefault := false;
+   LangArray[700].DefaultKey := #00;
+   LangArray[700].Keys       := '';
+   LangArray[700].TxtColor   := 0;
+
+   LangArray[701].TextStr    := StringNew('Waiting');
+   LangArray[701].HasDefault := false;
+   LangArray[701].DefaultKey := #00;
+   LangArray[701].Keys       := '';
+   LangArray[701].TxtColor   := 0;
+
+   LangArray[702].TextStr    := StringNew('Downloading');
+   LangArray[702].HasDefault := false;
+   LangArray[702].DefaultKey := #00;
+   LangArray[702].Keys       := '';
+   LangArray[702].TxtColor   := 0;
+
+   LangArray[703].TextStr    := StringNew('Warning! DCC sessions are active, quitting will abort. Continue?');
+   LangArray[703].HasDefault := true;
+   LangArray[703].DefaultKey := 'N';
+   LangArray[703].Keys       := '';
+   LangArray[703].TxtColor   := 0;
+
+   LangArray[704].TextStr    := StringNew('Unknown DCC command');
+   LangArray[704].HasDefault := false;
+   LangArray[704].DefaultKey := #00;
+   LangArray[704].Keys       := '';
+   LangArray[704].TxtColor   := 0;
+
+   LangArray[705].TextStr    := StringNew('DCC sessions enabled');
+   LangArray[705].HasDefault := false;
+   LangArray[705].DefaultKey := #00;
+   LangArray[705].Keys       := '';
+   LangArray[705].TxtColor   := 0;
+
+   LangArray[706].TextStr    := StringNew('DCC sessions disabled');
+   LangArray[706].HasDefault := false;
+   LangArray[706].DefaultKey := #00;
+   LangArray[706].Keys       := '';
+   LangArray[706].TxtColor   := 0;
+
+   LangArray[707].TextStr    := StringNew('Your sysop has disabled DCC on this client.');
+   LangArray[707].HasDefault := false;
+   LangArray[707].DefaultKey := #00;
+   LangArray[707].Keys       := '';
+   LangArray[707].TxtColor   := 0;
+
+   LangArray[708].TextStr    := StringNew('Address is not known. Attempt to send anyway?');
+   LangArray[708].HasDefault := true;
+   LangArray[708].DefaultKey := 'N';
+   LangArray[708].Keys       := '';
+   LangArray[708].TxtColor   := 0;
+
+   LangArray[709].TextStr    := StringNew('Connect to which telnet site: ');
+   LangArray[709].HasDefault := false;
+   LangArray[709].DefaultKey := #00;
+   LangArray[709].Keys       := '';
+   LangArray[709].TxtColor   := 0;
+
+   LangArray[710].TextStr    := StringNew('Connecting to %s.');
+   LangArray[710].HasDefault := false;
+   LangArray[710].DefaultKey := #00;
+   LangArray[710].Keys       := '';
+   LangArray[710].TxtColor   := 0;
+
+   LangArray[711].TextStr    := StringNew('Ed(i)t');
+   LangArray[711].HasDefault := False;
+   LangArray[711].DefaultKey := #00;
+   LangArray[711].Keys       := 'I';
+   LangArray[711].TxtColor   := 0;
+
+   LangArray[712].TextStr    := StringNew('Edit');
+   LangArray[712].HasDefault := False;
+   LangArray[712].DefaultKey := #00;
+   LangArray[712].Keys       := '';
+   LangArray[712].TxtColor   := 0;
+
+   LangArray[713].TextStr    := StringNew('Editting message in');
+   LangArray[713].HasDefault := False;
+   LangArray[713].DefaultKey := #00;
+   LangArray[713].Keys       := '';
+   LangArray[713].TxtColor   := 0;
+
+   LangArray[714].TextStr    := StringNew('------ ' + #13 + 'Message has been editted by "%1" on %2 %3');
+   LangArray[714].HasDefault := False;
+   LangArray[714].DefaultKey := #00;
+   LangArray[714].Keys       := '';
+   LangArray[714].TxtColor   := 0;
+
+   LangArray[715].TextStr    := StringNew('Forum');
+   LangArray[715].HasDefault := False;
+   LangArray[715].DefaultKey := #00;
+   LangArray[715].Keys       := '';
+   LangArray[715].TxtColor   := 0;
+end;
+
+(*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-*)
+
+procedure LoadralDefaults(var LangArray: DefaultLangArrayRec);
+var Counter: Longint;
+begin
+ FillChar(LangArray, SizeOf(DefaultLangArrayRec), #00);
+
+ For Counter := 00 to 710 do
+   LangArray[Counter].TextStr := nil;
+
+ LoadRalDefaults_0(LangArray);
+ LoadRalDefaults_1(LangArray);
+ LoadRalDefaults_2(LangArray);
+ LoadRalDefaults_3(LangArray);
+ LoadRalDefaults_4(LangArray);
+end;
+

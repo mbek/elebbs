@@ -1,0 +1,493 @@
+if a letter is in uppercase, its a var parameter.
+
+s = string
+i = integer
+b = boolean
+c = char
+a = array
+e = record
+
+type      | name                | returns      | parameterlist
+----------|---------------------|--------------|--------------
+procedure | insert              |              | <sSi>
+procedure | delete              |              | <Sii>
+procedure | clearkeybuffer      |              | <>
+procedure | waitforenter        |              | <bb>
+procedure | putinkeybuffer      |              | <sb>
+function  | askyesno            | boolean      | <b>
+procedure | updatelocalscreen   |              | <>
+procedure | rangeedit           |              | <Ssiii>
+procedure | stringedit          |              | <Siibbb>
+procedure | resetmoreprompt     |              | <>
+procedure | setstatusbar        |              | <i>
+procedure | pushsysopkey        |              | <c>
+procedure | runmenucmd          |              | <is>
+function  | getbbsversion       | string       | <>
+function  | getenvironment      | string       | <s>
+procedure | setuserflags        |              | <As>
+procedure | toggleuserflags     |              | <As>
+procedure | resetuserflags      |              | <As>
+function  | checkuserflags      | boolean      | <As>
+function  | cmpuserflags        | boolean      | <aa>
+function  | ralget              | string       | <i>
+function  | ralgetkeys          | string       | <i>
+function  | ralgetstr           | string       | <i>
+function  | ralgetdsp           | string       | <i>
+function  | ralgetdefaultkey    | string       | <i>
+function  | ralgettitleinfo     | string       | <>
+function  | ralgetkey           | char         | <i>
+function  | ralhaskey           | boolean      | <i>
+function  | ralgetcolor         | boolean      | <i>
+function  | ralgetentries       | integer      | <>
+procedure | ralresetcache       |              | <>
+procedure | ralgetall           |              | <iBSSCBB>
+procedure | setbit              |              | <Ii>
+procedure | clearbit            |              | <Ii>
+function  | readbit             | boolean      | <ii>
+function  | opentextfile        | string       | <s>
+function  | displayhotfile      | char         | <ss>
+procedure | displaywithcr       |              | <s>
+procedure | retrieveexitinfo    |              | <e>
+procedure | putexitinfo         |              | <e>
+function  | searchcombined      | boolean      | <i>
+function  | changegroup         | boolean      | <bs>
+procedure | changefilearea      |              | <s>
+procedure | changemessageareas  |              | <s>
+procedure | showmsgareanewmail  |              | <sbbb>
+procedure | clearcombined       |              | <s>
+procedure | selectcombined      |              | <s>
+procedure | togglecombinedarea  |              | <s>
+function  | checkflagaccess     | boolean      | <aaa>
+function  | checkfileareaaccess | boolean      | <Ebbbbi>
+function  | checkgroupaccess    | boolean      | <E>
+function  | checklanguageaccess | boolean      | <Eb>
+function  | checkmsgareaaccess  | boolean      | <Ebbi>
+function  | checkmenuaccess     | boolean      | <e>
+function  | checkreadmsgaccess  | boolean      | <sbb>
+function  | checkmsgsysopaccess | boolean      | <E>
+procedure | givetimeslice       |              | <>
+procedure | setwindowtitle      |              | <s>
+function  | getsystemenvironment| string       | <>
+function  | makeattr            | integer      | <ii>
+function  | getforeattr         | integer      | <i>
+function  | getbackattr         | integer      | <i>
+procedure | getcolors           |              | <iII>
+procedure | removeracolors      |              | <S>
+function  | nocolorlength       | integer      | <s>
+function  | getlastcolor        | integer      | <s>
+procedure | fastwrite           |              | <iiis>
+procedure | boxwindow           |              | <iiiiiis>
+procedure | colorarea           |              | <iiiii>
+procedure | fillarea            |              | <iiiici>
+procedure | localscreen         |              | <s>
+procedure | localscreenln       |              | <s>
+procedure | dobeep              |              | <iiis>
+procedure | getscreen           |              | <iiCI>
+procedure | putscreen           |              | <iici>
+procedure | sendinteractivemsg  |              | <is>
+procedure | checkoktosend       | boolean      | <iEb>
+procedure | doubleuseron        | boolean      | <s>
+procedure | getuseron           | integer      | <sb>
+procedure | emptynodenr         | integer      | <b>
+procedure | writeuseron         |              | <si>
+procedure | makedebuglogentry   | integer      | <is>
+procedure | makelogentry        |              | <cs>
+procedure | loadlimitinfo       |              | <ibb>
+procedure | lockoutuser         |              | <>
+procedure | settime             |              | <i>
+procedure | changetime          |              | <ib>
+procedure | downloadrestrictions|              | <b>
+procedure | checkcarrierandtime |              | <>
+procedure | timeremain          |              | <>
+procedure | checkeventstatus    |              | <>
+procedure | checkraexit         |              | <>
+procedure | checkidle           |              | <>
+procedure | warntimelimit       |              | <>
+procedure | checkforelemon      |              | <>
+procedure | timeisupwarning     |              | <>
+procedure | resetidletimeout    |              | <>
+procedure | setidletimeout      |              | <>
+procedure | taggetheader        |              | <iE>
+procedure | tagputheader        |              | <iE>
+procedure | tagfixfilename      |              | <S>
+function  | taggetcurrenttagged | integer      | <>
+function  | taggettotalkbstagged| integer      | <>
+function  | tagistagged         | boolean      | <si>
+function  | tagaddtotagfile     | boolean      | <Eiiis>
+procedure | tagdeletefromtag    |              | <s>
+procedure | tagdeletetagnumber  |              | <i>
+function  | forceback           | string       | <s>
+function  | noextension         | string       | <s>
+function  | justextension       | string       | <s>
+function  | justpath            | string       | <s>
+function  | justname            | string       | <s>
+function  | nobackslash         | string       | <s>
+function  | rdxname             | string       | <s>
+function  | fixtime             | string       | <s>
+function  | slashstr            | string       | <s>
+function  | asciistr            | string       | <s>
+function  | under2norm          | string       | <s>
+function  | space2dot           | string       | <s>
+function  | trim                | string       | <s>
+function  | trimleft            | string       | <s>
+function  | trimright           | string       | <s>
+function  | firstnameonly       | string       | <s>
+function  | lastnameonly        | string       | <s>
+function  | inquotes            | string       | <s>
+function  | initialstring       | string       | <s>
+function  | nodoublespace       | string       | <s>
+function  | fixusername         | string       | <s>
+function  | strtoreal           | reals        | <s>
+function  | str2flags           | integer      | <s>
+function  | fval                | integer      | <s>
+function  | isftpurl            | boolean      | <s>
+function  | lastchar            | char         | <s>
+function  | firstchar           | char         | <s>
+function  | hexlong             | string       | <i>
+function  | hexstr              | string       | <i>
+function  | tohex               | string       | <i>
+function  | fstr                | string       | <i>
+function  | formatminsec        | string       | <i>
+function  | word2time           | string       | <i>
+function  | commastr            | string       | <i>
+function  | byte2flags          | string       | <i>
+function  | byte2flagsoff       | string       | <ii>
+function  | fixbaud             | integer      | <i>
+function  | leadingzero         | string       | <ii>
+function  | real2str            | string       | <rii>
+function  | dup                 | string       | <ci>
+function  | makelen             | string       | <siibb>
+function  | dotpadding          | string       | <sibc>
+function  | getcommaargument    | string       | <si>
+function  | raducenter          | string       | <si>
+function  | rightjust           | string       | <si>
+function  | leftjust            | string       | <si>
+function  | leftjustchar        | string       | <sic>
+function  | centerjust          | string       | <sib>
+function  | centerjustchar      | string       | <sicb>
+function  | rightjustchar       | string       | <sic>
+function  | nocolorcopy         | string       | <sii>
+procedure | addrtostring        |              | <Siiii>
+procedure | stringtoaddr        |              | <sIIII>
+procedure | filterstring        |              | <Ss>
+procedure | removechar          |              | <Ss>
+function  | wordcount           | integer      | <ssb>
+function  | firstword           | string       | <Ssb>
+function  | lastword            | string       | <ssb>
+procedure | removewordnr        |              | <Sisb>
+procedure | replace             |              | <ssSb>
+procedure | dowrap              |              | <SSi>
+procedure | fullinsert          |              | <sSi>
+function  | getvalue            | string       | <sSb>
+function  | extractword         | string       | <sisbb>
+function  | supcase             | string       | <s>
+function  | slowcase            | string       | <s>
+function  | firstupper          | char         | <s>
+function  | strcrc              | integer      | <s>
+function  | gethour             | integer      | <>
+function  | getsecs             | integer      | <>
+function  | getmonth            | integer      | <>
+function  | getyear             | integer      | <>
+function  | getday              | integer      | <>
+function  | getmins             | integer      | <>
+function  | getuserage          | integer      | <>
+function  | getdow              | integer      | <>
+function  | unix2date           | integer      | <i>
+function  | date2unix           | integer      | <i>
+function  | norm2unix           | integer      | <iiiiii>
+function  | nowasunixdate       | integer      | <>
+function  | currenttime         | integer      | <>
+function  | unixtorfcdate       | string       | <is>
+function  | datestr             | string       | <>
+function  | datestry2k          | string       | <>
+function  | timestr             | string       | <bb>
+function  | date2str            | string       | <l>
+function  | getdayofweek        | string       | <>
+function  | futuredate          | string       | <i>
+function  | historydate         | string       | <i>
+procedure | gettime             |              | <i>
+function  | minsistime          | string       | <i>
+function  | isleapyear          | boolean      | <i>
+function  | minstilltime        | integer      | <s>
+function  | minsfromtime        | integer      | <s>
+function  | daysago             | integer      | <s>
+function  | daystogo            | integer      | <s>
+function  | monthnametonum      | integer      | <s>
+function  | packtimestr         | integer      | <ss>
+procedure | unix2norm           |              | <iIIIIII>
+procedure | setstarttime        |              | <>
+procedure | nntpdatetostring    |              | <sSS>
+procedure | getuserrecordnr     |              | <iEEb>
+procedure | updateuserrecord    |              | <>
+procedure | writeuserrecord     |              | <iEE>
+procedure | setnewuserdefaults  |              | <EE>
+function  | searchuser          | integer      | <s>
+function  | getscreenlength     | integer      | <>
+procedure | getuserrecord       |              | <EE>
+function  | getrecsize          | integer      | <E>
+function  | filecount           | integer      | <s>
+function  | getpackedfiletime   | integer      | <s>
+function  | getfilesize         | integer      | <si>
+function  | erasefile           | boolean      | <s>
+function  | fileexist           | boolean      | <s>
+function  | semaexist           | boolean      | <s>
+function  | openfile            | boolean      | <sb>
+function  | getfiledate         | string       | <s>
+function  | getvolumelabel      | string       | <s>
+function  | openrafile          | string       | <s>
+function  | createtempdir       | string       | <si>
+function  | getlogfilename      | string       | <s>
+procedure | makedir             |              | <s>
+function  | iswildcard          | string       | <ss>
+function  | renamefile          | boolean      | <ss>
+function  | filecopy            | boolean      | <ss>
+function  | searchctlfile       | boolean      | <ssb>
+function  | uptodatefile        | boolean      | <ss>
+function  | groupname           | string       | <ib>
+function  | getcurdir           | string       | <>
+function  | getdiskfree         | integer      | <c>
+function  | ra250area           | integer      | <i>
+function  | ra250msgarea        | integer      | <i>
+function  | searchnextmsgarea   | integer      | <i>
+function  | ra250group          | integer      | <ib>
+function  | findfirst           | integer      | <isi>
+function  | findnext            | integer      | <i>
+function  | findgetname         | string       | <i>
+procedure | findclose           |              | <i>
+procedure | writeexitinfo       |              | <>
+procedure | updatestatistics    |              | <>
+procedure | buildfastindex      |              | <>
+procedure | buildlastread       |              | <>
+procedure | initsystemnames     |              | <>
+procedure | dorabusy            |              | <b>
+procedure | readlanguagera      |              | <i>
+procedure | createdorinfodef    |              | <bbi>
+procedure | createdoorsys       |              | <i>
+procedure | createdoor32sys     |              | <i>
+procedure | removesema          |              | <s>
+procedure | createsema          |              | <s>
+procedure | killcompletedir     |              | <sb>
+procedure | erasedir            |              | <sb>
+procedure | setfiletime         |              | <s>
+procedure | createtemplatefile  |              | <s>
+procedure | writemsginf         |              | <sssssb>
+function  | elecodestr          | string       | <s>
+function  | getsysopname        | string       | <>
+function  | getsystemname       | string       | <>
+function  | getfilesrecord      | boolean      | <Eib>
+function  | getelefilesrecord   | boolean      | <Eib>
+function  | getmessagerecord    | boolean      | <Eib>
+function  | getelemessagerecord | boolean      | <Eib>
+function  | getgrouprecord      | boolean      | <ibbE>
+procedure | getprotocolrecord   |              | <cE>
+procedure | getexitinfo         |              | <E>
+procedure | readsysinfobbs      |              | <E>
+procedure | searchnextevent     |              | <E>
+procedure | readexitinfo        |              | <E>
+procedure | selectallcombined   |              | <E>
+procedure | getaddress          |              | <iE>
+procedure | setaddress          |              | <iE>
+procedure | setuserrecord       |              | <EE>
+procedure | addtouserbase       |              | <>
+function  | gettextattr         | integer      | <>
+function  | getparameter        | string       | <i>
+procedure | setreturnvalue      |              | <s>
+function  | fb_openfilebase     | boolean      | <i>
+function  | fb_read             | boolean      | <i>
+function  | fb_write            | boolean      | <i>
+function  | fb_totalrecords     | integer      | <>
+function  | fb_getfilename      | string       | <>
+function  | fb_getshortname     | string       | <>
+procedure | fb_gethdrrecord     |              | <E>
+procedure | fb_sethdrrecord     |              | <E>
+procedure | fb_getidxrecord     |              | <E>
+procedure | fb_setidxrecord     |              | <E>
+procedure | fb_addrecord        |              | <E>
+function  | fb_addlfnptr        | integer      | <sss>
+function  | fb_islfn            | boolean      | <s>
+function  | fb_isnewfile        | boolean      | <is>
+function  | fb_matchshowing     | boolean      | <is>
+function  | fb_iscomment        | boolean      | <>
+function  | fb_isdeleted        | boolean      | <>
+function  | fb_isunlisted       | boolean      | <>
+function  | fb_isfree           | boolean      | <>
+function  | fb_isnotavail       | boolean      | <>
+function  | fb_islocked         | boolean      | <>
+function  | fb_ismissing        | boolean      | <>
+function  | fb_isnotime         | boolean      | <>
+procedure | fb_doreaddescription|              | <>
+procedure | fb_resetdescriptionp|r             | <>
+function  | fb_getdescline      | string       | <i>
+function  | fb_endofdesc        | boolean      | <>
+function  | fb_unlistedfile     | boolean      | <>
+procedure | fb_addtotagarray    |              | <ii>
+function  | fb_geterror         | integer      | <>
+procedure | fb_closefilebase    |              | <>
+procedure | fb_tagfiles         |              | <>
+procedure | fb_viewfiles        |              | <>
+procedure | fb_edittaglist      |              | <>
+function  | fb_newsincelastlogon| boolean      | <>
+procedure | fb_dumpbinaryfile   |              | <s>
+function  | web_getuin          | integer      | <>
+function  | web_getuir          | integer      | <>
+function  | web_getuip          | integer      | <>
+function  | web_showhtmlfile    | boolean      | <s>
+function  | web_getdatetime     | string       | <>
+function  | web_getcookie       | string       | <s>
+procedure | web_setlogindata    |              | <iiib>
+function  | web_getformdata     | string       | <s>
+function  | web_isloggedon      | boolean      | <>
+procedure | web_runerrorscript  |              | <is>
+function  | web_runscript       | boolean      | <ss>
+function  | web_convertlink     | string       | <s>
+procedure | web_openoutput      |              | <s>
+function  | web_esctononesc     | string       | <s>
+procedure | web_sendheader      |              | <s>
+function  | getpath_protocolra  | string       | <>
+function  | getpath_languagera  | string       | <>
+function  | getpath_limitsra    | string       | <>
+function  | getpath_eventsra    | string       | <>
+function  | getpath_fgroupsra   | string       | <>
+function  | getpath_mgroupsra   | string       | <>
+function  | getpath_filesra     | string       | <>
+function  | getpath_akasbbs     | string       | <>
+function  | getpath_modemra     | string       | <>
+function  | getpath_telnetele   | string       | <>
+function  | getpath_pagestatra  | string       | <>
+function  | getpath_messagesra  | string       | <>
+function  | getpath_taglistra   | string       | <>
+function  | getpath_lastcallbbs | string       | <>
+function  | getpath_sysinfobbs  | string       | <>
+function  | getpath_timelogbbs  | string       | <>
+function  | getpath_logfile     | string       | <>
+function  | getpath_messagesele | string       | <>
+function  | getpath_filesele    | string       | <>
+function  | getpath_nwserverele | string       | <>
+function  | getpath_htmlpath    | string       | <>
+function  | getpath_scrpath     | string       | <>
+function  | getpath_syspath     | string       | <>
+function  | getpath_msgbasepath | string       | <>
+function  | getpath_filebasepath| string       | <>
+function  | mb_getareaaddress   | string       | <i>
+function  | mb_inmarkedlist     | boolean      | <ii>
+procedure | mb_addtomarklist    |              | <ii>
+procedure | mb_setlastread      |              | <ii>
+function  | mb_openmsgbase      | boolean      | <E>
+procedure | mb_read             |              | <i>
+procedure | mb_write            |              | <i>
+function  | mb_messagefound     | boolean      | <>
+procedure | mb_getprevious      |              | <>
+procedure | mb_getnext          |              | <>
+procedure | mb_getrecord        |              | <E>
+procedure | mb_setrecord        |              | <E>
+procedure | mb_addmessage       |              | <E>
+function  | mb_getactivemsgnum  | integer      | <>
+function  | mb_gethighmsgnum    | integer      | <>
+function  | mb_getnetmailboard  | integer      | <>
+procedure | mb_getmsgareastats  |              | <EIII>
+procedure | mb_silentdeletemsg  |              | <iib>
+procedure | mb_menupost         |              | <s>
+procedure | mb_postfile         |              | <issss>
+procedure | mb_doreadmessagetext|              | <>
+procedure | mb_resetmessageptr  |              | <>
+function  | mb_endofmessage     | boolean      | <>
+function  | mb_getmessageline   | string       | <i>
+function  | mb_htmlstring       | string       | <s>
+procedure | mb_addmessageline   |              | <s>
+procedure | mb_settowho         |              | <s>
+procedure | mb_setfromwho       |              | <s>
+procedure | mb_setsubject       |              | <s>
+procedure | mb_setreturnreceipt |              | <b>
+procedure | mb_setprivate       |              | <b>
+procedure | mb_setreplyreceipt  |              | <b>
+procedure | mb_setkillsent      |              | <b>
+procedure | mb_setcrashmail     |              | <b>
+procedure | mb_setattachment    |              | <b>
+procedure | mb_setmarkassent    |              | <b>
+function  | mb_getmsgnumber     | integer      | <>
+procedure | mb_setdestaddress   |              | <s>
+procedure | mb_setorigaddress   |              | <s>
+procedure | mb_handlemessageread|              | <bE>
+procedure | mb_setreceived      |              | <b>
+procedure | mb_setdatestr       |              | <s>
+procedure | mb_settimestr       |              | <s>
+procedure | mb_setreplynr       |              | <ii>
+function  | mb_gettowho         | string       | <>
+function  | mb_getfromwho       | string       | <>
+function  | mb_getsubject       | string       | <>
+function  | mb_getreturnreceipt | boolean      | <>
+function  | mb_getprivate       | boolean      | <>
+function  | mb_getreplyreceipt  | boolean      | <>
+function  | mb_getkillsent      | boolean      | <>
+function  | mb_getcrashmail     | boolean      | <>
+function  | mb_getattachment    | boolean      | <>
+function  | mb_getmarkassent    | boolean      | <>
+function  | mb_getmsglines      | integer      | <>
+function  | mb_getdestaddress   | string       | <>
+function  | mb_getorigaddress   | string       | <>
+function  | mb_getmarkasreceived| boolean      | <>
+function  | mb_getdatestr       | string       | <>
+function  | mb_gettimestr       | string       | <>
+function  | mb_getlastread      | integer      | <E>
+procedure | mb_closemessagebase |              | <>
+function  | checkmsgdeleteaccess| boolean      | <Essb>
+procedure | mb_postmessage      |              | <issssssbbbbbbI>
+procedure | mb_strbuf_init      |              | <>
+function  | mb_strbuf_get       | string       | <i>
+procedure | mb_strbuf_put       |              | <is>
+procedure | mb_strbuf_delete    |              | <i>
+procedure | mb_strbuf_add       |              | <s>
+procedure | mb_strbuf_done      |              | <>
+function  | mb_strbuf_count     | integer      | <>
+procedure | mb_strbuf_clear     |              | <>
+procedure | mb_form_to_strbuf   |              | <sb>
+procedure | getnewsarticleheader|              | <E>
+function  | mb_getreplyfirst    | integer      | <>
+function  | mb_getreplynext     | integer      | <>
+function  | mb_getreplyto       | integer      | <>
+function  | formatdatestring    | string       | <sii>
+function  | mb_updatemsgtext    | integer      |
+procedure | usr_getextensions   |              | <E>
+procedure | usr_setextensions   |              | <E>
+function  | mb_allowedit        | boolean      | <Es>
+procedure | mb_setreplyfirst    |              | <i>
+procedure | mb_setreplynext     |              | <i>
+procedure | mb_setreplyto       |              | <i>
+procedure | sock_init           |              | <i>
+procedure | sock_done           |              | <i>
+function  | sock_connectto      | boolean      | <isiS>
+function  | sock_gethandle      | integers     | <i>
+function  | sock_dataavailable  | boolean      | <i>
+function  | sock_connectionalive| boolean      | <i>
+procedure | sock_sendstrln      |              | <is>
+procedure | sock_sendstr        |              | <is>
+procedure | sock_sendbuf        |              | <iEiI>
+procedure | sock_recvbuf        |              | <iEiI>
+procedure | sock_disconnect     |              | <i>
+procedure | sock_waitfordata    |              | <i>
+procedure | sock_flushdata      |              | <i>
+procedure | sock_dosleep        |              | <ii>
+function  | sock_recvstrln      | boolean      | <iSb>
+function  | sock_recvstring     | boolean      | <iSb>
+function  | sock_resolveaddr    | boolean      | <isS>
+function  | sock_connectedip    | boolean      | <i>
+procedure | sock_setkeepalive   |              | <ib>
+function  | sock_getkeepalive   | boolean      | <ib>
+procedure | sock_setreuseaddr   |              | <ib>
+function  | sock_getreuseaddr   | boolean      | <ib>
+procedure | sock_setserverhandle|              | <ii>
+function  | sock_getserverhandle| integer      | <ii>
+function  | sock_setupserver    | boolean      | <iiSi>
+function  | sock_accept         | boolean      | <i>
+
+
+----------------------------------------------------------------------------
+
+for example:
+procedure | insert              |              | <sSi>
+
+would be declared as:
+
+procedure Insert(Source: String; Dest: String; Index: Integer);
+
+in normal Pascal code.

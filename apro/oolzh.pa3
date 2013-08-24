@@ -1,0 +1,580 @@
+type
+  LhaShowProgFunc  = function(BytesWritten, TotalBytes : LongInt) : Boolean;
+
+const
+  MsDosID          = 'M';
+  zCRC             : Word = 0;
+
+{Data structures and constants used for LHA compression}
+
+const
+  N1               = $2000;
+  N2               = N1 * 2;
+  NC               = $200 - 2;
+
+{$IFDEF DPMI}
+  EDSSize          = $8000 +                              {32768}
+                     ((NC+1) * SizeOf(Word)) +            { 1022}
+                     (2 * SizeOf(LongInt)) +
+                     (21 * SizeOf(Word)) +
+                     (3 * SizeOf(Byte));
+  Segment1Size     = (N1 + N2) * SizeOf(Word);            {49152}
+  Segment2Size     = (N1 + N2 + 256) * SizeOf(Word);      {49664}
+  Segment3Size     = (N1 + N2 + 256) * SizeOf(Word);      {49664}
+{$ELSE}
+  EDSSize          = $8000 +
+                     ((NC+1) * SizeOf(Word)) +
+                     (2 * SizeOf(LongInt)) +
+                     (21 * SizeOf(Word)) +
+                     (3 * SizeOf(Byte)) + 15;
+  Segment1Size     = (N1 + N2) * SizeOf(Word) + 15;
+  Segment2Size     = (N1 + N2 + 256) * SizeOf(Word) + 15;
+  Segment3Size     = (N1 + N2 + 256) * SizeOf(Word) + 15;
+{$ENDIF}
+
+var
+  EndOfInFile      : Boolean;
+  OrigSize         : LongInt;          {Original size}
+  CompSize         : LongInt;          {Compressed size}
+
+  ActualEDS        : ByteArrayPtr;
+  EDS              : Word;
+
+  {S1}
+  ActualSeg1      : ByteArrayPtr;
+  Seg1             : Word;
+
+  {S2}
+  ActualSeg2      : ByteArrayPtr;
+  Seg2             : Word;
+
+  {S3}
+  ActualSeg3      : ByteArrayPtr;
+  Seg3             : Word;
+
+  ActualBuf        : ByteArrayPtr;
+  Buf              : ByteArrayPtr;
+  BufLimit         : Word;
+
+  glSPF            : LhaShowProgFunc;
+  CurrentSelfPtr   : UnLzhPtr;
+
+
+function UnLzh.lhaMemRequired(Compressing : Boolean) : LongInt;
+  {-Return the amount of heap space required to compress or decompress}
+begin
+  if Compressing then begin
+    LhaMemRequired := EDSSize +
+                      SizeOf(InBufferType) + SizeOf(OutBufferType) +
+                      Segment1Size + Segment2Size + Segment3Size + 4096;
+  end else begin
+    LhaMemRequired := EDSSize +
+                      SizeOf(InBufferType) + SizeOf(OutBufferType);
+  end;
+end;
+
+procedure ClearPointers;
+begin
+  ActualEDS := nil;
+  ActualSeg1 := nil;
+  ActualSeg2 := nil;
+  ActualSeg3 := nil;
+  ActualBuf := nil;
+
+  EDS := 0;
+  Seg1 := 0;
+  Seg2 := 0;
+  Seg3 := 0;
+  Buf := nil;
+end;
+
+function UnLzh.lhaInit(Compressing : Boolean) : Boolean;
+  {-Init and allocate memory for lha method}
+label
+  ErrorExit;
+const
+  StepAmount = 256 * 16;
+var
+  MemAmt : LongInt;
+  TotalSize : LongInt;
+{$IFDEF DPMI}
+  SaveHeapLimit : LongInt;
+{$ENDIF}
+
+begin
+  lhaInit := False;
+
+  FirstExtHdrSize := 0;
+
+{$IFDEF DPMI}
+  SaveHeapLimit := HeapLimit;
+{$ENDIF}
+
+  ClearPointers;  {Set all pointers to nil}
+  if not Compressing then begin                                        {!!.02}
+    OutBuffer := nil;                                                  {!!.02}
+    InBuffer := nil;                                                   {!!.02}
+  end;                                                                 {!!.02}
+
+{allocate space for Heap and MSB structures}
+
+{$IFDEF DPMI}
+  {Set HeapLimit to 0 to force a zero offset for the following allocations}
+  HeapLimit := 0;
+  if not GetMemCheck(ActualEDS, EDSSize) then
+    goto ErrorExit;
+  EDS := OS(ActualEDS).S;
+  HeapLimit := SaveHeapLimit;  {Restore original heap limit}
+{$ELSE}
+  if not GetMemCheck(ActualEDS, EDSSize) then
+    goto ErrorExit;
+  EDS := OS(ActualEDS).S;
+  if OS(ActualEDS).O <> 0 then
+    Inc(EDS);
+{$ENDIF}
+
+  {Init structure}
+  FillChar(ActualEDS^, EDSSize, #0);
+
+  if not Compressing then begin  {allocate mem for decode process}
+    if (not GetMemCheck(OutBuffer, SizeOf(OutBufferType))) or
+       (not GetMemCheck(InBuffer, SizeOf(InBufferType))) then begin
+      arError := epFatal+ecOutOfMemory;
+      goto ErrorExit;
+    end;
+    {Init structures}
+    FillChar(OutBuffer^, SizeOf(OutBufferType), #0);
+    FillChar(InBuffer^, SizeOf(InBufferType), #0);
+
+    {decompress doesn't need the allocations below -- so exit}
+    lhaInit := True;
+    Exit;
+  end;
+
+  {Allocate lha tree and buffer memory used for compressing}
+
+  MemAmt := MemAvail;
+  BufLimit := StepAmount;
+
+  TotalSize := Segment1Size + Segment2Size + Segment3Size + BufLimit;
+
+  if MemAmt < TotalSize then begin
+    arError := ecOutOfMemory;                                          {!!.01}
+    goto ErrorExit;                                                    {!!.02}
+  end;
+
+  {See how much the workspace can be expanded (max of 1024 pages)}
+  while (MemAmt > TotalSize + StepAmount) and
+        (BufLimit + StepAmount < 1024 * 16) do begin
+    Inc(BufLimit, StepAmount);
+    Inc(TotalSize, StepAmount);
+  end;
+
+{$IFDEF DPMI}
+  {Set HeapLimit to 0 to force a zero offset for the following allocations}
+  HeapLimit := 0;
+  if (not GetMemCheck(ActualSeg1, Segment1Size)) or
+     (not GetMemCheck(ActualSeg2, Segment2Size)) or
+     (not GetMemCheck(ActualSeg3, Segment3Size)) or
+     (not GetMemCheck(ActualBuf, BufLimit)) then
+    goto ErrorExit;
+  Seg1 := OS(ActualSeg1).S;
+  Seg2 := OS(ActualSeg2).S;
+  Seg3 := OS(ActualSeg3).S;
+  Buf := ActualBuf;
+  HeapLimit := SaveHeapLimit;  {Restore original heap limit}
+{$ELSE}
+  if (not GetMemCheck(ActualSeg1, Segment1Size)) or
+     (not GetMemCheck(ActualSeg2, Segment2Size)) or
+     (not GetMemCheck(ActualSeg3, Segment3Size)) or
+     (not GetMemCheck(ActualBuf, BufLimit)) then
+    goto ErrorExit;
+  Seg1 := OS(ActualSeg1).S;
+  if OS(ActualSeg1).O <> 0 then
+    Inc(Seg1);
+  Seg2 := OS(ActualSeg2).S;
+  if OS(ActualSeg2).O <> 0 then
+    Inc(Seg2);
+  Seg3 := OS(ActualSeg3).S;
+  if OS(ActualSeg3).O <> 0 then
+    Inc(Seg3);
+  {Force Buffer to a 0 offset}
+  Buf := ActualBuf;
+  if OS(Buf).O <> 0 then begin
+    Inc(OS(Buf).S);
+    OS(Buf).O := 0;
+  end;
+
+{$ENDIF}
+
+  {Init structures}
+  FillChar(ActualSeg1^, Segment1Size, #0);
+  FillChar(ActualSeg2^, Segment2Size, #0);
+  FillChar(ActualSeg3^, Segment3Size, #0);
+  FillChar(ActualBuf^, BufLimit, #0);
+
+  Dec(BufLimit, 24);
+  lhaInit := True;
+  Exit;
+
+ErrorExit:
+
+  arError := ecOutOfMemory;                                            {!!.01}
+
+  if ActualEDS <> nil then
+    FreeMemCheck(ActualEDS, EDSSize);
+
+  if not Compressing then begin
+    FreeMemCheck(OutBuffer, SizeOf(OutBufferType));
+    FreeMemCheck(InBuffer, SizeOf(InBufferType));
+    OutBuffer := nil;
+    InBuffer := nil;
+    {decompress doesn't need the deallocations below -- so exit}
+    Exit;
+  end;
+
+  if ActualSeg1 <> nil then
+    FreeMemCheck(ActualSeg1, Segment1Size);
+  if ActualSeg2 <> nil then
+    FreeMemCheck(ActualSeg2, Segment2Size);
+  if ActualSeg3 <> nil then
+    FreeMemCheck(ActualSeg3, Segment3Size);
+  if ActualBuf <> nil then
+    FreeMemCheck(ActualBuf, BufLimit);
+
+  ClearPointers;
+end;
+
+procedure UnLzh.lhaCleanUp(Compressing : Boolean);
+  {-Free lha tree and buffer memory}
+begin
+
+  {Dispose of space used for both compress and decompress}
+  FreeMemCheck(ActualEDS, EDSSize);
+
+  if Compressing then begin  {Dispose of heap used by compress}
+    FreeMemCheck(ActualSeg1, Segment1Size);
+    FreeMemCheck(ActualSeg2, Segment2Size);
+    FreeMemCheck(ActualSeg3, Segment3Size);
+    FreeMemCheck(ActualBuf, BufLimit + 24);
+  end else begin  {Dispose of heap used by decompress}
+    FreeMemCheck(OutBuffer, SizeOf(OutBufferType));
+    FreeMemCheck(InBuffer, SizeOf(InBufferType));
+    OutBuffer := nil;
+    InBuffer := nil;
+  end;
+
+  ClearPointers;
+end;
+
+{$L APLHA.OBJ}
+{$F+}
+procedure LhaEncode; external;
+procedure LhaDecode; external;
+
+procedure lhaPutC(W : Word);
+  {-Buffered output of one character -- Lo(W) -- called by asm routines}
+var
+  BytesWritten : Word;
+begin
+  OutBuffer^[OutBufPos] := Lo(W);
+  Inc(OutBufPos);
+  if OutBufPos > OutBufSize then begin
+    BlockWrite(NewLzh, OutBuffer^, OutBufPos-1, BytesWritten);
+    ArchiveStatus := IOResult;
+    if (ArchiveStatus = ecOk) and (BytesWritten <> OutBufPos-1) then
+      ArchiveStatus := ecDiskFull;
+    OutBufPos := 1;
+  end;
+end;
+
+function lhaGetC : Integer;
+  {-Return the next character from the input file -- called by asm routines}
+begin
+  lhaGetC := -1;
+  if InBufPos > InBufEnd then begin
+    if EndOfInFile then Exit;  {Return false if at end of file}
+    {Reload the buffer}
+    InBufPos := 1;
+    BlockRead(CurrentSelfPtr^.arFile, InBuffer^, SizeOf(InBuffer^), InBufEnd);
+    ArchiveStatus := IOResult;
+    if (InBufEnd <> SizeOf(InBufferType)) or Eof(CurrentSelfPtr^.arFile) then
+      EndOfInFile := True;
+  end;
+  {Get the next character from the buffer}
+  lhaGetC := InBuffer^[InBufPos];
+  Inc(InBufPos);
+end;
+
+function LhaProgress(BytesWritten, TotalBytes : LongInt) : Boolean;
+  {-Called by asm routines through glSPF pointer}
+begin
+  LhaProgress := CurrentSelfPtr^.ShowProgress(BytesWritten, TotalBytes);
+end;
+{$F-}
+
+procedure Lzh.lhaFreezeFile(FName : PathStr; var LH : LzhHeader);
+  {-Compress the specified file and store in the archive}
+label                                                                  {!!.01}
+  ErrorExit;                                                           {!!.01}
+var
+  FAttr : Word;
+  BytesWritten : Word;
+  S1, S2 : string;
+  I : Word;
+  RelativePos  : LongInt;
+
+begin
+  ArchiveStatus := 0;                                                  {!!.01}
+
+  FillChar(LH, SizeOf(LH), #0);
+  S1 := FName;
+  S2 := '';
+
+  glSPF := LhaProgress;  {Set progress pointer for link with asm routines}
+  CurrentSelfPtr := @Self;
+
+  HeaderSize := ShortHeaderSize;  {Start with basic header size}
+  CRC := ulCRC;
+  zCRC := CRC;
+
+  Assign(InFile, FName);
+
+  FAttr := 0;
+  GetFAttr(InFile, FAttr);
+  if DosError <> 0 then ;
+  LH.Attr := Lo(FAttr and $0020);
+
+  {Open up the file to freeze}
+  ulSaveMode := FileMode;                                              {!!.02}
+  FileMode := AproFileMode;                                     {!!.02}{!!.03}
+  Reset(InFile, 1);
+  FileMode := ulSaveMode;                                              {!!.02}
+  arError := IOResult;
+  if arError <> ecOk then                                              {!!.01}
+    Exit;                                                              {!!.01}
+
+  lzhOrigFileSize := FileSize(InFile);
+
+  {Show the filename to freeze}
+  ShowMethod(nil, S1);
+
+  ExtendedHeader := True;  {Yes, using extended header format}
+
+  {Setup for buffering}
+  OutBufPos := 1;
+  InBufPos := 1;
+  InBufEnd := 0;
+  EndOfInFile := False;
+
+  if not ShowProgress(0, lzhOrigFileSize) then begin
+    arError := ecUserAbort;                                            {!!.01}
+    goto ErrorExit;                                                    {!!.01}
+  end;
+
+  {allocate memory buffers and initialize}
+  if not LhaInit(True) then
+    goto ErrorExit;                                                    {!!.01}
+
+  LH.Level := 1;
+  LH.PathHdrSize := 0;
+  LH.OSID := MSDosID;
+  LH.OrigSize := lzhOrigFileSize;
+
+  {If the path isn't going to be stripped then}
+  {create a "PATH" extended header if needed}
+  if not arOptionsAreOn(arStripPath) then begin
+    S2 := JustPathName(S1);
+
+    {Create "Path" and "CRC" extended header}
+    if Length(S2) > 0 then begin
+      S2 := AddBackSlash(S2);
+      if S2[2] = ':' then  {strip drive letter and colon}
+        System.Delete(S2, 1, 2);
+      for I := 1 to Length(S2) do
+        if (S2[I] = '/') or (S2[I] = '\') then
+          S2[I] := #$FF;  {preceede and follow all directory names with $FF}
+
+      with LH do begin
+        PathHdrSize   := Length(S2) + 3;
+        PathHdrID     := 2;
+        ExtFPath      := S2;
+        CRCHdrSize    := 5;
+
+        CRCHdrID      := 0;
+        ExtCRC        := 0;  {calculated later}
+        NextHdrSize   := 0;
+      end;
+      FirstExtHdrSize := LH.PathHdrSize;
+
+    end;
+  end;
+
+  S1 := JustFileName(S1);
+  HeaderSize := HeaderSize + Length(S1) + SizeOf(LH.CRC) + SizeOf(LH.OSID);
+
+  {Handle empty files}
+  CodeSize := 0;
+  zCRC := 0;
+  if lzhOrigFileSize = 0 then begin
+    ExtendedHeader := False;
+    for I := 1 to Length(S2) do  {change file and path back to normal form}
+      if S2[I] = #$FF then
+        S2[I] := '\';
+    S1 := S2 + S1;
+    LH.Attr := Lo(FAttr);
+    LH.PathHdrSize := 0;
+    FirstExtHdrSize := 0;
+    HeaderSize := ShortHeaderSize + Length(S1);
+    arError := SeekRelative(NewLzh, HeaderSize + SizeOf(LH.CRC));      {!!.01}
+    CRC := zCRC;
+    ulCRC := CRC;
+    lzhCreateHeader(InFile, S1, LH);  {just a header - no data to store}
+    Close(InFile);
+    if IOResult <> 0 then {};
+    lhaCleanUp(True {compressing});                                    {!!.01}
+    Exit;
+  end;
+
+  {Move file pointer to beyond where header will (eventually) end}
+  RelativePos := HeaderSize + SizeOf(LH.PathHdrSize);
+  if LH.PathHdrSize > 0 then
+    Inc(RelativePos, LH.PathHdrSize + 5{for "CRC" extended header});
+  ArError := SeekRelative(NewLzh, RelativePos);                        {!!.01}
+  if arError <> ecOk then begin                                        {!!.01}
+    lhaCleanUp(True {compressing});                                    {!!.01}
+    goto ErrorExit;                                                    {!!.01}
+  end;                                                                 {!!.01}
+
+  FreezeId := '-lh5-';          {the method string}
+  OrigSize := lzhOrigFileSize;  {remember the original size}
+  OrigFileSize := OrigSize;                                            {!!.01}
+  CodeSize := OrigSize;
+  CompSize := OrigSize;         {start with worst case - no compression}
+
+  LhaEncode;  {compress the file}
+
+  {Asm routines may set ArchiveStatus}                                 {!!.01}
+  arError := ArchiveStatus;                                            {!!.01}
+  if arError <> ecOk then begin                                        {!!.01}
+    lhaCleanUp(True {compressing});                                    {!!.01}
+    goto ErrorExit;                                                    {!!.01}
+  end;                                                                 {!!.01}
+
+  if OutBufPos > 1 then begin  {Characters still in the buffer - purge}
+    BlockWrite(NewLzh, OutBuffer^, OutBufPos-1, BytesWritten);
+    arError := IOResult;                                               {!!.01}
+    if arError = ecOk then                                             {!!.01}
+      if BytesWritten <> OutBufPos-1 then                              {!!.01}
+        arError := ecDiskFull;                                         {!!.01}
+  end;
+
+  lhaCleanUp(True {compressing});
+  if arError <> ecOk then                                              {!!.01}
+    goto ErrorExit;                                                    {!!.01}
+
+  CodeSize := OrigSize - CompSize;
+
+  if CodeSize >= lzhOrigFileSize then begin
+    ExtendedHeader := False;
+    for I := 1 to Length(S2) do
+      if S2[I] = #$FF then
+        S2[I] := '\';
+    S1 := S2 + S1;
+    LH.Attr := Lo(FAttr);
+    FirstExtHdrSize := 0;
+    arError := SeekRelative(NewLzh, -RelativePos);                     {!!.01}
+    LH.PathHdrSize := 0;
+    HeaderSize := ShortHeaderSize + Length(S1);
+    arError := SeekRelative(NewLzh, HeaderSize + SizeOf(LH.CRC));      {!!.01}
+  end;
+
+  CRC := zCRC;
+  ulCRC := CRC;
+  lzhCreateHeader(InFile, S1, LH);
+
+ErrorExit:
+  Close(InFile);
+  if IoResult <> 0 then ;
+end;
+
+{===============================================================extracting}
+
+procedure UnLzh.lhaExtractFile(var LN : LzhNode; OutName : PathStr);
+  {-Extract the specified file from the archive}
+label                                                                  {!!.01}
+  ErrorExit;                                                           {!!.01}
+var
+  T : LongInt;
+begin
+  ArchiveStatus := 0;                                                  {!!.01}
+
+  {Initialize buffer variables}
+  ulCRC := 0;
+  CRC := ulCRC;
+  zCRC := CRC;
+  InBufPos := 1;
+  InBufEnd := 0;
+  EndOfInFile := False;
+
+  glSPF := LhaProgress;  {Set progress pointer for link with asm routines}
+  CurrentSelfPtr := @Self;
+
+  {seek to start of data}
+  Seek(arFile, LN.lnFileOfs);
+  arError := IOResult;                                                 {!!.01}
+  if arError <> ecOk then Exit;                                        {!!.01}
+
+  if LN.lnLH.HeadID <> '-lh5-' then begin
+    OrigSize := 0;
+    arError := ecUnknownMethod;                                        {!!.01}
+    Exit;
+  end;
+
+  {allocate memory}
+  if not LhaInit(False {decompressing}) then
+    Exit;
+
+  CreateOutputFile(OutF, OutName);
+  arError := IOResult;                                                 {!!.01}
+  if arError = 2 then                                                  {!!.01}
+    arError := ecOk;                                                   {!!.01}
+  if arError <> ecOk then begin                                        {!!.01}
+    lhaCleanUp(False {decompressing});                                 {!!.01}
+    Exit;                                                              {!!.01}
+  end;                                                                 {!!.01}
+
+  OrigSize := LN.lnLH.OrigSize;
+  OrigFileSize := OrigSize;                                            {!!.01}
+
+  {Calculate compressed code size by subtracting sizes of the extended headers}
+  {Some or all of the header sizes may be zero}
+  with LN.lnLH do
+    CompSize := NewSize - PathHdrSize - AttrHdrSize -
+                FNameHdrSize - CRChdrSize - NextHdrSize;
+
+  LhaDecode;  {expand the file}
+  lhaCleanUp(False {decompressing});
+
+  {Asm routines may set ArchiveStatus}                                 {!!.01}
+  arError := ArchiveStatus;                                            {!!.01}
+  if arError <> ecOk then                                              {!!.01}
+    goto ErrorExit;                                                    {!!.01}
+
+  T := MakeLongInt(LN.lnLH.Date, LN.lnLH.Time);
+  SetFTime(OutF, T);
+
+  CRC := zCRC;
+  ulCRC := CRC;
+
+  if CRC <> LN.lnLH.CRC then
+    arError := ecBadFileCRC                                            {!!.01}
+  else begin
+    SetFAttr(LN.lnLH.FName, LN.lnLH.Attr);
+    if IOResult <> 0 then ;
+  end;
+
+ErrorExit:                                                             {!!.01}
+  Close(OutF);                                                         {!!.01}
+  if IoResult <> 0 then ;                                              {!!.01}
+end;

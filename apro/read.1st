@@ -1,0 +1,1351 @@
+            Last Minute News on Async Professional 2.03
+            ===========================================
+
+This file describes changes, additions, and clarifications to Async
+Professional that do not appear in the printed documentation. Please
+print and read this file prior to using Async Professional, and save it
+for future reference. It includes the following sections, which are
+organized according to the unit/utility to which they apply:
+
+     1. New Modem Routines
+     2. APMISC
+     3. APFOSSIL
+     4. APDIGI14
+     5. APPORT
+     6. APMODEM/OOMODEM
+     7. APZMODEM/OOZMODEM
+     8. TERMWIN
+     9. APFAXCVT/OOFAXCVT
+    10. APABSFAX/OOABSFAX
+    11. APFAX12/OOFAX12
+    12. CVT2FAX/CVT2FAXO
+    13. FAX2PCX/FAX2PCXO
+    14. FAXSRVR/FAXSRVRO
+    15. PRNFAX/PRNFAXO
+    16. SHOWFAX/SHOWFAXO
+    17. SIMPSND/SIMPSNDO
+    18. SIMPRCV/SIMPRCVO
+    19. RFAX/RFAXO
+    20. APFAXPRN/OOFAXPRN
+    21. APZIP/OOZIP
+    22. APANSI/OOEMU
+    23. SIMPCOM
+    24. COMTEST/COMTESTO
+    25. DPMI.PAS
+    26. BP7 Protected mode crashes
+    27. Protected Mode DLLs
+    28. Fax Stream support
+    29. Help system
+    30. Faxmodems
+    31. Cautions when using shared IRQs
+    32. GIFDEMO Removed
+    33. Corrections to the Manual
+
+1. New Modem Routines
+=======================================================================
+Async Professional 2.03 introduces a completely new system of modem
+control, including a database of over 100 popular modems. This system
+is identical in function to the modem control functions provided in
+Async Professional for Windows and Async Professional for Delphi.
+
+The new system provides a much cleaner architecture for dealing with
+the wide variety of modems available today. Rather then deriving a new
+modem object type for each particular modem (as is required in the
+"old" modem control system) the new system provides one basic modem
+type, TModem, whose characteristics are loaded from an external
+database. Programs can present a list of all of the modems in the
+database to the user, let the user pick the closest modem type, then
+load the data for that modem.
+
+The new modem system includes several new units, examples and
+demonstration programs. The basic components are:
+
+ INI file management    -- Windows-like INI file functions
+   INI database         -- treats INI files as indexed databases
+     Modem database     -- specialized modem INI database
+ Modem control          -- modem control units using a modem whose
+                           attributes were loaded from an
+                           external database.
+
+Here is a list of all of the new files:
+
+OOP files
+---------
+OOINI.PAS    - INI file manager unit
+OOINIDB.PAS  - INI database unit
+OOMODDB.PAS  - Modem database unit
+OOMODEM2.PAS - Modem interface unit
+OPDIALER.PAS - Object Professional dialer dialog unit
+EXINIO.PAS   - Example program for OOINI
+EXINIDBO.PAS - Example program for OOINIDB
+EXMODDBO.PAS - Example program for OOMODDB
+EXDIALO.PAS  - Example program showing dialing using OOMODEM2
+EXANSWRO.PAS - Example program showing answering using OOMODEM2
+EXDIALER.PAS - Example program for OPDIALER
+MODDEMO.PAS  - Turbo Vision demonstration using OOMODDB
+OOINI.PA0    - Include file for OOINI
+
+non-OOP files
+-------------
+APINI.PAS    - INI file manager unit
+APINIDB.PAS  - INI database unit
+APMODDB.PAS  - Modem database unit
+APMODEM2.PAS - Modem interface unit
+EXINI.PAS    - Example program for APINI
+EXINIDB.PAS  - Example program for APINIDB
+EXMODDB.PAS  - Example program for APMODDB
+EXDIAL.PAS   - Example program showing dialing using APMODEM2
+EXANSWER.PAS - Example program showing answering using APMODEM2
+APINI.PA0    - Include file for APINI
+APINIDB.PA0  - Include file for APINIDB
+APMODDB.PA0  - Include file for APMODDB
+APMODEM2.PA0 - Include file for APMODEM2
+
+other files
+-----------
+MODEM2.DOC   - Documentation of modem-related units
+OPDIALER.DOC - Documentation of OPDIALER.PAS.
+MYINI.INI    - INI file used with example programs.
+AWMODEM.INI  - Modem database containing data for over 100 modems and
+               used with MODDEMO, EXMODDBO, and EXMODDB.
+
+See MODEM2.DOC for a complete description of all of the units.
+
+2. APMISC
+=======================================================================
+The following new typed constant was added to APMISC:
+
+const
+  AproFileMode : Byte = $40;     {Readonly filemode}
+
+AproFileMode is used throughout the Async Professional library. When a
+file is opened for reading only, the runtime library variable FileMode
+is set to AproFileMode to allow that file to be opened in shared mode.
+The default value, $40, specifies read-only, deny-none access, meaning
+that other programs can open that file in shared mode while Async
+Professional is reading the file.
+
+Different sharing access can be specified for these files by changing
+AproFileMode as desired. If follows the same rules as the runtime
+library variable FileMode.
+
+When using the protected mode DLLs AproFileMode cannot be accessed
+directly. Instead, applications must call the new routine
+GetAproFileMode to get the current value of AproFileMode; applications
+must call the new routine SetAproFileMode to change the value of
+AproFileMode:
+
+  function GetAproFileMode : Byte;
+  procedure SetAproFileMode(NewMode : Byte);
+
+3. APFOSSIL
+=======================================================================
+The following new option was added to APFOSSIL.PAS:
+
+  ptBufferGetChar   = $1000; {Set to use buffered reads}
+
+When this option is set (it is not, by default) APFOSSIL attempts to
+minimize calls to the FOSSIL driver by buffering received data. On the
+initial call to GetChar, APFOSSIL makes a blockread FOSSIL call to
+retrieve all available data into a local buffer, then returns the first
+character. On subsequent calls to GetChar the next buffered character
+is returned until the buffer is empty, at which time it is refilled
+with another blockread FOSSIL call.
+
+Buffering received data in this manner can significantly reduce the
+number of calls made to the FOSSIL driver. Protected mode applications
+and applications running in protected mode environments (like Windows
+or OS/2) will gain the most, due to the greater overhead in calling
+real mode device drivers in those situations.
+
+Note that this option must be set to the desired state *before* opening
+the port and can be changed *only* by changing DefFossilOptions.
+DefFossilOptions does not include ptBufferGetChar by default; to enable
+this option include the following line in your program before opening
+the port:
+
+  DefFossilOptions := DefFossilOptions or ptBufferGetChar;
+
+
+4. APDIGI14
+=======================================================================
+The following new option was added to APDIGI14.PAS:
+
+  ptBufferGetChar   = $1000; {Set to use buffered reads}
+
+When this option is set (it is off by default) APDIGI14 attempts to
+minimize calls to the XIDOS5 driver by buffering received data. On the
+initial call to GetChar, APDIGI14 makes a blockread XIDOS5 call to
+retrieve all available data into a local buffer, then returns the first
+character. On subsequent calls to GetChar the next buffered character
+is returned until the buffer is empty, at which time it is refilled
+with another blockread XIDOS5 call.
+
+Buffering received data in this manner can significantly reduce the
+number of calls made to the XIDOS5 driver. Protected mode applications
+and applications running in protected mode environments (like Windows
+or OS/2) will gain the most, due to the greater overhead in calling
+real mode device drivers in those situations.
+
+Note that this option must be set to the desired state *before* opening
+the port and can be changed *only* by changing DefDigi14Options.
+DefDigi14Options does not include ptBufferGetChar by default; to enable
+this option include the following line in your program before opening
+the port:
+
+  DefDigi14Options := DefDigi14Simple or ptBufferGetChar;
+
+5. APPORT
+=======================================================================
+The following new routines were added to APPORT:
+
+Syntax
+  procedure AppendTrace(FName : PathStr);
+
+Purpose
+  Dump the contents of the trace buffer to FName, appending if
+  FName exists.
+
+Description
+  This routine is identical in form and function to DumpTrace except
+  that FName is appended to if it already exists. FName is created
+  normally if it does not already exist.
+
+  AppendTrace is useful in situations where trace data must be
+  collected in parts over the life of the program. DumpTrace cannot be
+  used in that case since each call to DumpTrace creates a new file,
+  overwriting the file if it already exists.
+
+See Also
+  AppendTraceHex DumpTrace
+
+
+Syntax
+  procedure AppendTraceHex(FName : PathStr);
+
+Purpose
+  Dump the contents of the trace buffer to FName, appending if
+  FName exists.
+
+Description
+  This routine is identical in form and function to DumpTraceHex except
+  that FName is appended to if it exits. FName is created normally if
+  it does not already exist.
+
+  AppendTraceHex is useful in those situations where trace data must be
+  collected in parts over the life of the program. DumpTrace cannot be
+  used in that case since each call to DumpTrace creates a new file,
+  overwriting the file if it already exists.
+
+6. APMODEM/OOMODEM
+=======================================================================
+APMODEM/OOMODEM include a new typed constant:
+
+ ModemCharDelay : Word = 10;   {MSec between each outgoing cmd char}
+
+This is the millisecond delay added between each command character sent
+to the modem. The default value is 10 milliseconds, which is required
+for some Multitech modems and doesn't disturb any other modems.
+Application programs can set this to zero for modems that don't require
+a delay.
+
+
+7. APZMODEM/OOZMODEM
+===========================================================================
+The typed constant DefReceiveTimeout (described on page 372 of the
+manual) is no longer used to specify inter-character timeouts and
+header timeouts in Zmodem receives. Instead, all receive timeouts
+(except finish timeouts) use HandshakeWait, which defaults to 60
+seconds but can be changed with SetHandshakeWait (APABSPCL/OOABSPCL).
+
+8. TERMWIN
+===========================================================================
+TerminalWindow streams in Async Professional 1.xx didn't store enough
+information and never stored the port pointer properly. Since this bug
+was never reported, we can only assume that the TerminalWindow stream
+feature was never used. For this reason we did not create a Load00
+method to load version 1.xx stream files, meaning Async Professional
+2.00 TerminalWindows cannot load streams created in 1.xx.
+
+This applies to TerminalWindow streams only. All other stream files
+created by Async Professional 1.xx can be read by Async Professional
+2.0.
+
+The following new option was added to TERMWIN.PAS
+
+  twInhibitAutoLF = $00002000;  {don't advance after writing col 80}
+
+If this option is not set (it's off by default) TERMWIN automatically
+advances to the next line as though a carriage return and line feed were
+received. Since some hosts issue their own <CR><LF>, this could create the
+effect of moving down two lines rather than one.
+
+9. APFAXCVT/OOFAXCVT
+=====================================================================
+The object hierarchy for converting to and unpacking fax files was
+expanded to include a BMP file converter and a DCX file converter and
+unpacker. The complete new hierarchy is as follows:
+
+  AbstractFaxConverter
+    TextFaxConverter
+    AbstractPcxFaxConverter
+      PcxFaxConverter
+      DcxFaxConverter
+    TiffFaxConverter
+    BmpFaxConverter
+
+  UnpackFax
+    AbstractPcxUnpack
+      UnpackToPcx
+      UnpackToDcx
+
+The new abstract object AbstractPcxFaxConverter contains data and
+procedures common to PcxFaxConverter and DcxFaxConverter. Similarly,
+the new abstract object AbstractPcxUnpack contains data and code common
+to UnpackToPcx and UnpackToDcx. You will never need to create or use
+either of these abstract objects so they won't be discussed further.
+APFAXCVT contains a similar hierarchy using record pointers instead of
+objects.
+
+DCX files are multi-page PCX files. DCX files are the primary method of
+image storage used by the CAS faxmodem manager. All files received by
+CAS are stored as DCX files. DcxFaxConverter and UnpackToDcx objects
+were added to Async Professional to convert DCX files to APF files and
+to create your own DCX files.
+
+The procedure for converting DCX and BMP files to APF files is the same as
+converting other files. Simply instantiate either a DcxFaxConverter or
+BmpFaxConverter and use it just as you would a PcxFaxConverter. See
+CVT2FAX/CVT2FAXO for an example.
+
+The procedure for creating DCX files is nearly the same as the
+procedure for creating PCX files. Simply instantiate a DcxFaxConverter
+object instead of a PcxFaxConverter object and call UnpackToDcx instead
+of UnpackToPcx. See FAX2PCX/FAX2PCXO for an example.
+
+Versions of Async Professional prior to 2.03 could not properly
+generate or unpack high width (2048 pixel wide) faxes. This was fixed
+in version 2.03; high width faxes now operate as specified in the
+printed manual.
+
+The following new declarations and routines were added to
+APFAXCVT/OOFAXCVT:
+
+type
+  DcxFaxConverter =
+    object(AbstractPcxFaxConverter)
+      ...
+  end;
+
+  BmpFaxConverter =
+    object(AbstractFaxConverter)
+      ...
+  end;
+
+  UnpackToDcx =
+    object(AbstractPcxUnpack)
+      ...
+  end;
+
+
+Syntax
+  procedure ConvertFaxBmp(FC : FaxConverterPtr; FName : PathStr);
+  procedure BmpFaxConverter.ConvertFax(FName : PathStr); virtual;
+
+Purpose
+  Convert a BMP file to APF format.
+
+Description
+  This procedure is identical in form and function to the other
+  ConvertFaxXxx methods described on page 513 in the manual.
+
+
+Syntax
+  procedure ConvertFaxDcx(FC : FaxConverterPtr; FName : PathStr);
+  procedure DcxFaxConverter.ConvertFax(FName : PathStr); virtual;
+
+Purpose
+  Convert a DCX file to APF format.
+
+Description
+  This procedure is identical in form and function to the other
+  ConvertFaxXxx methods described on page 513 in the manual.
+
+Syntax
+  procedure DoneBmpConverter(var FC : FaxConverterPtr);
+  destructor BmpFaxConverter.Done; virtual;
+
+Purpose
+  Dispose of a fax conversion object or record.
+
+Description
+  This routine is identical in form and function to the other
+  DoneZzzConverter routines described on page 514 of the manual.
+
+
+Syntax
+  procedure DoneDcxConverter(var FC : FaxConverterPtr);
+  destructor AbstractPcxFaxConverter.Done; virtual;
+
+Purpose
+  Dispose of a fax conversion object or record.
+
+Description
+  This routine is identical in form and function to the other
+  DoneZzzConverter routines described on page 514 of the manual.
+  The AbstractPcxFaxConverter.Done method replaces the
+  PcxFaxConverter.Done method and is used for both PCX and DCX
+  converters.
+
+
+Syntax
+  procedure DoneUnpackToDcx(var UFP : UnpackToPcxPtr);
+
+Purpose
+  Dispose of an unpacker record.
+
+Description
+  This routine is identical in form and function to DoneUnpackToPcx
+  (described on page 523 of the manual) except that it disposes of a
+  DCX unpacker record.
+
+
+Syntax
+  procedure InitBmpConverter(var FC : FaxConverterPtr);
+  constructor BmpFaxConverter.Init;
+
+Purpose
+  Allocate and initialize a BmpConverter object or record.
+
+Description
+  This routine is identical in form and function to the other
+  InitZzzConverter routines (described on page 517 of the manual)
+  except that it prepares to convert BMP files.
+
+
+Syntax
+  procedure InitDcxConverter(var FC : FaxConverterPtr);
+  constructor AbstractPcxFaxConverter.Init;
+
+Purpose
+  Allocate and initialize a DcxConverter object or record.
+
+Description
+  This routine is identical in form and function to the other
+  InitZzzConverter routines (described on page 517 of the manual)
+  except that it prepares to convert DCX files. The
+  AbstractPcxFaxConverter.Init constructor replaces the
+  PcxFaxConverter.Init constructor and is used for both PCX and DCX
+  conversions.
+
+
+Syntax
+  procedure InitUnpackToDcx(var UFP : UnpackToPcxPtr);
+
+Purpose
+  Allocate and initialize an unpacker record.
+
+Description
+  This routine is identical in form and function to InitUnpackToPcx
+  (described on page 525 of the manual) except that it prepares to DCX
+  files instead of PCX files.
+
+
+Syntax
+  procedure UnpackFileToDcx(UFP : UnpackToPcxPtr; Fax, Dcx: PathStr);
+  procedure UnpackToDcx.UnpackFileToDcx(Fax, Dcx: PathStr);
+
+Purpose
+  Unpack a fax file to a DCX file.
+
+Description
+  This routine is identical in form and function to UnpackFileToPcx
+  (described on page 528 of the manual) except that it creates a DCX
+  file instead of a PCX file.
+
+
+Syntax
+  procedure SetMargins(FC : FaxConverterPtr; Left, Top : Word);
+  procedure AbstractFaxConverter.SetMargins(Left, Top : Word);
+
+Purpose
+  Set the left and top margins for converted files.
+
+Description
+  This routine allows you to specify the top and left margins to use
+  when converting files. The margin values are in pixels. The default
+  left margin is 50 pixels or 1/4 of an inch; the default top margin is
+  zero. The defaults are set by DefLeftMargin and DefTopMargin,
+  which are Word typed constants.
+
+  The margins apply to all file types (text, PCX, DCX, TIFF, and BMP).
+  A left margin can cause the rightmost portion of the image to be
+  lost. No check is made for this.
+
+  Some fax machines will not print close to the left edge of the page.
+  The default margin of 1/4 inch should accommodate most fax machines.
+
+Example
+    SetMargin(F, 100, 0);
+
+  Sets a left margin of 100 pixels, or 1/2 inch. When using objects, the
+  F parameter would be omitted.
+
+
+10. APABSFAX/OOABSFAX
+=====================================================================
+Although the manual doesn't state this explicitly, it is possible to
+send just a cover page. When using AddFaxEntry, pass an empty string
+for FName and the name of the cover file in Cover. When supplying your
+own NextFax function, return an empty string for FName and the name of
+the cover file in Cover. FaxTransmit replaces the tokens in the cover
+text file with the proper text, converts the cover page to fax format,
+and transmits just the cover page. In this case, GetFaxName returns an
+empty string and the FName parameter passed to your logging procedure
+is an empty string.
+
+The following two constants were added to the values that can be
+returned by GetFaxProgress:
+
+  fpBusyWait -  The faxmodem received a busy signal after dialing and
+                is waiting before dialing again. This value is
+                returned only if SetConnectAttempts was called to
+                enable the automatic busy/retry feature.
+
+  fpNoConnect - The faxmodem received 'NO CONNECT' after dialing.
+                This usually means that the call was not picked up by
+                a faxmodem or fax machine.
+
+The following new option was added to APABSFAX/OOABSFAX:
+
+  afNoSoftwareFlow    = $0010; {Don't use software flow control in C1/2}
+
+By specification, all faxmodems must support software flow control, so
+software flow control is built into APFAX12/OOFAX12. If your faxmodem
+supports hardware flow control and you want to use it, enable hardware
+flow control before calling FaxTransmit/FaxReceive and turn software
+flow control off by setting afNoSoftwareFlow. This option is off by
+default, meaning that software flow control is automatically used by
+APFAX12/OOFAX12.
+
+The following routine was added to APABSFAX/OOABSFAX:
+
+Syntax
+  procedure SetDestinationDir(FP : FaxRecPtr; Dest : PathStr);
+  procedure AbstractFax.SetDestinationDir(Dest : PathStr);
+
+Purpose
+  Set a destination directory for received fax files.
+
+Description
+  This routine allows you to specify the drive:\directory (Dest) for
+  storing received fax files. If only a drive is specified (e.g., 'D:'),
+  the files are stored in the current directory for that drive. If
+  SetDestinationDir is not called, received fax files are stored in the
+  current directory.
+
+  Dest sets the internal field DestDir, which is used by the built-in
+  FaxName functions, FaxNameMD and FaxNameCount. User-supplied FaxName
+  functions should also reference the internal field DestDir. If DestDir
+  is not blank, it should be added to the front of the returned file
+  name.
+
+Example
+    SetDestinationDir(F, 'C:\INBOX');
+    FaxReceiveC12(F);
+
+  Sets C:\INBOX as the directory to store incoming fax files. When
+  using objects, the F parameter and C12 suffix would be omitted.
+
+11. APFAX12/OOFAX12
+=====================================================================
+Versions of Async Professional prior to 2.03 could not send or receive
+high width (2048 pixels) faxes. This was fixed in 2.03; sending and
+receiving high width faxes now operates as specified in the printed
+manual.
+
+The following new routines were added to APFAX12/OOFAX12:
+
+Syntax
+  procedure SetInitBaudRate(FP : FaxRecPtr;
+                            InitRate, NormalRate : LongInt);
+  procedure C12AbstractFax.SetInitBaudRate(InitRate,
+                                           NormalRate : LongInt);
+
+Purpose
+  Set the baud rate to use when sending initialization commands to
+  the faxmodem.
+
+Description
+  By default, APFAX12/OOFAX12 doesn't set or make any adjustments to the
+  baud rate of the com port it is using. In almost all cases this will
+  be 19200 baud. In some cases, however, this isn't adequate. Older
+  24/96 modems (2400 data, 9600 fax), require that the initialization
+  commands be sent at 2400 baud. SetInitBaudRate provides the ability to
+  do this.
+
+  If SetInitBaudRate isn't called all commands and data are sent to
+  the modem at the existing port baud rate. If SetInitBaudRate is
+  called, all initialization commands are sent at InitRate baud.
+  FaxTransmit/FaxReceive switch the baud rate back to the original
+  port baud rate after all initialization commands are sent.
+
+  NormalRate is optional; in most cases it should be set to zero,
+  which means ignore. If it is zero, SetInitBaudRate calls the port's
+  GetLine routine, with FromHardware set to False, to determine the
+  original baud rate. This approach is 100% reliable for all device
+  layers *except* APINT14. If using the InitPortKeep routine of
+  APINT14 you must specify a NormalBaud value, usually 19200, so that
+  FaxTransmit/FaxReceive will switch bauds properly
+
+  Note that InitRate applies to all routines that send commands to the
+  modem (GetModemFeatures, GetModemInfo, and so on).
+
+Example
+    SetInitBaud(F, 2400, 0);
+    FaxTransmitC12(F);
+
+  Sets 2400 baud as the baud rate to use when sending commands to the
+  modem. FaxTransmitC12 sends all initialization commands at 2400 and
+  switches back up to the original baud rate just before dialing the
+  phone.
+
+Syntax
+  function C12AbstractFax.GetModemClassSupportEx(
+                          var Class1, Class2, Class2_0 : Boolean;
+                          Reset : Boolean) : Boolean;
+  function GetModemClassSupportEx(var Class1, Class2, Class2_0 : Boolean;
+                                  Reset : Boolean) : Boolean;
+
+Purpose
+  Determine the modem fax class, including class 2.0 modems.
+
+Description
+  This routine replaces the existing routine GetModemClassSupport, which
+  checked only for class 1 and class 2 support. This new routine checks
+  for class 1, class 2 and class 2.0 support.
+
+  The booleans Class1, Class2 and Class2_0 return True if the faxmodem
+  supports that class, False otherwise. If Reset is True the modem is
+  reset by toggling the DTR line and flushing the input buffer.
+
+  The old routine, GetModemClassSupport, is still provided for
+  compatibility. However, new programs should call
+  GetModemClassSupportEx instead.
+
+Example
+  var
+    C1, C2, C2_0 : Boolean;
+  ...
+  if GetModemClassSupportEx(F, C1, C2, C2_0, False) then
+    {report the supported classes}
+
+  Reports the supported fax classes.
+
+12. CVT2FAX/CVT2FAXO
+=====================================================================
+
+CVT2FAX/CVT2FAXO has three new command line options:
+
+  /D     Convert from DCX (mono) to fax
+  /M     Convert from BMP (mono) to fax
+  /W     Generate 2048 pixel wide fax
+
+Use the /D and /M options to convert DCX or BMP graphics files to APF
+files.  A file extension of .DCX or .BMP is assumed (depending on the
+option used).
+
+Use the /W option to generate "high width" faxes. High width faxes are
+2048 pixels wide; standard faxes are 1728 pixels wide. Note that many
+standard fax machines and fax software cannot send or receive high
+width faxes; use standard width faxes unless you are sure that your
+hardware and the hardware you will exchange faxes with can support high
+width.
+
+13. FAX2PCX/FAX2PCXO
+=====================================================================
+FAX2PCX/FAX2PCXO has a new command line option:
+
+  /D     Output to a DCX file
+
+Use this option to create a single page DCX file instead of a PCX file.
+
+
+14. FAXSRVR/FAXSRVRO
+=====================================================================
+FAXSRVR/FAXSRVRO now uses an INI file for all configurable items except
+one: the comport. The comport may still be specified on the command
+line:
+
+  FAXSRVR [comport]
+
+  where comport is the number of the communications port to use
+
+All other options are specified in an INI file named FAXSRVR.INI for
+FAXSRVR.EXE and FAXSRVRO.INI for FAXSRVRO.EXE. This INI file includes
+all configurable options described in the manual, plus several new
+options. All options are described below in this sample INI file:
+
+; *** FAXSRVR.INI ***
+[Port]
+;Com port to use (default is 2). Port is the number of the com port to
+;be used. Valid values are 1 through 4
+Port=2
+
+;Port speed (default is 19200). Sets the baud rate between the PC and
+;the Modem
+Speed=19200
+
+[Modem]
+;Modem init string (default is ""). Allows you to specify an
+;additional modem initialization string that is sent to the modem
+;before the default initialization string.
+InitStr=ATM0V1X4
+
+;Baud rate used to send commands to the modem (0 = use port speed)
+;FAXSRVR uses the baud rate specified by the "Speed" setting, or 19200
+;baud if the "Speed" setting isn't used, to send all commands and
+;data to the modem.  This is sometimes a problem for modems that only
+;support 2400 baud data.  Older versions of these types of modems don't
+;always accept initialization commands (e.g., ATE0) at 19200. Instead,
+;they require those commands to be sent at 2400 baud. If using
+;FAXSRVR on such a modem, specify CommandBaud=2400 in the [Modem]
+;section of the ini file. FAXSRVR will then use 2400 baud for
+;initialization, switching up to 19200 baud as the last step in
+;preparing the modem.
+CommandBaud=0
+
+[Fax]
+;Attempt to connect at this speed (default is 14400). Sets the
+;connection speed between the two modems. This is an initial BPS rate
+;that the local modem will try to achieve. If the remote modem doesn't
+;support this speed, it will be negotiated down. Warning: no check is
+;made to ensure that the BPS rate you specify here is supported by your
+;modem. If it is not supported, FaxSrvr may fail during the
+;initialization step.
+BaudRate=14400
+
+;ID of this station -- sent to remote fax (default is ""). The station
+;ID set by assigning a string to the "StationID" setting can contain up
+;to 20 characters and is used to identify the receiving fax station. The
+;Class 1 and Class 2 specifications indicate that the station ID should
+;contain just your telephone number and therefore limit it to just the
+;digits 0 through 9 and space. However, FaxSrvr does not filter the
+;characters you specify, and most faxmodems will accept all characters.
+;If you don't set the station ID , it is blank, which is acceptable, but
+;the sender will not receive an identification of you station.
+StationID=
+
+;storage path for received fax files (default is program directory)
+FaxPath=
+
+;seconds to wait for next send attempt (default is 300 seconds). This
+;is the amount of time in seconds that FaxSrvr will delay before
+;attempting to send a fax that has failed a previous send attempt.
+RetryWaitTime=300
+
+;number of times to attempt to send the fax (default is 5)
+MaxFaxRetries=5
+
+;"Yes" to erase the fax command files after processing (default is
+;to rename)
+EraseCmdFiles=Yes
+
+;path for command files (.CMD) (default is program directory)
+CmdFilePath=
+
+;On some modems, a hangup result of 0004 seems to indicate that either
+;the dialed number is invalid or something is wrong with the phone
+;line. The default value of "Yes" allows a second attempt. Use "No"
+;to avoid a second attempt.
+Hangup4Retry=No
+
+[Printing]
+;printer port (default is "PRN")
+PrintDest=PRN
+
+;printer and resolution to use (default is HP at 150dpi)
+;options are HP150, HP300, EPSON, or EPSON24
+Printer=HP300
+
+;suppress blank areas in received fax (default is "No")
+SuppressBlanks=Yes
+
+;maximum blank area to print if SuppressBlanks is "Yes" (default is 60)
+;smaller values reduce the length of most fax pages but may compress
+;some blank areas that were intended for manual entry.
+BlankSize=40
+
+;scale output (default is "Yes")
+ScaleOutput=Yes
+
+;use PCL5 commands to compress (default is "No")
+PCL5Commands=Yes
+
+;option to suspend printing received fax files on startup (default is
+;"No")
+PrintSuspended=No
+<< End of FAXSRVR.INI >>
+
+Starting with 2.02, FAXSRVR/FAXSRVRO has the ability to send fax files as
+well as receive them. Because of this new feature, FAXSRVR/FAXSRVRO was
+split into several source files and now has several ancillary files:
+
+  FAXSRVR  PAS - Main program {procedural)
+  FAXSRVRO PAS - Main program (object-oriented)
+  FSCLIST  PAS - Command file linked-list unit
+  FSINI    PAS - INI file handling routines
+  FSMISC   PAS - General utility routines
+  TXBROWSE PAS - Text file browser unit
+
+  FAXSRVRO INI - Sample INI file for FAXSRVRO
+  FAXSRVR  INI - Sample INI file for FAXSRVR
+  SAMPLE   CMD - Sample fax command file
+
+Information about fax files to transmit is provided by external command
+files (.CMD files). These command files contain the name of the file(s)
+to send, the fax number to dial, and can also specify a cover page,
+station ID and other options. The following shows a sample command
+file (SAMPLE.CMD), with comments to explain each item:
+
+;** one CMD file for each fax request
+;** currently only one possible section name [FaxSend]
+
+[FaxSend]
+;up to 20 full path and filenames to send as the fax
+;multiple fax files are combined and sent as one (multi-page) fax
+;prepend each path/filename with an "*" to indicate that it should
+;be deleted after a successful send.
+File1=
+File2=
+File3=
+File4=
+File5=
+
+;the Station ID to use for this fax send (default is ID of FaxSrvr)
+SenderID=
+
+;the full path and file name of the cover page file (default is none)
+;a "cover page only fax" can be sent by not specifying any file names
+;above, and by specifying a cover page file name below.
+CoverPage=
+
+;usually the name of the sender (replaces $F in cover.txt}
+;not used if a cover page is not specified (default is none)
+Sender=
+
+;usually the name of the recipient (replaces $R in cover.txt}
+;not used if a cover page is not specified (default is none)
+Recipient=
+
+;true to print a header line at the top of the fax (default is "No")
+UseHeaderLine=No
+
+;text to place in the header line if selected (replaces the $S tag)
+;used only if UseHeaderLine is true (default is none)
+HeaderText=Attn: xxxxxxxxxxxxx
+
+;baud rate used to send the fax (deafult is FaxBaudRate, this
+;is set in the FaxSrvr ini file which defaults to 14400)
+SendBaudRate=14400
+
+;the complete phone number (no default)
+Phone=260-7151
+
+;date to attempt to send the fax -- (default is asap)
+;format mm/dd/yy or mm/dd/yyyy (01/31/95 or 01/31/1995)
+Date=
+
+;time to send the fax -- (default is midnight)
+;format hh:mm (24 hour format 14:00 for 2:00pm)
+Time=
+
+<< End of SAMPLE.CMD file >>
+
+Immediately upon startup and every five minutes thereafter,
+FAXSRVR/FAXSRVRO checks the directory specified by CmdFilePath for new
+files with the extension CMD, reads the information from the command
+files and stores it in an internal queue. The number of pending fax
+send request is only limited by the amount of available memory.
+
+It then checks the transmit queue to see if it is time to send a fax.
+If necessary, multiple fax files are merged into one. FAXSRVR/FAXSRVRO
+then dials the specified number and attempts to send the fax. If the
+fax is sent successfully the command file is deleted; otherwise the fax
+is re-queued to for another try in five minutes. After three failures
+FAXSRVR/FAXSRVRO gives up, dumps a trace file, prints an error report,
+and renames the command file to an extension of CM$.
+
+
+15. PRNFAX/PRNFAXO
+=====================================================================
+PRNFAX/PRNFAXO have three new command line options:
+
+  /2        Use Epson 24-pin output
+  /5        Use HP PCL5 print commands (default = PCL4)
+  /L        Enable blank line suppression (HP only)
+
+Support for Epson 24-pin dot matrix printers was added. Use the /2
+option instead of the /E option to format output for a 24-pin printer.
+
+Support for HP PCL4 compatible printers was added and that is now the
+default. Use the /5 option if you need PCL5 print commands.
+
+/L enables a paper saving option called "blank line suppression." This
+causes PRNFAX/PRNFAXO to watch for horizontal blank areas larger than
+2/10ths inch and shrink them to no less than 2/10ths inch.
+
+The /C option documented in the manual no longer exists.
+
+
+16. SHOWFAX/SHOWFAXO
+=====================================================================
+Added new scaling option that reduces the width of the fax image so
+that it fits the screen (without scaling the width of the fax image is
+greater than the width of the screen).
+
+Scaling is off by default. It is enabled by supplying /S on the
+SHOWFAX/SHOWFAXO command line.
+
+Added new 180 degree rotation command that will rotate an individual
+page 180 degrees.  Press the R key while viewing for the rotation.
+
+17. SIMPSND/SIMPSNDO
+=====================================================================
+SIMPSND/SIMPSNDO have a new command line option
+
+  /L LowBaud  Set low baud rate for initialization commands
+
+/L, usually with the value 2400, is required for older 24/96 modems
+(modems that have a top data speed of 2400 baud). Some of these modems
+require the modem initialization commands to be sent at 2400 baud
+instead of the higher baud, usually 19200, used for sending fax
+commands and data.
+
+18. SIMPRCV/SIMPRCVO
+=====================================================================
+SIMPRCV/SIMPRCVO have new command line options
+
+  /X          Pick up fax connection already in progress
+  /L LowBaud  Set low baud rate for initialization commands
+
+Use /X if another program answered an incoming call, determined that
+it is a fax call, and wants to run SIMPRCV/SIMPRCVO to handle the
+incoming fax. SIMPRCV/SIMPRCVO assume that they are answering a call
+in progress and that the faxmodem has already sent the +FCON. In this
+mode SIMPRCV/SIMPRCVO use the "one fax" option to receive just one
+incoming fax and then exit.
+
+Class 2 faxmodems always send the string +FCON after they determine
+that the incoming call is a fax call. Some faxmodems send the string
+CED or FAX before sending +FCON. The program answering the call can use
+any of these responses to determine if the call is a fax call.
+
+The bonus program FAXDATA illustrates how /X can be used.
+
+Note: This option works for Class 2 modems only.
+
+See SIMPSND/SIMPSNDO for a description of LowBaud.
+
+19. RFAX/RFAXO
+=====================================================================
+RFAX/RFAXO have a new command line option
+
+  /L LowBaud  Set low baud rate for initialization commands
+
+See SIMPSND/SIMPSNDO for a description of LowBaud.
+
+20. APFAXPRN/OOFAXPRN
+=====================================================================
+These units are used by FAXSRVR/FAXSRVRO, PRNFAX/PRNFAXO, and TPFAX
+(the OPRO based demo) to provide fax printing capabilities for HP and
+Epson compatible printers. See the appropriate source file for more
+information.
+
+21. APZIP/OOZIP
+====================================================================
+Added support for PkZip's version 2.0 Deflate/Inflate methods.
+Applications currently using the default, "cmBestMethod" compression
+method will require no changes, the new Deflate method will be used
+automatically.
+
+A new compression mode, cmDeflate, was added along with one interfaced
+procedure:
+
+  procedure SetDeflateLevel(Level : Byte);
+
+Allowable values for Level are from 1 to 9. Level 1, corresponds to
+PkZip's DeflatF method, Level 9 to DeflatX, and Level 5 (the default)
+to DeflatN. Call this routine just prior to performing a compression
+operation.
+
+22. APANSI/OOEMU
+====================================================================
+The APRO manual and the units APANSI and OOEMU describe a difference
+between DOS/ANSI emulation and VT100 emulation where the K and J escape
+sequences are interpreted differently if they don't include a
+parameter. This is incorrect. Both DOS/ANSI and VT100 treat
+parameter-less K/J sequences the same.
+
+Because older programs may depend on the existing behavior when
+UseVT100Mode is False or when teMapVT100 is not set, these units have
+not been changed. Note, however, that in almost all cases your programs
+should request VT100-style emulation. In APANSI this is done by setting
+UseVT100Mode to True; in OOEMU, by enabling the teMapVT100 option.
+
+23. SIMPCOM
+====================================================================
+SIMPCOM now accepts a command line override of its com port.
+
+SIMPCOM usually reads the com port information out of its configuration
+file SIMPCOM.DAT. The file we supply uses COM1. If SIMPCOM doesn't find
+a configuration file it defaults to COM1 as well.  A side effect of
+this behavior is that if a machine doesn't have a COM1 port it can
+never run SIMPCOM.
+
+The SIMPCOM command line syntax is
+
+  SIMPCOM <ConfigFilename> <PortNum>
+
+    ConfigFilename is the name of a configuration file that SIMPCOM should
+    use (if other than SIMPCOM.DAT).
+
+    <PortNum> is one of the digits 1..8, indicating which com port
+    SIMPCOM should open
+
+If only one command line option is provided it is assumed to be a com
+port if it is a single digit between 1 and 8; otherwise it is assumed
+to be a configuration file.
+
+
+24. COMTEST/COMTESTO
+====================================================================
+COMTEST/COMTESTO have the following new command line option:
+
+/Q Irq    2 - 15 [default = auto]
+
+Use this option to specify a non-standard IRQ for a com port. If /Q is
+omitted COMTEST/COMTESTO assume that the port is using the standard
+IRQ.
+
+
+25. DPMI.PAS
+====================================================================
+The DPMI.PAS unit is shipped with several other TurboPower Software
+products in addition to Async Professional: Turbo Professional and
+Object Professional. The unit's interface has been changed over time,
+resulting in the possibility of 'unit version mismatch' errors from the
+compiler depending on which DPMI unit it finds. To avoid this error you
+should always use the newest copy of DPMI -- in this case it is most
+likely the copy of DPMI you just got in Async Professional.  Delete any
+existing copies of DPMI.TPU or DPMI.TPP and re-make your application.
+
+Obviously, it you later receive an update to Turbo Professional or
+Object Professional you would want to use *their* version of DPMI.PAS
+and delete the Async Professional copy.
+
+
+26. BP7 Protected mode crashes
+=====================================================================
+The following describes a problem noticed with versions of RTM.EXE
+dated 3-9-93 or before. If you are using a later version of RTM.EXE the
+discussion below does *not* apply.
+
+Several people have documented a problem in BP7 pmode programs that
+install pmode hardware interrupt service routines. The symptom of the
+problem is random and otherwise unexplainable "unhandled exception D"
+errors. The address is usually 0020:<something>. Under some versions of
+QDPMI, the program hangs instead of displaying the error message.  The
+problem seems to occur only when the program calls a memory
+allocation/deallocation routine that generates a DPMI call *and* that
+call is interrupted by a hardware interrupt.
+
+We mention this problem because Async Professional installs a protected
+mode ISR to handle serial input/output, hence any program built using
+Async Professional susceptible to the problem. Borland has acknowledged
+the problem but hasn't provided any details about it nor suggested when
+a solution might be available. So, for the foreseeable future at least,
+pmode applications programs must take steps to avoid this problem
+themselves. When using Async Professional, the basic approach is to
+avoid allocating or deallocating memory when serial I/O might be taking
+place.
+
+This can be accomplished by moving all memory allocations in your
+program to locations where you are sure no serial I/O is occurring. To
+aid in this process we've moved all memory allocation/deallocations in
+Async Professional, except where noted below, to constructors and
+destructors. Your programs simply need to assure that no I/O is taking
+place when calling these routines. In some cases you may know when this
+is appropriate for your applications. In other cases you may need to
+impose flow control or turn off interrupts around these routines.  But
+be careful when turning interrupts off! DPMI memory allocations can
+take a millisecond or more even on fast machines -- resulting in lost
+received characters even as low as 9600 baud.
+
+Here's a list of non constructor/destructor routines that allocate or
+deallocate memory. You are responsible for making sure it's safe to
+call these routines:
+
+  ** General **
+  APMISC:
+    StringToHeap
+    DisposeString
+  APPORT:
+    InitTracing
+    DumpTrace
+  APUART
+    InitEventLogging
+    DumpEvents
+  APCOM/OOCOM
+    EnableStatusBuffering
+    DisableStatusBuffering
+
+  ** Protocols **
+  APABSPCL/OOABSPCL
+    MakeFileList
+    apCRC32ofFile
+
+  ** Faxing **
+  APFAXCVT/OOFAXCVT
+    LoadHPFont
+    ConvertFax/ConvertFaxToTiff (only when converting TIFF files)
+  APABSFAX/OOABSFAX
+    AddFaxEntry
+    ClearFaxEntries
+  APFAXCAS/OOFAXCAS
+    GetEventStatus
+    GetExternalDataBlock
+    MoveReceivedFile
+    SubmitSingleFile
+    SubmitTask
+
+  ** Archiving **
+  APARCHIV/OOARCHIV
+    AppendFileName
+    AppendFileMask
+    Append
+  APZIP/OOZIP
+    Nearly all operations will cause memory allocations
+  APLZH/OOLZH
+    Nearly all operations will cause memory allocations
+
+If the routine isn't listed above you can assume it is safe to call
+even when hardware interrupts are occurring. You should *always* assume
+that allocations and deallocations are taking place when calling a
+constructor or destructor.
+
+Another, more generalized and foolproof, approach is available if you
+want to avoid the hassle of figuring out exactly when it's safe or not
+safe to perform allocations. We know that the problem occurs only when
+memory allocations/deallocations cause the heap sub-allocator to call
+DPMI. Hence, the problem can be avoided by pre-allocating all the
+memory your program needs at once, then de-allocating all but enough to
+keep the sub-allocator blocks from being released.
+
+For example, let's say a program requires 100K of heap space and the
+biggest single block it will allocate is 8K. At startup, the program
+would set HeapLimit to a value larger than the largest block: say 16K
+for this example. Then in a loop until 100K, allocate an 8 byte block
+and then a 16K-8 byte block. When finished allocating all memory the
+program would immediately deallocate all of the 16K-8 byte blocks. The
+end result of this is large pool of nearly empty blocks in the
+sub-allocator. Subsequent calls to GetMem or New *won't* require a DPMI
+call -- they'll be satisfied from this pool. Naturally, this requires
+some careful calculations on your part to be sure that you've allocated
+enough memory and that the biggest block your program needs can be
+allocated from one of the pre-allocated blocks.
+
+27. Protected Mode DLLs
+=====================================================================
+Section 2.F of the manual (Protected Mode DLLs) neglects to include the
+fax DLL in its list of Async Professional DLLs:
+
+  APFAXD.DLL  - fax convert/send/receive routines
+
+This DLL is created and used just like the other DLLs described in
+Section 2.F.
+
+The compression DLL, APCMPD.DLL, has been broken into two DLLs:
+
+  APLZHD.DLL - LZH compression and decompression routines
+  APZIPD.DLL - Zip compression and decompression routines
+
+The interface unit, APCMPD.PAS was also split into two interface units,
+APLZHD.PAS and APZIPD.PAS.
+
+Although this change places the routines in APMISC and APARCHIV in both
+DLLs, we felt that in most cases only one or the other of these DLL's
+would be used for most applications. It's still possible to use both
+Lzh and Zip routines in the same application by including both
+interface units in the uses list and including both DLLs with your
+application.
+
+28. Fax Stream Support
+=====================================================================
+Although not mentioned in the manual, all objects in OOFAXCVT,
+OOABSFAX, OOFAX12 and OOFAXCAS support Object Professional style
+streams. To activate, enable UseStreams in OPDEFINE.INC and UseOPRO in
+APDEFINE.INC.
+
+Each object has a Load constructor and a Store method available to it
+although some objects inherit these methods rather than declaring their
+own.
+
+The following stream registration procedures are provided:
+
+  OOFAXCVT:
+    procedure AbstractFaxConverterStream(SPtr : IdStreamPtr);
+    procedure TextFaxConverterStream(SPtr : IdStreamPtr);
+    procedure PcxFaxConverterStream(SPtr : IdStreamPtr);
+    procedure DcxFaxConverterStream(SPtr : IdStreamPtr);
+    procedure TiffFaxConverterStream(SPtr : IdStreamPtr);
+    procedure UnpackFaxStream(SPtr : IdStreamPtr);
+    procedure UnpackToPcxStream(SPtr : IdStreamPtr);
+    procedure UnpackToDcxStream(SPtr : IdStreamPtr);
+
+  OOABSFAX:
+    procedure AbstractFaxStream(SPtr : IdStreamPtr);
+
+  OOFAX12:
+    procedure C12AbstractFaxStream(SPtr : IdStreamPtr);
+    procedure C12SendFaxStream(SPtr : IdStreamPtr);
+    procedure C12ReceiveFaxStream(SPtr : IdStreamPtr);
+
+  OOFAXCAS:
+    procedure CasFaxStream(SPtr : IdStreamPtr);
+
+Examples of Load and Store method usage for all objects are provided in
+the demonstration programs CVT2FAXO, SHOWFAXO, FAX2PCXO, SIMPRCVO, and
+SIMPSNDO. Each of these programs contains a CreateStream procedure that
+illustrates the steps required to create a stream. Each program also
+includes a LoadStream procedure that illustrates the steps required to
+load that same stream. This code is activated by removing the period in
+front of the TestStreams define at the top of each of these programs.
+
+29. Help System
+=====================================================================
+A new utility named MEGAPAGA.EXE is now installed in the \APRO\HELP
+subdirectory when you install the APRO help system. If you run this
+utility, it merges page numbers from the APRO 2.0 manual into all
+relevant topics of the help text. It reads the supplied file
+APROIND.TXT to supply a map between the topic names and the manual
+pages. MEGAPAGA.EXE creates new help text files with the extension
+.NEW, leaving the previous .TXT files unchanged. To use the new files,
+run MAKEHELP APRO.NEW to create a new version of APRO.HLP.
+
+MEGAPAGA.EXE is a modified version of Scott Samet's MEGAPAGE program,
+which was originally developed for use with Object Professional.
+
+30. Faxmodems
+======================================================================
+TurboPower Software tests the Async Professional fax routines on
+faxmodems from 8 different vendors. Async Professional users (that have
+reported back to us) have expanded this list to 14 different vendors.
+The text file MODEM.DOC in the \BONUS subdirectory lists all of the
+faxmodems directly tested by TurboPower Software as well as those
+tested by others during the beta cycle. (Since not all beta testers
+report in, the actual list is probably larger.)
+
+Please be sure to review MODEM.DOC for information about your faxmodem
+or faxmodems others might use with your software.
+
+Of special note here are Multitech modems. Older models MT224BAF and
+MT1432BL (pre 1993) are known to require a brief delay between each
+character in a command string sent to the modem. Async Professional
+does *not* normally insert this delay because it violates the tight
+timing requirements required by most other Class 1 modems. Application
+programs can add short delays by setting the typed constant
+InterCharDelay in APABSFAX/OOABSFAX to the desired millisecond delay.
+The delay can be quite short: 10 milliseconds works fine for the
+Multitech modems mentioned above.
+
+31. Cautions when using shared IRQs
+=======================================================================
+
+The DigiBoard Non-Intelligent Boards topic in subsection 4.E of the manual
+describes how to enable shared-IRQ for hardware, like non-intelligent
+DigiBoards, that supports shared IRQs. It neglects to describe, however,
+a potentially fatal lockup that can occur with shared IRQs. This is not
+a bug, but is simply a situation that shared-IRQ programs must be
+prepared to handle.
+
+The lockup occurs on the *second* run of the program. Fortunately,
+the solution is quite simple. Either assure that the first port opened
+is always the last port closed or have the program itself save the
+appropriate vector upon start up and restore it upon shutdown.
+
+The explanation of the problem is quite a bit more complex, but here it
+is for those that are interested. To understand the lockup, we need to
+mention two facts: one, whenever a port is opened the original vector
+is saved and when that port is closed the vector is restored. And two,
+when shared IRQs are used, APRO's ISR examines the orginal vector to
+determine if another port is using this same IRQ. If the segment of the
+original IRQ is the same as the current CS register, APRO's assumes the
+current port is sharing the same vector as the previous port and jumps
+to the saved vector.
+
+Given these two facts, we know that if the last port closed for a
+particular IRQ is *not* the first port that was opened for that IRQ,
+then the restored vector will still point to the APRO ISR rather than
+the original vector (because only the first port opened saved the
+"original" vector, all subsequent ports saved vector of the previously
+opened port.
+
+Further, if the shared-IRQ program is run once, then run again, even
+the first port's "orginal" vector will point to the APRO ISR address.
+(It will point to the vector address of the previous run of the
+program, but if no new TSRs were loaded then the second run of the
+program will start at the same address as the first run.
+
+Which finally brings us to the problem: In the second run of the
+program when the first-opened port finally is chained to by the
+subsequently-opened ports, it examines its "original" vector to
+determine whether or not to chain. Because that vector still points to
+the current data segment, the ISR ends up jumping to itself in an
+endless loop -- resulting in a hopelessly locked program.
+
+32. GIFDEMO Removed
+=======================================================================
+
+On page 406 the printed manual refers to GIFDEMO, a bonus unit for
+receiving and displaying GIF files. Due to legal issues surrounding
+the GIF file format, this demonstration program has been removed.
+
+GIF stands for Graphics Interchange Format and is a graphics file
+format developed and championed by CompuServe. The GIF format includes
+compression of the graphics image using the LZW compression algorithm.
+Unisys holds a patent on this algorithm and recently began enforcing
+its patent, requiring royalties from the author of any program that
+uses LZW. Since GIF uses LZW, any program that uses GIF must also pay
+royalties to Unisys. To avoid any potential liabilities, we felt we had
+no choice but to stop making GIFDEMO available.
+
+33. Corrections to the Manual
+=======================================================================
+
+p.  155     The second line of the example should use Com1 instead of
+            Com4. The second line is also missing two parameters to
+            the init constructor: InSize and OutSize.
+p.  180     The 2nd line of the mid-page example should be
+            "case (AsyncStatus mod 10000) of "
+p.  188     The reference entry for BlockReady should state that
+            BlockReady works with APUART only. Calling BlockReady for
+            any other device
+            layer generates ecNotBuffered.
+p.  204     The example for GetBlockDirect should reference InBuffUsed,
+            not OutBuffUsed.
+p.  211     In the first example the comport and baud rate parameters
+            should be reversed.
+p.  267     The second argument to the example for HangupModem should be
+            zero, not -1.
+p.  340     Should state that SetDestinationDirectory cannot be called
+            from an AcceptFile procedure.
+p.  449     The Device Status Report sequence is #27'[6n.
+p.  578     The examples for InitC12ReceiveFax and InitC12SendFax use
+            InitFast to initialize the port. InitCustom should be used
+            instead because the buffers provided by InitFast are too
+            small.
+p.  625     The final line on the page should start "The /H parameter "
+p.  746     The second paragraph should start "If you don't have an
+            EISA or MCA machine..."
+

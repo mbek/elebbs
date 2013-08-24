@@ -1,0 +1,2092 @@
+  function SeekRelative(var F : File; L : LongInt) : Word;
+    {-Skip the next L bytes in F}
+
+  {This function can seek to a location before the start of the file. No}
+  {error is returned for this situation.  Any subsequent reads or writes}
+  {to the file will return an error.}
+
+  var
+    Regs : Registers;
+    Handle : Word absolute F;
+  begin
+    SeekRelative := 0;
+    with Regs do begin
+      AX := $4201;         {move file pointer function, relative to current pos}
+      BX := Handle;        {file handle}
+      CX := LH(L).H;       {CX has high word of delta}
+      DX := LH(L).L;       {DX has low word}
+      MsDos(Regs);
+      if Odd(Flags) then
+         SeekRelative := AX;
+    end;
+  end;
+
+  constructor LzhNode.Init(var LH : LzhHeader; FO : LongInt);
+    {-Initialize node}
+  begin
+    lnNext := nil;
+    lnLH := LH;
+    lnFileOfs := FO;
+    lnTagged := True;
+  end;
+
+  destructor LzhNode.Done;
+    {-Destroy node}
+  begin
+  end;
+
+  procedure LzhNode.SetTag(On : Boolean);
+    {-Tag/untag this node}
+  begin
+    lnTagged := On;
+  end;
+
+  constructor LzhFileList.Init;
+    {-Initialize list}
+  begin
+    lfHead := nil;
+    lfTail := nil;
+    lfCount := 0;
+  end;
+
+  destructor LzhFileList.Done;
+    {-Destroy list}
+  var
+    CurP, NextP : LzhNodePtr;
+  begin
+    CurP := lfHead;
+    while CurP <> nil do begin
+      NextP := CurP^.lnNext;
+      Dispose(CurP, Done);
+      CurP := NextP;
+    end;
+  end;
+
+  function LzhFileList.Append(var LH : LzhHeader; FO : LongInt) : Boolean;
+    {-Add a node to the list}
+  var
+    LNP : LzhNodePtr;
+  begin
+    New(LNP, Init(LH, FO));
+    if LNP = nil then
+      Append := False
+    else begin
+      Append := True;
+      if lfHead = nil then begin
+        lfHead := LNP;
+        lfTail := LNP;
+      end
+      else begin
+        lfTail^.lnNext := LNP;
+        lfTail := LNP;
+      end;
+      Inc(lfCount);
+    end;
+  end;
+
+  procedure LzhFileList.Delete(LNP : LzhNodePtr);
+    {-Delete the specified node from the LzhFileList}
+  var
+    P, LP : LzhNodePtr;
+  begin
+    LP := nil;
+    P := lfHead;
+    while P <> nil do
+      if P = LNP then begin
+        if LP = nil then
+          lfHead := P^.lnNext
+        else
+          LP^.lnNext := P^.lnNext;
+        Dec(lfCount);
+        FreeMemCheck(P, SizeOf(LzhNode));
+        Exit;
+      end
+      else begin
+        LP := P;
+        P := P^.lnNext;
+      end;
+  end;
+
+  constructor UnLzh.Init(FName : PathStr);
+    {-Initialize the archive and open the input file}
+  var
+    Buf : array[0..2047] of Char;
+    I, BR  : Integer;
+    Found : Boolean;
+  begin
+    arError := 0;                                                      {!!.01}
+    FName := StUpCase(FName);                                          {!!.01}
+    if not Archive.Init(FName) then
+      Fail;
+    @ulOK         := nil;
+    @ulShowLzh    := nil;
+    @ulShowMethod := nil;
+    @ulSuccess    := nil;
+    @ulProgress   := nil;
+
+    BlockRead(arFile, Buf, SizeOf(Buf), BR);
+    ArchiveStatus := IOResult;
+    if ArchiveStatus = 0 then begin
+      I := 0;
+      Dec(BR, 5);
+      Found := False;
+      while (I < BR) and not Found do
+        if (Buf[I] = '-') and (Buf[I+1] = 'l') and (Buf[I+4] = '-') then
+          Found := True
+        else
+          Inc(I);
+
+      if Found then
+        ulStart := I-2
+      else
+        ArchiveStatus := epFatal+ecNotAnLzhFile;
+    end;
+
+    if ArchiveStatus <> 0 then begin
+      Done;
+      Fail;
+    end;
+  end;
+
+  procedure UnLzh.Extract(Mask : PathStr);
+    {-Extract all files matching Mask}
+  var
+    FML : FileMaskList;
+  begin
+    FML.Init;
+    if not FML.Append(Mask) then
+      arError := epFatal+ecOutOfMemory
+    else
+      ExtractFileMaskList(FML);
+    FML.Done;
+  end;
+
+  procedure UnLzh.ExtractFileMaskList(var FML : FileMaskList);
+    {-Extract all files matching one of the masks in specified list}
+  var
+    LFL : LzhFileList;
+  begin
+    arOptionsOff(arCompressing+arDeleting);
+
+    LFL.Init;
+    BuildLzhFileList(LFL, FML);
+    if arError = 0 then
+      ExtractLzhFileList(LFL);
+    LFL.Done;
+  end;
+
+  procedure UnLzh.BuildLzhFileList(var LFL : LzhFileList; var FML : FileMaskList);
+    {-Build a list of files to be unarced}
+  var
+    LH : LzhHeader;
+    FO : LongInt;
+    FP : LongInt;                       {File position}
+  begin
+    {show name}
+    ShowName;
+
+    {Loop through all files in the archive, comparing to all masks}
+    FP := ulStart;
+    while (arError = 0) and ulReadNextHeader(LH, FO, FP) do
+      if (arError = 0) and FML.Match(LH.FName) then
+        if not LFL.Append(LH, FO) then
+          arError := ecOutOfMemory;
+
+    if (arError = 0) and (LFL.lfCount = 0) then
+      arError := epNonFatal+ecNoMatchingFiles
+    else if arError <> 0 then
+      Inc(arError, epFatal);
+  end;
+
+  procedure UnLzh.ExtractLzhFileList(var LFL : LzhFileList);
+    {-Extract all files in the LZH file list}
+  var
+    LNP : LzhNodePtr;
+    I : Word;
+    Name : PathStr;
+  begin
+    LNP := LFL.lfHead;
+    while LNP <> nil do
+      with LNP^ do begin
+        {is it OK to write this file?}
+        if lnTagged then begin
+          Name := arActualName(lnLH.FName);
+          if OkToWrite(LNP, Name) then begin
+            {show what we're doing}
+            ShowMethod(LNP, Name);
+
+            if LNP^.lnLH.HeadID[4] = cmcFrozen2 then begin
+              if LNP^.lnLH.Level > 0 then
+                ExtendedHeader := True;
+              {use the new huffman method}
+              lhaExtractFile(LNP^, Name);
+            end else
+              {try to create the output file}
+              ulExtractFile(LNP^, Name);
+
+            {report error if we failed}
+            I := arError;
+            if not ExtractSuccess(LNP, Name) then begin
+              arError := I;
+              Exit;
+            end
+            else
+              arError := 0;
+          end;
+        end;
+        LNP := LNP^.lnNext;
+      end;
+  end;
+
+  {$L OOLZH.OBJ}
+
+ {$F+}
+  procedure UpdateCRC(var CRC : Word; var Buffer; Len : Word); external;
+    {-Update 16-bit CRC based on first Len bytes in Buffer}
+ {$F-}
+  procedure UpdateBinaryTree; external;
+    {-Update binary tables with value in SI register}
+  procedure InitTree; external;
+    {-Inits binary tree arrays for encoding}
+  procedure InsertNode(R : Word); external;
+    {-Inserts node R into binary tree}
+  procedure DeleteNode(R : Word); external;
+    {-Deletes node R from binary tree}
+
+  function UnLzh.ulMeltPrim(BytesLeft : LongInt) : Word; external;
+    {-Loop through frozen file, write melted file}
+
+  function UnLzh.ulFlushOutputBuffer(BytesToWrite : Word) : Word;
+    {-Flush contents of output buffer}
+  begin
+    UpdateCRC(ulCrc, OutBuffer^, BytesToWrite);
+    BlockWrite(OutF, OutBuffer^, BytesToWrite);
+    Inc(BytesWritten, BytesToWrite);
+    arError := IoResult;
+    if arError = 0 then
+      if not ShowProgress(BytesWritten, SaveBytesLeft) then
+        arError := ecUserAbort;
+    ulFlushOutputBuffer := arError;
+  end;
+
+  procedure ReconstructTree;
+    {-Halves all frequencies and rebuilds tree. Note this reconstruction
+      assumes an assembly language program is using the table, i.e., the
+      values stored are _byte_ indexes, not words}
+  var
+    I, J, K : Integer;
+    F, L, M : Word;
+  begin
+    {Reduce each frequency by dividing by two}
+    J := 0;
+    for I := 0 to TableSize-1 do
+      if Son[I] >= TableSize*2 then begin
+        Freq[J] := (Freq[I] + 1) div 2;
+        Son[J] := Son[I];
+        Inc(J);
+      end;
+
+    {Connect Sons}
+    I := 0;
+    M := 0;
+    J := NumChar;
+    while (J < TableSize) do begin
+      K := I + 1;
+      F := Freq[I] + Freq[K];
+      Freq[J] := F;
+      K := J - 1;
+      while F < Freq[K] do
+        Dec(K);
+      Inc(K);
+
+      L := (J - K) * 2;
+      Move(Freq[K], Freq[K+1], L);
+      Freq[K] := F;
+      Move(Son[K], Son[K+1], L);
+      Son[K] := M;
+      Inc(J);
+      Inc(I, 2);
+      Inc(M, 4);
+    end;
+
+    {Connect Parents}
+    for I := 0 to TableSize-1 do begin
+      M := I * 2;
+      K := Son[I] div 2;
+      if K >= TableSize then
+        Parent[K] := M
+      else begin
+        Parent[K] := M;
+        Parent[K+1] := M;
+      end;
+    end;
+  end;
+
+  function UnLzh.ulCalcHeaderHeadChk(var LH : LzhHeader) : Byte;
+    {-Calculate the checksum for a file header}
+  var
+    I : Word;
+    Sum : Byte;
+    LHarray : array[1..SizeOf(LzhHeader)] of Byte absolute LH;
+  begin
+    Sum := Lo(LH.CRC)+Hi(LH.CRC);
+
+    if ExtendedHeader then begin
+      Sum := Sum + Byte(LH.OSID);
+      {Add the first extended header size}
+      Sum := Sum + FirstExtHdrSize;
+    end;
+    for I := 3 to ShortHeaderSize + Length(LH.FName) do
+      Inc(Sum, LHarray[I]);
+
+    ulCalcHeaderHeadChk := Sum;
+  end;
+
+  function UnLzh.ulReadNextHeader(var LH : LzhHeader;
+                                  var FileOfs : LongInt;
+                                  var FP : LongInt) : Boolean;
+    {-Read the next file header}
+  type
+    SubHeaderRec  = record
+      HeaderID    : Byte;
+      Data        : array[1..1024] of Byte;
+      NextHdrSize : Word;
+    end;
+  var
+    i : Integer;
+    BytesRead : Integer;
+    SubHeader : SubHeaderRec;
+    ThisHeaderSize : Word;
+
+    function GetSubHeader(Size : Word; var H : SubHeaderRec) : Word;
+    begin
+      FillChar(H, SizeOf(SubHeaderRec), #0);
+      BlockRead(arFile, H.HeaderID, 1);
+      BlockRead(arFile, H.Data, Size - 3);
+      BlockRead(arFile, H.NextHdrSize, 2);
+      GetSubHeader := H.NextHdrSize;
+    end;
+
+  begin
+    ulReadNextHeader := False;
+    FillChar(LH, SizeOf(LzhHeader), #0);
+
+    {Seek to next header}
+    Seek(arFile, FP);
+    arError := IOResult;
+    if (arError <> 0) then
+      Exit;
+
+    {read in the header including the file name length byte}
+    BlockRead(arFile, LH, ShortHeaderSize, BytesRead);
+    arError := IOResult;
+
+    {are we at end of file?}
+    if (LH.HeadSize = 0) and (arError = 0) then
+      Exit;
+
+    {is the file format valid?}
+    if (arError <> 0) or (LH.HeadID[1] <> '-') or (LH.HeadID[5] <> '-') then
+      arError := ecBadFileFormat;
+    if arError <> 0 then
+      Exit;
+
+    {Test if this is an extended header format}
+    ExtendedHeader := LH.Level > 0;
+
+    {Read in filename}
+    BytesRead := Byte(LH.FName[0]);
+    BlockRead(arFile, LH.FName[1], BytesRead);
+
+    {Read in CRC value}
+    BlockRead(arFile, LH.CRC, 2);
+
+    {Read extended info}
+    if ExtendedHeader then begin
+      BlockRead(arFile, LH.OSID, 1);
+      BlockRead(arFile, LH.NextHdrSize, 2);
+      FirstExtHdrSize := LH.NextHdrSize;
+
+      {Got enough info to check heacher now}
+      if ulCalcHeaderHeadChk(LH) <> LH.HeadChk then begin
+        arError := ecBadFileFormat;
+        Exit;
+      end;
+
+      {read all possible sub-header types and keep only the}
+      {path and crc hdrs - leave file pointer at end of last}
+      while LH.NextHdrSize > 0 do begin
+
+        {Record the first headers size so it can be used}
+        {in the header check-sum calculation}
+        if FirstExtHdrSize = 0 then
+          FirstExtHdrSize := LH.NextHdrSize;
+
+        ThisHeaderSize := LH.NextHdrSize;
+        LH.NextHdrSize := GetSubHeader(ThisHeaderSize, SubHeader);
+        case SubHeader.HeaderId of
+          $00 : begin  {CRC header (common header)}
+                  LH.CRCHdrSize := ThisHeaderSize;
+                  LH.CRCHdrId := $00;
+                  Move(SubHeader.Data, LH.ExtCRC, 2);
+                end;
+          $01 : begin  {Filename header}
+                  LH.FNameHdrSize := ThisHeaderSize;
+                  LH.FNameHdrID := $01;
+                  Move(SubHeader.Data, LH.ExtFName[1], ThisHeaderSize - 3);
+                  LH.ExtFName[0] := Chr(ThisHeaderSize - 3);
+                end;
+          $02 : begin  {Path header}
+                  LH.PathHdrSize := ThisHeaderSize;
+                  LH.PathHdrID := $02;
+                  Move(SubHeader.Data, LH.ExtFPath[1], ThisHeaderSize - 3);
+                  LH.ExtFPath[0] := Chr(ThisHeaderSize - 3);
+                  {Replace #255 with "\"}
+                  for i := 1 to Length(LH.ExtFPath) do
+                    if LH.ExtFPath[i] = #255 then
+                      LH.ExtFPath[i] := '\';
+                end;
+          $40 : begin  {Attribute header}
+                  LH.AttrHdrSize := ThisHeaderSize;
+                  LH.AttrHdrId := $40;
+                  Move(SubHeader.Data, LH.ExtAttr, 2);
+                end
+        end;
+      end;
+    end else if ulCalcHeaderHeadChk(LH) <> LH.HeadChk then begin
+      arError := ecBadFileFormat;
+      Exit;
+    end;
+
+    {save location of compressed data in FileOfs}
+    FileOfs := FilePos(arFile);
+    arError := IOResult;
+    if arError <> 0 then Exit;
+
+    {Set FP to start of next header}
+    Inc(FP, LH.NewSize + LH.HeadSize + 2);
+
+    {Prepend path to file name}
+    LH.FName := LH.ExtFPath + LH.FName;
+
+    ulReadNextHeader := (arError = 0);
+  end;
+
+  procedure UnLzh.ulInitTables;
+    {-Initializes Huffman tables to a balanced binary tree. This table is
+      initialized for access by a assembly language program, i.e., the values
+      stored are _byte_ indexes, not words}
+  begin
+    Move(InitFreq, Freq, SizeOf(Freq));
+    Move(InitParent, Parent, SizeOf(Parent));
+    Move(InitSon, Son, SizeOf(Son));
+  end;
+
+  procedure UnLzh.ulCopyPrim(BytesLeft : LongInt);
+    {-Straight copy of file}
+  var
+    BR : Integer;
+  begin
+    while BytesLeft > 0 do begin
+      {calc bytes to read}
+      if BytesLeft < OutBufSize then
+        BR := BytesLeft
+      else
+        BR := OutBufSize;
+      Dec(BytesLeft, BR);
+
+      {read in the next block}
+      BlockRead(arFile, OutBuffer^, BR);
+      arError := IoResult;
+
+      {flush the output buffer and calculate its CRC}
+      if arError = 0 then
+        arError := ulFlushOutputBuffer(BR);
+
+      {check for I/O errors}
+      if arError <> 0 then
+        Exit;
+    end;
+  end;
+
+  procedure UnLzh.ulExtractFile(var LN : LzhNode; OutName : PathStr);
+    {-Extract a single file}
+  label
+    ExitPoint;
+  var
+    arFileHandle : Word absolute arFile;
+    I : Word;
+  begin
+    {Initialize the Huffman tables in Pascal}
+    ulInitTables;
+
+    {try to allocate I/O buffers}
+    InBuffer := nil;
+    OutBuffer := nil;
+    if not ( GetMemCheck(OutBuffer, SizeOf(OutBuffer^)) and
+             GetMemCheck(InBuffer, SizeOf(InBuffer^)) ) then begin
+      arError := epFatal+ecOutOfMemory;
+      goto ExitPoint;
+    end;
+
+    {seek to start of data}
+    Seek(arFile, LN.lnFileOfs);
+    arError := IoResult;
+    if arError <> 0 then
+      goto ExitPoint;
+
+    {Open the output file}
+    CreateOutputFile(OutF, OutName);
+    if arError <> 0 then begin
+      case arError of
+        ecPathNotFound, ecInvalidDrive, ecDiskFull, ecDriveNotReady : {};
+        else arError := epNonFatal+ecCannotCreate;
+      end;
+      goto ExitPoint;
+    end;
+
+    {extract the file}
+    ulCrc := 0;
+    SaveBytesLeft := LN.lnLH.OrigSize;
+    BytesWritten := 0;
+    LzhHandle := arFileHandle;
+    case LN.lnLH.HeadID[4] of
+      cmcStored :
+        ulCopyPrim(LN.lnLH.OrigSize);
+      cmcFrozen1:
+        arError := ulMeltPrim(LN.lnLH.OrigSize);
+      else
+        arError := epNonFatal+ecUnknownMethod;
+    end;
+
+    {set date/time stamp and close the file}
+    SetFTime(OutF, MakeLongInt(LN.lnLH.Date, LN.lnLH.Time));
+    Close(OutF);
+    I := IoResult;
+    if arError = 0 then
+      arError := I;
+    if arError <> 0 then
+      Erase(OutF);
+    I := IoResult;
+    if arError = 0 then
+      arError := I;
+
+    {check for bad CRC}
+    if (arError = 0) and (ulCRC <> LN.lnLH.CRC) then
+      arError := epNonFatal+ecBadFileCRC;
+
+ExitPoint:
+    {dispose of buffers}
+    FreeMemCheck(OutBuffer, SizeOf(OutBuffer^));
+    FreeMemCheck(InBuffer, SizeOf(InBuffer^));
+  end;
+
+  function UnLzh.OkToWrite(LNP : LzhNodePtr; var FName : PathStr) : Boolean;
+    {-Returns True if OK to write file associated with LNP}
+  begin
+    if @ulOK <> nil then
+      OkToWrite := ulOK(LNP, FName, @Self)
+    else
+      OkToWrite := True;
+  end;
+
+  procedure UnLzh.ShowName;
+    {-Called to display name of LZH file}
+  begin
+    if @ulShowLzh <> nil then
+      ulShowLzh(@Self);
+  end;
+
+  procedure UnLzh.ShowMethod(LNP : LzhNodePtr; FName : PathStr);
+    {-Called to display name of file being unarced and comp. method}
+  begin
+    if @ulShowMethod <> nil then
+      ulShowMethod(LNP, FName, @Self);
+  end;
+
+  function UnLzh.ExtractSuccess(LNP : LzhNodePtr; FName : PathStr) : Boolean;
+    {-Called after file assoc. with LNP has been unarced}
+  begin
+    if @ulSuccess <> nil then
+      ExtractSuccess := ulSuccess(LNP, FName, @Self)
+    else
+      ExtractSuccess := (arError = 0);
+  end;
+
+  function UnLzh.ShowProgress(BytesWritten, TotalBytes : LongInt) : Boolean;
+    {-Called when flushing output buffer to disk}
+  begin
+    if @ulProgress <> nil then
+      ShowProgress := ulProgress(@Self, BytesWritten, TotalBytes)
+    else
+      ShowProgress := True;
+  end;
+
+  procedure UnLzh.SetOkToWriteFunc(OKF : OkToWriteFunc);
+    {-Set OK to write function}
+  begin
+    ulOK := OKF;
+  end;
+
+  procedure UnLzh.SetShowNameProc(SNP : ShowNameProc);
+    {-Set procedure to display LZH file name}
+  begin
+    ulShowLzh := SNP;
+  end;
+
+  procedure UnLzh.SetShowMethodProc(SMP : ShowMethodProc);
+    {-Set procedure to display file name and compression method}
+  begin
+    ulShowMethod := SMP;
+  end;
+
+  procedure UnLzh.SetExtractSuccessFunc(ESF : ExtractSuccessFunc);
+    {-Set procedure to call after file has been unarchived}
+  begin
+    ulSuccess := ESF;
+  end;
+
+  procedure UnLzh.SetShowProgressFunc(SPF : ShowProgressFunc);
+    {-Set procedure to call to show progress}
+  begin
+    ulProgress := SPF;
+  end;
+
+  constructor Lzh.Init(FName : PathStr);
+    {-Initialize the archive and open the LZH file}
+  begin
+    arError := 0;                                                      {!!.01}
+    FName := StUpCase(FName);                                          {!!.01}
+    if not UnLzh.Init(FName) then
+      Fail;
+    @lzhOK           := nil;
+    @lzhSuccess      := nil;
+    lzhNewFile       := False;
+    lzhProgressWidth := 80;
+    lzhCompressMode  := cmBestMethod;
+  end;
+
+  constructor Lzh.Create(FName : PathStr);
+    {-Create an archive file FName}
+  begin
+    arError := 0;                                                      {!!.01}
+    FName := StUpCase(DefaultExtension(FName, 'LZH'));                 {!!.01}
+    Assign(arFile, FName);
+    Reset(arFile, 1);
+    if IOResult = 0 then begin
+      {Error if specified file already exists}
+      Close(arFile);
+      if IOResult <> 0 then ;
+      ArchiveStatus := ecCannotCreate;
+      Fail;
+    end;
+
+    {Save the name of the file for later updates}
+    arName := FName;
+
+    {Create an empty file}
+    Assign(arFile, FName);
+    Rewrite(arFile, 1);
+    ArchiveStatus := IOResult;
+    if ArchiveStatus <> ecOk then
+      Fail;
+
+    @lzhOk := nil;
+    @lzhSuccess := nil;
+    ulStart := 0;
+    lzhNewFile := True;
+    lzhProgressWidth := 80;
+    lzhCompressMode  := cmBestMethod;                                  {!!.02}
+
+    {Initialize parent hooks}
+    @ulOK         := nil;
+    @ulShowLzh    := nil;
+    @ulShowMethod := nil;
+    @ulSuccess    := nil;
+    @ulProgress   := nil;
+
+    {Initialize parent fields not already taken care of}
+    arOptions := DefArchiveOptions;
+  end;
+
+  procedure Lzh.lzhRestoreArchive;
+    {-Delete )2(, rename )1( to original}
+  begin
+    {Delete )2(}
+    Close(NewLzh);
+    Erase(NewLzh);
+    if IOResult <> 0 then ;
+
+    {Rename )1( to original}
+    Close(arFile);
+    Rename(arFile, arName);
+    if IOResult <> 0 then ;
+
+    {Free I/O buffers}
+    FreeMemCheck(InBuffer, SizeOf(InBuffer^));
+    FreeMemCheck(OutBuffer, SizeOf(OutBuffer^));
+    FreeMemCheck(ActualTextBuffer, SizeOf(TextBuffer^));
+    FreeMemCheck(ActualEDPtr, SizeOf(EDPtr^));
+  end;
+
+  procedure Lzh.lzhPrepareForUpdate;
+    {-rename to .)1(, open .)2( for new archive}
+  type
+    OS = record
+      O : Word;
+      S : Word;
+    end;
+  var
+    Dir : DirStr;
+    Name : NameStr;
+    Ext : ExtStr;
+    FName : PathStr;
+{$IFDEF DPMI}
+    SaveHeapLimit : LongInt;
+{$ENDIF}
+  begin
+    {Close existing file and build temp name}
+    Close(arFile);
+    FSplit(arName, Dir, Name, Ext);
+    FName := Dir + Name + '.)1(';
+
+    {Blindly delete an existing temp file}
+    Assign(arFile, FName);
+    Erase(arFile);
+    if IOResult = 0 then ;
+
+    {Rename to )1(}
+    Assign(arFile, arName);
+    Rename(arFile, FName);
+    Reset(arFile, 1);
+    arError := IOResult;
+    if arError <> 0 then
+      Exit;
+
+    {Create new output file named name.)2(}
+    FName := Dir + Name + '.)2(';
+    Assign(NewLzh, FName);
+    Rewrite(NewLzh, 1);
+    arError := IOResult;
+    if arError <> ecOk then begin
+      lzhRestoreArchive;
+      Close(arFile);
+      if IOResult <> 0 then ;
+      Exit;
+    end;
+
+    {Allocate I/O buffers}
+    InBuffer := nil;
+    OutBuffer := nil;
+    EDPtr := nil;
+    TextBuffer := nil;
+    ActualEDPtr := nil;
+    ActualTextbuffer := nil;
+
+    if not (GetMemCheck(OutBuffer, SizeOf(OutBuffer^)) and
+            GetMemCheck(InBuffer, SizeOf(InBuffer^))) then begin
+      FreeMemCheck(OutBuffer, SizeOf(OutBuffer^));
+      FreeMemCheck(InBuffer, SizeOf(InBuffer^));
+      lzhRestoreArchive;
+      arError := epFatal+ecOutOfMemory;
+      Exit;
+    end;
+
+{$IFDEF DPMI}
+    {Set HeapLimit to 0 to force a zero offset for the following allocations}
+    SaveHeapLimit := HeapLimit;
+    HeapLimit := 0;
+{$ENDIF}
+
+    if not (GetMemCheck(EDPtr, SizeOf(EDPtr^)) and
+            GetMemCheck(TextBuffer, SizeOf(TextBuffer^))) then begin
+      FreeMemCheck(EDPtr, SizeOf(EDPtr^));
+      FreeMemCheck(TextBuffer, SizeOf(TextBuffer^));
+      lzhRestoreArchive;
+      arError := epFatal+ecOutOfMemory;
+      Exit;
+    end;
+
+    ActualTextBuffer := Pointer(TextBuffer);
+    ActualEDPtr := Pointer(EDPtr);
+
+{$IFDEF DPMI}
+  HeapLimit := SaveHeapLimit;  {Restore original heap limit}
+{$ELSE}
+    {Force TextBuffer to a 0 offset}
+    if OS(TextBuffer).O <> 0 then begin
+      Inc(OS(TextBuffer).S);
+      OS(TextBuffer).O := 0;
+    end;
+
+    {Force EDPtr to a 0 offset}
+    if OS(EDPtr).O <> 0 then begin
+      Inc(OS(EDPtr).S);
+      OS(EDPtr).O := 0;
+    end;
+{$ENDIF}
+
+  end;
+
+  procedure Lzh.lzhDoneUpdate;
+    {-Rename )2( to original and delete )1(}
+  const
+    Zero : Byte = 0;
+  begin
+    {Write trailing zero}
+    BlockWrite(NewLzh, Zero, SizeOf(Zero));
+    if IOResult <> 0 then ;
+
+    {Rename )2( to original}
+    Close(NewLzh);
+    Rename(NewLzh, arName);
+    arError := IOResult;
+    if arError <> 0 then begin
+      lzhRestoreArchive;
+      Exit;
+    end;
+
+    {Delete )1(}
+    Close(arFile);
+    Erase(arFile);
+    arError := IOResult;
+
+    {Free I/O buffers}
+    FreeMemCheck(InBuffer, SizeOf(InBuffer^));
+    FreeMemCheck(OutBuffer, SizeOf(OutBuffer^));
+    FreeMemCheck(ActualTextBuffer, SizeOf(TextBuffer^));
+    FreeMemCheck(ActualEDPtr, SizeOf(EDPtr^));
+  end;
+
+  procedure Lzh.lzhWriteBlock;
+    {-Virtual method for convenient overrides of block writing}
+  var
+    BytesWritten : Word;
+  begin
+    BlockWrite(NewLzh, OutBuffer^, OutBufPos-1, BytesWritten);
+    arError := IOResult;
+    if BytesWritten <> OutBufPos-1 then
+      arError := ecDiskFull;
+  end;
+
+  procedure Lzh.lzhPutC(W : Word);
+    {-Buffered output of one character -- Lo(W)}
+  begin
+    OutBuffer^[OutBufPos] := Lo(W);
+    Inc(OutBufPos);
+    if OutBufPos > OutBufSize then begin
+      lzhWriteBlock;
+      OutBufPos := 1;
+    end;
+  end;
+
+  procedure Lzh.lzhPutCode(L : Integer; C : Word);
+    {-Output C bits of code}
+  begin
+    PutBuf := PutBuf or (C shr PutLen);
+    Inc(PutLen, L);
+    if PutLen >= 8 then begin
+      lzhPutC(PutBuf shr 8);
+      Dec(PutLen, 8);
+      if PutLen >= 8 then begin
+        lzhPutC(PutBuf);
+        Inc(CodeSize, 2);
+        Dec(PutLen, 8);
+        PutBuf := C shl Word(L - PutLen);
+      end else begin
+        PutBuf := PutBuf shl 8;
+        Inc(CodeSize);
+      end;
+    end;
+  end;
+
+  function Lzh.lzhGetC(var C : Byte) : Boolean;
+    {-Return the next character from the input file}
+  begin
+    if (InBufPos > InBufEnd) then begin
+      {Return false if at end of file}
+      if lzhEndofInFile then begin
+        lzhGetC := False;
+        Exit;
+      end;
+
+      {Reload the buffer}
+      InBufPos := 1;
+      BlockRead(InFile, InBuffer^, SizeOf(InBuffer^), InBufEnd);
+      arError := IOResult;
+      if (InBufEnd <> SizeOf(InBuffer^)) or Eof(InFile) then
+        lzhEndofInFile := True;
+
+      {Update the CRC for this block}
+      Inline(
+        $8B/$0E/>INBUFEND/ {   MOV     CX,[>InBufEnd]   ;CX = InBuffEnd}
+        $C4/$36/>INBUFFER/ {   LES     SI,[>InBuffer]   ;ES:SI = InBuffer}
+        $A1/>CRC/          {   MOV     AX,[>Crc]        ;AX holds current Crc}
+                           {Top:}
+        $26/               {   ES:}
+        $32/$04/           {   XOR     AL,[SI]          ;Get next character}
+        $31/$DB/           {   XOR     BX,BX            ;Zero out BX}
+        $88/$C3/           {   MOV     BL,AL            ;Use as index...}
+        $D1/$E3/           {   SHL     BX,1             ;into array of words}
+        $88/$E0/           {   MOV     AL,AH            ;Move hi(Crc) to lo}
+        $30/$E4/           {   XOR     AH,AH            ;Clear hi}
+        $33/$87/>CRCTABLE/ {   XOR     AX,>CrcTable[BX] ;Lookup new CRC value}
+        $46/               {   INC     SI               ;Next character}
+        $E2/$EC/           {   LOOP    Top              ;Repeat}
+        $A3/>CRC);         {   MOV     [>Crc],AX        ;Update Crc}
+    end;
+
+    {Get the next character from the buffer}
+    C := InBuffer^[InBufPos];
+    Inc(InBufPos);
+    lzhGetC := True;
+  end;
+
+  procedure Lzh.lzhEncodeChar(C : Integer);
+    {-Send this character to the huffman encoder}
+  var
+    I : Word;
+    J, K : Integer;
+    TabSize : Word;
+  begin
+    I := 0;
+    J := 0;
+    K := Parent[C + TableSize];
+
+    repeat
+      I := I shr 1;
+
+      {Make a word index out of it}
+      K := K shr 1;
+
+      {If node's address is odd, choose bigger brother node}
+      if Odd(K) then
+        Inc(I, $8000);
+
+      Inc(J);
+      K := Parent[K];
+    until K = Root * 2;
+
+    lzhPutCode(J, I);
+
+    {UpdateBinaryTree is an assembly language routine that wasn't originally
+     designed to called the from a Turbo Pascal procedure. Hence, it expects
+     its sole argument, C, to be passed via the SI register and it expects
+     this to be a byte offset rather than a word index. Additionally, and it
+     expects that DS=ES.}
+
+     TabSize := TableSize;
+     inline($1E/                      {PUSH   DS }
+            $07/                      {POP    ES }
+            $8B/$76/<C/               {MOV    SI,C[BP] ;SI = C }
+            $03/$76/$F8/              {ADD    SI,[>TableSize] }
+            $D1/$E6);                 {SHL    SI, 1 }
+     UpdateBinaryTree;
+  end;
+
+  procedure Lzh.lzhEncodePosition(C : Integer);
+    {Send this <pos,len> code}
+  var
+    I : Word;
+  begin
+    {Output upper 6 bits by table lookup}
+    I := C shr 6;
+    lzhPutCode(EncodeLen[I], EncodeCode[I] shl 8);
+
+    {Output lower 6 bits verbatim}
+    lzhPutCode(6, (C and $3F) shl 10);
+  end;
+
+  procedure Lzh.lzhEncodeEnd;
+    {-Empty the bit buffer and flush the output buffer}
+  var
+    BytesWritten : Word;
+  begin
+    if PutLen > 0 then begin
+      lzhPutC(PutBuf shr 8);
+      Inc(CodeSize);
+    end;
+
+    if OutBufPos > 0 then begin
+      BlockWrite(NewLzh, OutBuffer^, OutBufPos-1, BytesWritten);
+      arError := IOResult;
+      if BytesWritten <> OutBufPos-1 then
+        arError := ecDiskFull;
+    end;
+  end;
+
+  procedure Lzh.lzhStoreFile;
+    {-Store file into archive}
+  var
+    BytesLeft : LongInt;
+    BytesRead : Integer;
+    BytesWritten : Integer;
+  begin
+    Seek(InFile, 0);
+    BytesLeft := lzhOrigFileSize;
+    while BytesLeft > 0 do begin
+      BlockRead(InFile, InBuffer^, SizeOf(InBuffer^), BytesRead);
+      arError := IOResult;
+      if arError <> ecOk then
+        Exit;
+      Dec(BytesLeft, BytesRead);
+      BlockWrite(NewLzh, InBuffer^, BytesRead, BytesWritten);
+      arError := IOResult;
+      if arError <> ecOk then
+        Exit;
+      if BytesRead <> BytesWritten then begin
+        arError := ecDiskFull;
+        Exit;
+      end;
+    end;
+  end;
+
+  function Lzh.lhaCalcExtendedHeaderCRC(var LH : LzhHeader) : Word;
+  var
+    Buffer : ByteArrayPtr;
+    CRC : Word;
+    chLength : Word;
+  begin
+    lhaCalcExtendedHeaderCRC := 0;
+    if not GetMemCheck(Buffer, 256) then Exit;
+    FillChar(Buffer^[0], 256, #0);
+
+    Move(LH, Buffer^[0], ShortHeaderSize + Length(LH.FName));
+    chLength := ShortHeaderSize + Length(LH.FName);
+    Move(LH.CRC, Buffer^[chLength], 5);
+    Inc(chLength, 5);  {for CRC, OSID and PathHdrSize}
+
+    {Get Extended header bytes}
+    if LH.PathHdrSize > 0 then begin
+      Move(LH.PathHdrID, Buffer^[chLength], 1);
+      Inc(chLength);
+      Move(LH.ExtFPath[1], Buffer^[chLength], LH.PathHdrSize - 3);
+      chLength := chLength + LH.PathHdrSize - 1;
+    end;
+    Buffer^[chLength - 2] := 5;   {Size of CRC header}
+    Inc(chLength, 5);             {Length of CRC header}
+
+    asm
+      push        es
+      push        si
+      push        ds
+
+      push        ds
+      pop         es                               {ES=DS}
+      lds         si, Buffer
+
+      mov         cx, chLength
+      mov         bx, 0
+      xor         ah, ah
+  @@01:
+      lodsb
+      xor         bl, al
+      mov         al, bh
+      mov         bh, ah
+      shl         bx, 1
+      mov         bx, word ptr es:CRCTable[bx]
+      xor         bx, ax
+      dec         cx
+      jnz         @@01         {Update CRC loop}
+      mov         [CRC], bx
+
+      pop         ds
+      pop         si
+      pop         es
+    end;
+
+    FreeMemCheck(Buffer, 256);
+    lhaCalcExtendedHeaderCRC := CRC;
+  end;
+
+  procedure Lzh.lzhCreateHeader(var F : File; FileName : PathStr;
+                                var LH : LzhHeader);
+    {-Create and write a header for FName to NewLzh}
+  type
+    DW = record
+      Lo : Word;
+      Hi : Word;
+    end;
+  var
+    DateTime : LongInt;
+    FAttr : Word;
+    BytesWritten : Integer;
+    BytesToWrite : Integer;
+    RelativePos  : LongInt;
+
+  begin
+    with LH do begin
+      {Stuff static header values}
+      HeadSize := HeaderSize;
+      Move(FreezeID, HeadID, SizeOf(HeadID));
+      NewSize := CodeSize;
+      OrigSize := lzhOrigFileSize;
+      GetFTime(F, DateTime);
+      Time := DW(DateTime).Lo;
+      Date := DW(DateTime).Hi;
+      GetFAttr(F, FAttr);
+      Attr := Lo(FAttr);
+      Level := Ord(ExtendedHeader);
+      FName := FileName;
+      OSID := 'M';
+    end;
+    LH.CRC := Crc;
+
+    {Store file, rather than freeze, if packed size greater than unpacked}
+    if CodeSize >= lzhOrigFileSize then begin
+      RelativePos := - CodeSize;
+
+      if ExtendedHeader then begin
+        {Backup to start of OSID}
+        Dec(RelativePos, SizeOf(LH.OSID) + SizeOf(LH.PathHdrSize));
+        LH.Level := 0;
+        ExtendedHeader := False;
+      end;
+
+      arError := SeekRelative(NewLzh, RelativePos);  {backup}
+      if arError <> ecOk then Exit;
+      lzhStoreFile;                                  {store the file}
+      if arError <> ecOk then Exit;
+
+      {Indicate that file was stored}
+      LH.NewSize := lzhOrigFileSize;
+      CodeSize := lzhOrigFileSize;
+      LH.HeadID[4] := '0';
+    end;
+
+    {If file size was zero, say it was stored}
+    if lzhOrigFileSize = 0 then begin
+      LH.HeadID[4] := '0';
+      LH.Level := 0;
+      if ExtendedHeader then begin
+        {Backup to start of CRC}
+        arError := SeekRelative(NewLzh,
+                      - SizeOf(LH.CRC)
+                      - SizeOf(LH.OSID)
+                      - SizeOf(LH.PathHdrSize));
+        if arError <> ecOk then Exit;
+        ExtendedHeader := False;
+      end;
+    end;
+
+    {Reposition the file and write the header}
+
+    RelativePos := - CodeSize - LH.HeadSize;
+    if ExtendedHeader then  {backup to allow for PathHdrSize}
+      Dec(RelativePos, SizeOf(LH.PathHdrSize))
+    else  {backup to allow for CRC}
+      Dec(RelativePos, SizeOf(LH.CRC));
+
+    if ExtendedHeader and (LH.PathHdrSize > 0) then begin
+      {Adjust compressed file size by the sizes of the extended headers}
+      Inc(LH.NewSize, LH.PathHdrSize + 5);
+      Dec(RelativePos, LH.PathHdrSize + 5);
+    end;
+
+    {OK to calculate header's checksum now}
+    LH.HeadChk := ulCalcHeaderHeadChk(LH);
+
+    {and extended header CRC}
+    if ExtendedHeader and (LH.PathHdrSize > 0) then
+      LH.ExtCRC := lhaCalcExtendedHeaderCRC(LH);
+
+    arError := SeekRelative(NewLzh, RelativePos);
+    if arError <> ecOk then Exit;
+
+    BytesToWrite := LH.HeadSize;
+    if ExtendedHeader then
+      Dec(BytesToWrite, SizeOf(LH.CRC) + SizeOf(LH.OSID));
+      {because with extended headers, HeadSize includes these}
+
+    BlockWrite(NewLzh, LH, BytesToWrite, BytesWritten);
+    arError := IOResult;
+    if BytesWritten <> BytesToWrite then
+      arError := ecDiskFull;
+    if arError <> ecOk then Exit;
+
+    {Write the CRC}
+    BlockWrite(NewLzh, LH.CRC, 2, BytesWritten);
+    arError := IOResult;
+    if BytesWritten <> 2 then
+      arError := ecDiskFull;
+    if arError <> ecOk then Exit;
+
+    if ExtendedHeader then begin
+      {Write the OS information}
+      BlockWrite(NewLzh, LH.OSID, 1, BytesWritten);
+      if BytesWritten <> 1 then
+        arError := ecDiskFull;
+      if arError <> ecOk then Exit;
+
+      {Write the extended header size information}
+      BlockWrite(NewLzh, LH.PathHdrSize, 2, BytesWritten);
+      if BytesWritten <> 2 then
+        arError := ecDiskFull;
+      if arError <> ecOk then Exit;
+
+      {Write directory and crc headers}
+      if LH.PathHdrSize > 0 then begin
+        BlockWrite(NewLzh, LH.PathHdrID, 1,BytesWritten);
+        if BytesWritten <> 1 then
+          arError := ecDiskFull;
+        if arError <> ecOk then Exit;
+        BlockWrite(NewLzh, LH.ExtFPath[1], LH.PathHdrSize - 3, BytesWritten);
+        if BytesWritten <> LH.PathHdrSize - 3 then
+          arError := ecDiskFull;
+        if arError <> ecOk then Exit;
+        BlockWrite(NewLzh, LH.CRCHdrSize, 7, BytesWritten);
+        if BytesWritten <> 7 then
+          arError := ecDiskFull;
+        if arError <> ecOk then Exit;
+      end;
+
+    end;
+
+    {Advance the file pointer just beyond the compressed file}
+    arError := SeekRelative(NewLzh, CodeSize);
+  end;
+
+  procedure Lzh.lzhFreezeFile(FName : PathStr; var LH : LzhHeader);
+  var
+    I : Integer;
+    C : Byte;
+    Len : Integer;
+    R : Integer;
+    S : Integer;
+    LastMatchLen : Integer;
+    Finished : Boolean;
+  begin
+    ExtendedHeader := False;
+    FillChar(LH, SizeOf(LH), #0);
+
+    {Open up the file to freeze}
+    ulSaveMode := FileMode;                                            {!!.02}
+    FileMode := AproFileMode;                                   {!!.02}{!!.03}
+    Assign(InFile, FName);
+    Reset(InFile, 1);
+    FileMode := ulSaveMode;                                            {!!.02}
+    arError := IOResult;
+    if arError <> ecOk then
+      Exit;
+
+    lzhOrigFileSize := FileSize(InFile);
+
+    {Show the filename to freeze}
+    ShowMethod(nil, FName);
+
+    {Init progress variables}
+    NextDisplay := 0;
+    NextDisplayInc := 4096;
+    SaveBytesLeft := lzhOrigFileSize;
+    if not ShowProgress(0, SaveBytesLeft) then begin
+      arError := ecUserAbort;
+      Exit;
+    end;
+
+    {Strip path now (since file is already opened)}
+    if arOptionsAreOn(arStripPath) then
+      FName := JustFileName(FName);
+    HeaderSize := ShortHeaderSize + Length(FName);
+
+    {Handle empty files}
+    CodeSize := 0;
+    Crc := 0;
+    if lzhOrigFileSize = 0 then begin
+      arError := SeekRelative(NewLzh, HeaderSize + SizeOf(LH.CRC));
+      lzhCreateHeader(InFile, FName, LH);
+      Close(InFile);
+      if IOResult <> 0 then ;
+      Exit;
+    end;
+
+    {Move file pointer to beyond where header will (eventually) end}
+    arError := SeekRelative(NewLzh, HeaderSize + SizeOf(LH.CRC));
+    if arError <> ecOk then
+      Exit;
+
+    {Init data structures}
+    ulInitTables;
+    InitTree;
+
+    {Setup for buffering}
+    OutBufPos := 1;
+    InBufPos := 1;
+    InBufEnd := 0;
+    lzhEndofInFile := False;
+
+    {Setup for loop}
+    TextSize := 0;
+    PutLen := 0;
+    PutBuf := 0;
+    S := 0;
+    R := InBufSize - LookAheadSize;
+    FillChar(TextBuffer^[S], R, ' ');
+    Finished := False;
+    Len := 0;
+    while (Len < LookAheadSize) and not Finished do begin
+      if lzhGetC(C) then begin
+        TextBuffer^[R+Len] := C;
+        Inc(Len);
+      end else
+        Finished := True;
+    end;
+    TextSize := Len;
+
+    {Build a tree of blanks}
+    for I := 1 to LookAheadSize do
+      InsertNode(R-I);
+    InsertNode(R);
+
+    {Main compression loop}
+    repeat
+      MatchLen := EDPtr^.MatchLen;
+      if MatchLen > Len then
+        MatchLen := Len;
+      if MatchLen <= Threshold then begin
+        MatchLen := 1;
+        lzhEncodeChar(TextBuffer^[R]);
+      end else begin
+        lzhEncodeChar(255 - Threshold + MatchLen);
+        lzhEncodePosition(EDPtr^.MatchPos);
+      end;
+
+      LastMatchLen := MatchLen;
+      I := 0;
+      Finished := False;
+      while (I < LastMatchLen) and not Finished do begin
+        if lzhGetC(C) then begin
+          DeleteNode(S);
+          TextBuffer^[S] := C;
+          if (S < LookAHeadSize - 1) then
+            TextBuffer^[S+InBufSize] := C;
+          S := (S + 1) and (InBufSize - 1);
+          R := (R + 1) and (InBufSize - 1);
+          InsertNode(R);
+          Inc(I);
+        end else
+          Finished := True;
+      end;
+
+      {Increment TextSize and show progress}
+      Inc(TextSize, I);
+      if TextSize > NextDisplay then begin
+        Inc(NextDisplay, NextDisplayInc);
+        if not ShowProgress(TextSize, SaveBytesLeft) then
+          arError := ecUserAbort;
+      end;
+
+      while (I < LastMatchLen) do begin
+        DeleteNode(S);
+        S := (S + 1) and (InBufSize - 1);
+        R := (R + 1) and (InBufSize - 1);
+        Dec(Len);
+        if Len <> 0 then
+          InsertNode(R);
+        Inc(I);
+      end;
+    until (Len = 0) or (arError <> ecOk);
+
+    if arError = ecOk then begin
+      lzhEncodeEnd;
+      lzhCreateHeader(InFile, FName, LH);
+    end;
+
+    Close(InFile);
+    if IOResult <> 0 then ;
+  end;
+
+  procedure Lzh.lzhWriteHeader(var LH : LzhHeader; var FO, FP : LongInt);
+    {-Copy header from arFile to NewLzh}
+  var
+    i : Integer;
+    BytesToWrite, BytesWritten : Word;
+  begin
+    {Read in header from old archive file}
+    if not ulReadNextHeader(LH, FO, FP) then
+      Exit;
+
+    BytesToWrite := LH.HeadSize;
+    if ExtendedHeader then begin                                       {!!.01}
+      Dec(BytesToWrite, SizeOf(LH.CRC) + SizeOf(LH.OSID));
+      {because with extended headers, HeadSize includes these}
+      {Remove the directory information from the file name}            {!!.01}
+      LH.FName := JustFileName(LH.FName)                               {!!.01}
+    end;                                                               {!!.01}
+
+    BlockWrite(NewLzh, LH, BytesToWrite, BytesWritten);
+    arError := IOResult;
+    if BytesWritten <> BytesToWrite then
+      arError := ecDiskFull;
+    if arError <> ecOk then Exit;
+
+    {Write the CRC}
+    BlockWrite(NewLzh, LH.CRC, 2, BytesWritten);
+    arError := IOResult;
+    if BytesWritten <> 2 then
+      arError := ecDiskFull;
+    if arError <> ecOk then Exit;
+
+    if ExtendedHeader then begin
+      {Write the OS information}
+      BlockWrite(NewLzh, LH.OSID, 1, BytesWritten);
+      if BytesWritten <> 1 then
+        arError := ecDiskFull;
+      if arError <> ecOk then Exit;
+
+      {Write the extended header size information}
+      BlockWrite(NewLzh, LH.PathHdrSize, 2, BytesWritten);
+      if BytesWritten <> 2 then
+        arError := ecDiskFull;
+      if arError <> ecOk then Exit;
+
+      {Write directory and crc headers}
+      if LH.PathHdrSize > 0 then begin
+        BlockWrite(NewLzh, LH.PathHdrID, 1, BytesWritten);
+        if BytesWritten <> 1 then
+          arError := ecDiskFull;
+        if arError <> ecOk then Exit;
+        for i := 1 to Length(LH.ExtFPath) do                           {!!.01}
+          if LH.ExtFPath[i] = '\' then                                 {!!.01}
+            LH.ExtFPath[i] := #255;                                    {!!.01}
+        BlockWrite(NewLzh, LH.ExtFPath[1], LH.PathHdrSize - 3, BytesWritten);
+        if BytesWritten <> LH.PathHdrSize - 3 then
+          arError := ecDiskFull;
+        if arError <> ecOk then Exit;
+        BlockWrite(NewLzh, LH.CRCHdrSize, 7, BytesWritten);
+        if BytesWritten <> 7 then
+          arError := ecDiskFull;
+        if arError <> ecOk then Exit;
+      end;
+    end;
+  end;
+
+  procedure Lzh.lzhCopyFilePrim(var LH : LzhHeader; FO : LongInt);
+    {-Copy just the file from the old archive to the new}
+  var
+    BlockSize, BytesRead, BytesWritten : Word;
+    BytesLeft : LongInt;
+  begin
+    {Init vars}
+    BytesLeft := LH.NewSize;
+    if ExtendedHeader and (LH.PathHdrSize > 0) then begin              {!!.01}
+      {Adjust BytesLeft because PathHdr was written when header was}   {!!.01}
+      Dec(BytesLeft, LH.PathHdrSize + 5);                              {!!.01}
+    end;                                                               {!!.01}
+    while BytesLeft > 0 do begin
+      {Set bytes to read}
+      if BytesLeft < SizeOf(InBuffer^) then
+        BlockSize := BytesLeft
+      else
+        BlockSize := SizeOf(InBuffer^);
+
+      {Read a block and handle errors}
+      BlockRead(arFile, InBuffer^, BlockSize, BytesRead);
+      arError := IOResult;
+      if arError <> ecOk then
+        Exit;
+      if BytesRead <> BlockSize then begin
+        arError := ecDiskRead;
+        Exit;
+      end;
+
+      {Write a block and handle errors}
+      BlockWrite(NewLzh, InBuffer^, BlockSize, BytesWritten);
+      arError := IOResult;
+      if arError <> ecOk then
+        Exit;
+      if BytesWritten <> BlockSize then begin
+        arError := ecDiskFull;
+        Exit;
+      end;
+
+      {Adjust BytesLeft}
+      Dec(BytesLeft, BlockSize);
+    end;
+  end;
+
+  procedure Lzh.lzhCopyFile(FP : LongInt);
+    {-Copy existing file to new archive}
+  var
+    LH : LzhHeader;
+    FO : LongInt;
+  begin
+    {Copy header from old to new}
+    lzhWriteHeader(LH, FO, FP);
+
+    {Copy file from old to new}
+    lzhCopyFilePrim(LH, FO);
+  end;
+
+  function Lzh.lzhCompareNodes(Node1 : FileMaskNodePtr;
+                               Node2 : LzhNodePtr) : Boolean;
+    {-Return True if file name in Node1 is less than or equal Node2}
+  var
+    Dir1, Dir2 : DirStr;                                               {!!.01}
+    Name : NameStr;
+    Ext : ExtStr;
+  begin
+    if Node1 = nil then
+      lzhCompareNodes := False
+    else if Node2 = nil then
+      lzhCompareNodes := True
+    else begin
+      FSplit(Node2^.lnLH.FName, Dir2, Name, Ext);                      {!!.01}
+      {Ignore drive specification, if any}                             {!!.01}
+      if (Length(Dir2) > 1) and (Dir2[2] = ':') then                   {!!.01}
+        System.Delete(Dir2, 1, 2);                                     {!!.01}
+      if arOptionsAreOn(arStripPath) then                              {!!.02}
+        Dir1 := ''                                                     {!!.02}
+      else                                                             {!!.02}
+        Dir1 := Node1^.fmnDirPtr^;                                     {!!.01}
+      if (Length(Dir1) > 1) and (Dir1[2] = ':') then                   {!!.01}
+        System.Delete(Dir1, 1, 2);                                     {!!.01}
+      if Pos('.', Ext) <> 0 then
+        System.Delete(Ext, 1, 1);
+      lzhCompareNodes :=                                               {!!.01}
+        (Dir1 < Dir2) or                                               {!!.01}
+        ((Dir1 = Dir2) and (Node1^.fmnName < Name)) or                 {!!.01}
+        ((Dir1 = Dir2) and (Node1^.fmnName = Name) and (Node1^.fmnExt <= Ext)); {!!.01}
+    end;
+  end;
+
+  function Lzh.OkToCompress(NewFile : PathStr; LH : LzhHeader) : Boolean;
+    {-Returns True if OK to compress NewFile}
+  begin
+    if @lzhOK <> nil then
+      OkToCompress := lzhOK(@Self, NewFile, LH)
+    else
+      OkToCompress := True;
+  end;
+
+  function Lzh.CompressSuccess(LH : LzhHeader) : Boolean;
+    {-Show success, return True for abort}
+  var
+    SaveError : Word;
+  begin
+    if @lzhSuccess <> nil then begin
+      SaveError := arError;
+      CompressSuccess := lzhSuccess(@Self, LH);
+      arError := SaveError;
+    end else
+      CompressSuccess := (arError = 0);
+  end;
+
+  procedure Lzh.SetOkToCompressFunc(OKC : OkToCompressFunc);
+    {-Set OK to compress function}
+  begin
+    lzhOK := OKC;
+  end;
+
+  procedure Lzh.SetCompressSuccessFunc(CSF : CompressSuccessFunc);
+    {-Set compress success function}
+  begin
+    lzhSuccess := CSF;
+  end;
+
+  procedure Lzh.SetProgressWidth(Width : Word);
+    {-Set assumed width of window for DefShowProgressFunc}
+  begin
+    lzhProgressWidth := Width;
+  end;
+
+  procedure Lzh.SetCompressionMode(CM : CompressionMode);
+    {-Set the mode of compression (ie. Store, Freeze, Best Method}
+  begin
+    LzhCompressMode := CM;
+  end;
+
+  procedure Lzh.CompressFileMaskList(var FML : FileMaskList);
+    {-Compress (store or freeze) all files that match the file mask list}
+  var
+    LzhList : LzhFileList;
+    LzhNode : LzhNodePtr;
+    ExpNode : FileMaskNodePtr;
+    LH : LzhHeader;
+    FO : LongInt;
+    NewFile : PathStr;
+    FP : LongInt;
+    Dir : DirStr;
+    Name : NameStr;
+    Ext : ExtStr;
+    Exclude1 : String[12];
+    Exclude2 : String[12];
+    SaveName : PathStr;
+  label
+    ErrorExit;
+  begin
+    {Exit with error if nothing to do}
+    if FML.fmlHead = nil then begin
+      arError := ecEmptyFileMaskList;
+      Exit;
+    end;
+
+    arError := 0;
+    arOptionsOn(arCompressing);
+    arOptionsOff(arDeleting);
+
+    {Do file renaming in preparation for update}
+    lzhPrepareForUpdate;
+    if arError <> ecOk then
+      Exit;
+
+    {Expand FML into list of actual file names}
+    FML.ExpandFileMaskList;
+    arError := ArchiveStatus;
+    if arError <> ecOk then begin
+      lzhRestoreArchive;
+      Exit;
+    end;
+    FML.SortFileMaskList;
+
+    LzhList.Init;
+    if lzhNewFile then
+      lzhNewFile := False
+    else begin
+      {Make an LzhFileList of all file names currently in archive}
+      FP := ulStart;
+      while (arError = 0) and ulReadNextHeader(LH, FO, FP) do
+        if not LzhList.Append(LH, FO) then begin
+          arError := epFatal+ecOutOfMemory;
+          LzhList.Done;
+          lzhRestoreArchive;
+          Exit;
+        end;
+    end;
+
+    {Exit if not a valid archive file}
+    if arError <> 0 then begin
+      arError := ecBadFileFormat;
+      goto ErrorExit;
+    end;
+
+    {Reset file back to starting position}
+    FP := ulStart;
+    Seek(arFile, FP);
+    arError := IOResult;
+    if arError <> 0 then begin
+      LzhList.Done;
+      lzhRestoreArchive;
+      Exit;
+    end;
+
+    {show name}
+    ShowName;
+
+    {Build the exclude file names}
+    FSplit(arName, Dir, Name, Ext);
+    Exclude1 := Name + '.)1(';
+    Exclude2 := Name + '.)2(';
+
+    {Loop through both lists, freezing or copying as required}
+    ExpNode := FML.fmlHead;
+    LzhNode := LzhList.lfHead;
+
+    repeat
+      if lzhCompareNodes(ExpNode, LzhNode) then begin
+        with ExpNode^ do begin
+          NewFile := fmnDirPtr^ + fmnName + '.' + fmnExt;
+          if LzhNode = nil then begin
+            LH.FName := '';
+            SaveName := '';
+          end else begin
+            LH := LzhNode^.lnLH;
+            SaveName := LH.FName;
+          end;
+
+          {Exclude the LZH temp files, see if OK to compress}
+          if (NewFile <> Exclude1) and (NewFile <> Exclude2) then
+            if OkToCompress(NewFile, LH) then begin
+              case LzhCompressMode of
+                cmStored     : ;
+                cmFrozen1    : lzhFreezeFile(NewFile, LH);
+                cmBestMethod,
+                cmFrozen2    : lhaFreezeFile(NewFile, LH);
+              end;
+
+              {Remove drive from NewFile name before compare}          {!!.02}
+              if (Length(NewFile) > 1) and (NewFile[2] = ':') then     {!!.02}
+                System.Delete(NewFile, 1, 2);                          {!!.02}
+              {Skip past same file if already in archive}              {!!.02}
+              if SaveName = NewFile then
+                LzhNode := LzhNode^.lnNext                             {!!.02}
+              else if arOptionsAreOn(arStripPath) then                 {!!.02}
+                if SaveName = fmnName + '.' + fmnExt then              {!!.02}
+                  LzhNode := LzhNode^.lnNext;                          {!!.02}
+
+              {Call CompressSuccess function}
+              if CompressSuccess(LH) then
+                if (arError < 100) or (arError > 163) then
+                  arError := 0
+            end;
+        end;
+        ExpNode := ExpNode^.fmnNext;
+      end else begin
+        FP := LzhNode^.lnFileOfs - LzhNode^.lnLH.HeadSize - SizeOf(LH.CRC);
+        {Adjust file pos for extended header information}              {!!.01}
+        if (LzhNode^.LnLH.Level > 0) and (LzhNode^.LnLH.PathHdrSize > 0) then {!!.01}
+          Dec(FP, LzhNode^.LnLH.PathHdrSize + 5);                      {!!.01}
+        lzhCopyFile(FP);
+        FP := FilePos(arFile);
+        LzhNode := LzhNode^.lnNext;
+      end;
+
+      {Abort and restore on errors}
+      if arError <> ecOk then
+        goto ErrorExit;
+    until (ExpNode = nil) and (LzhNode = nil);
+
+    {Cleanup}
+    LzhList.Done;
+    lzhDoneUpdate;
+    Exit;
+
+ErrorExit:
+    LzhList.Done;
+    lzhRestoreArchive;
+  end;
+
+  procedure Lzh.Compress(Mask : PathStr);
+    {-Compress files meeting Mask}
+  var
+    FML : FileMaskList;
+  begin
+    {Make a file mask list of just Mask}
+    FML.Init;
+    if not FML.Append(Mask) then
+      Exit;
+
+    {Compress the files}
+    CompressFileMaskList(FML);
+
+    {Clean up the file mask list}
+    FML.Done;
+  end;
+
+  procedure Lzh.DeleteFileMaskList(var FML : FileMaskList);
+    {-Removes files in FML from LZH file}
+  var
+    LFL : LzhFileList;
+    LNP : LzhNodePtr;
+    LH : LzhHeader;
+    FO : LongInt;
+    FP : LongInt;
+  begin
+    arOptionsOn(arDeleting);
+    arOptionsOff(arCompressing);
+
+    {initialize LFL}
+    LFL.Init;
+
+    {build the list of files}
+    BuildLzhFileList(LFL, FML);
+
+    {Do file renaming in preparation for update}
+    lzhPrepareForUpdate;
+    if arError <> ecOk then
+      Exit;
+
+    {Reset file back to starting position}
+    FP := ulStart;
+    Seek(arFile, FP);
+    arError := IOResult;
+    if arError <> 0 then begin
+      lzhRestoreArchive;
+      Exit;
+    end;
+
+    {Loop through all files in archive, skipping all matches}
+    LNP := LFL.lfHead;
+    FP := ulStart;
+    while (arError = 0) and ulReadNextHeader(LH, FO, FP) do
+      if (LNP <> nil) and (LH.FName = LNP^.lnLH.FName) then begin
+        {Skip this file}
+        ShowMethod(LNP, LH.FName);
+        LNP := LNP^.lnNext;
+      end else begin
+        {Copy this file}
+        arError := SeekRelative(arFile, -LH.HeadSize - SizeOf(LH.CRC));
+        {Adjust file pos for extended header information}              {!!.01}
+        if (LH.Level > 0) and (LH.PathHdrSize > 0) then                {!!.01}
+          arError := SeekRelative(arFile, - (LH.PathHdrSize+5));       {!!.01}
+        FP := FilePos(arFile);
+        lzhCopyFile(FP);
+        FP := FilePos(arFile);
+      end;
+
+    {Cleanup}
+    lzhDoneUpdate;
+  end;
+
+  procedure Lzh.Delete(Mask : PathStr);
+    {-Delete files matching Mask from archive}
+  var
+    FML : FileMaskList;
+  begin
+    {Make a file mask list of just Mask}
+    FML.Init;
+    if not FML.Append(Mask) then
+      Exit;
+
+    {Compress the files}
+    DeleteFileMaskList(FML);
+
+    {Clean up the file mask list}
+    FML.Done;
+  end;
+
+  procedure Lzh.FreshenArchive;
+    {-Freshen all files in the current archive (via OkToCompress)}
+  label
+    ExitPoint;
+  var
+    LH : LzhHeader;
+    FO : LongInt;
+    FP : LongInt;
+  begin
+    arError := 0;                                                      {!!.01}
+    ArchiveStatus := ecOk;
+    arOptionsOn(arCompressing);
+    arOptionsOff(arDeleting);
+
+    {Do file renaming in preparation for update}
+    lzhPrepareForUpdate;
+    if arError <> ecOk then
+      Exit;
+
+    {Show name}
+    ShowName;
+
+    {Loop through all files in archive}
+    FP := ulStart;
+    while arError = 0 do begin
+      if ulReadNextHeader(LH, FO, FP) then begin
+        {Freeze or copy, as required}
+        if ExistFile(LH.FName) and OkToCompress(LH.FName, LH) then begin
+          if ExtendedHeader then
+            lhaFreezeFile(LH.FName, LH)
+          else
+            lzhFreezeFile(LH.FName, LH);
+          {Call CompressSuccess function}
+          if CompressSuccess(LH) then
+            if (arError < 100) or (arError > 163) then
+              arError := 0;
+        end else begin
+          FP := FO - LH.HeadSize - SizeOf(LH.CRC);
+          {Adjust file pos for extended header information}            {!!.01}
+          if (LH.Level > 0) and (LH.PathHdrSize > 0) then              {!!.01}
+            Dec(FP, LH.PathHdrSize + 5);                               {!!.01}
+          lzhCopyFile(FP);
+          FP := FilePos(arFile);
+        end;
+
+        {Abort and restore if we encountered any errors during the copy/freeze}
+        if arError <> ecOk then begin
+          lzhRestoreArchive;
+          Exit;
+        end;
+      end else
+        goto ExitPoint;
+    end;
+ExitPoint:
+    {Cleanup}
+    lzhDoneUpdate;
+  end;
+
+  procedure DefShowMethodProc(LNP : LzhNodePtr; FName : PathStr; UP : UnLzhPtr);
+    {-Default ShowMethod procedure}
+  var
+    St : string[11];
+  begin
+    {show what we're doing}
+    if UP^.arOptionsAreOn(arCompressing) then begin
+      WriteLn(JustFileName(FName));
+      Write('  Freezing  :  ');
+    end else if UP^.arOptionsAreOn(arDeleting) then
+      WriteLn('  Deleting ', JustFileName(FName))
+    else begin
+      case LNP^.lnLH.HeadID[4] of
+        cmcStored :
+          St := 'Extracting';
+        cmcFrozen1,
+        cmcFrozen2:
+          St := '   Melting';
+        else
+          Exit;
+      end;
+      Write(St, ': ', JustFileName(FName), '  ');
+    end;
+  end;
+
+  function DefExtractSuccessFunc(LNP : LzhNodePtr; FName : PathStr;
+                                 UP : UnLzhPtr) : Boolean;
+    {-Default ExtractSuccess function}
+  begin
+    DefExtractSuccessFunc := True;
+    with UP^, LNP^ do
+      case GetLastError mod 10000 of
+        ecOK : case LNP^.lnLH.HeadID[4] of
+                 cmcFrozen1,
+                 cmcFrozen2 : Write('   Melted ');
+                 cmcStored  : Write('Extracted ');
+               end;
+        ecUnknownMethod :
+          Write('Unknown compression method used');
+        ecCannotCreate :
+          Write('Cannot create output file');
+        ecBadFileCRC :
+          Write('CRC error: Is ', HexW(ulCrc), ', should be ', HexW(lnLH.Crc));
+        else
+          DefExtractSuccessFunc := False;
+      end;
+    WriteLn;
+  end;
+
+  procedure DefShowNameProc(UP : UnLzhPtr);
+    {-Default ShowName procedure}
+  begin
+    if UP^.arOptionsAreOn(arCompressing) or
+       UP^.arOptionsAreOn(arDeleting) then
+      WriteLn('Updating ', UP^.GetFileName)
+    else
+      WriteLn('Searching ', UP^.GetFileName);
+  end;
+
+  function DefShowProgressFunc(UP : UnLzhPtr; BytesWritten, TotalBytes : LongInt) : Boolean;
+    {-Default function to show progress}
+  const
+    UsedCols = 17;
+    Increment : Integer = 8192;
+  var
+    Dots : Byte;
+    I : Byte;
+    MaxColBytes : LongInt;
+
+    procedure ShowDots(Count : Byte; Ch : Char);
+    var
+      D : Byte;
+    begin
+       for D := 1 to Count do
+         Write(Ch);
+       for D := 1 to Count do
+         Write(^H);
+    end;
+
+  begin
+    DefShowProgressFunc := True;
+    with LzhPtr(UP)^ do begin
+      if arOptionsAreOn(arCompressing) then begin
+        if (lzhCompressMode <> cmBestMethod) and
+           (lzhCompressMode <> cmFrozen2) then
+          Increment := 4096 else begin
+          if (LongInt(lzhProgressWidth - UsedCols) * Increment) <
+              TotalBytes then
+            Increment := TotalBytes div
+                    LongInt(lzhProgressWidth - UsedCols);
+        end;
+
+        if BytesWritten = 0 then begin
+          MaxColBytes := LongInt(lzhProgressWidth - UsedCols) * Increment;
+          if TotalBytes > MaxColBytes then begin
+            NextDisplayInc := TotalBytes div (lzhProgressWidth - UsedCols);
+            Dots := (lzhProgressWidth - UsedCols);
+            if lzhProgressWidth mod UsedCols <> 0 then
+              Inc(Dots);
+          end else begin
+            Dots := (TotalBytes div Increment);
+            if TotalBytes mod Increment <> 0 then
+              Inc(Dots);
+          end;
+          ShowDots(Dots, '.');
+        end else begin
+          MaxColBytes := LongInt(lzhProgressWidth - UsedCols) * Increment;
+          if BytesWritten > MaxColBytes then begin
+            Dots := (lzhProgressWidth - UsedCols);
+            if lzhProgressWidth mod UsedCols <> 0 then
+              Inc(Dots);
+          end else begin
+            Dots := (BytesWritten div Increment);
+            if BytesWritten mod Increment <> 0 then
+              Inc(Dots);
+          end;
+          ShowDots(Dots, 'o');
+        end
+      end else
+        Write('.');
+    end;
+  end;
+
+  function DefCompressSuccessFunc(LP : LzhPtr;
+                                  LH : LzhHeader) : Boolean;
+    {-Default CompressSuccess function}
+  var
+    Code  : Word;
+    Ratio : Byte;                                                      {!!.01}
+  begin
+    DefCompressSuccessFunc := True;
+    Code := LP^.GetLastError mod 10000;
+    case Code of
+      ecOK :
+        begin
+          Write(#13);
+          if LH.HeadID[4] = cmcStored then
+            Write('  Stored (100%)')
+          else begin
+            if LH.PathHdrSize > 0 then
+              Ratio :=
+                Percentage(LH.NewSize-LH.PathHdrSize-5, LH.OrigSize)   {!!.01}
+            else
+              Ratio := Percentage(LH.NewSize, LH.OrigSize);            {!!.01}
+            Write('  Frozen (', Ratio, '%)');
+          end;
+          WriteLn;
+        end;
+      else
+        DefCompressSuccessFunc := False;
+    end;
+  end;
+
+  function DefOkToWriteFunc(LNP : LzhNodePtr; var FName : PathStr; UP : UnLzhPtr) : Boolean;
+    {-Default function to get permission to extract file}
+  begin
+    DefOkToWriteFunc := True;
+  end;
+
+  function DefOkToCompressFunc(LP : LzhPtr; NewFile : PathStr;
+                               LH : LzhHeader) : Boolean;
+    {-Default function to say OK to compress NewName}
+  type
+    DT = record
+      Time : Word;
+      Date : Word;
+    end;
+  var
+    NewF : File;
+    NTime : DT;
+    SaveMode : Byte;                                                   {!!.02}
+  begin
+    if NewFile <> LH.FName then
+      {NewFile is new for this archive, compress it}
+      DefOkToCompressFunc := True
+    else begin
+      {NewFile is same as OldFile, only compress if newer}
+      SaveMode := FileMode;                                            {!!.02}
+      FileMode := AproFileMode;                                 {!!.02}{!!.03}
+      Assign(NewF, NewFile);
+      Reset(NewF);
+      FileMode := SaveMode;                                            {!!.02}
+      GetFTime(NewF, LongInt(NTime));
+      if IOResult <> 0 then
+        DefOkToCompressFunc := True
+      else begin
+        if DT(NTime).Date > LH.Date then
+          DefOkToCompressFunc := True
+        else if (DT(NTime).Date = LH.Date) and
+                (DT(NTime).Time > LH.Time) then
+          DefOkToCompressFunc := True
+        else
+          DefOkToCompressFunc := False;
+      end;
+      Close(NewF);
+      if IOResult <> 0 then ;
+    end;
+  end;

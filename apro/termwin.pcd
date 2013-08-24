@@ -1,0 +1,44 @@
+{******************************************************}
+{*                  TERMWIN.PCD 2.03                  *}
+{*      Copyright (c) TurboPower Software 1993.       *}
+{*                All rights reserved.                *}
+{******************************************************}
+const
+  {Keystroke to command mapping}
+  TerminalKeyMax = 106;
+  TerminalKeyID : string[18] = 'terminal key array';
+  TerminalKeySet : array[0..TerminalKeyMax] of Byte =
+  (
+  3, $00, $3B, ccHelp,            {F1}
+  3, $00, $47, ccHome,            {Home}
+  3, $00, $4F, ccEnd,             {End}
+  3, $00, $6A, ccQuit,            {AltF3}
+
+  3, $00, $76, ccEndOfFile,       {^PgDn}
+  3, $00, $84, ccTopOfFile,       {^PgUp}
+
+  3, $00, $48, ccUp,              {Up}
+  3, $00, $50, ccDown,            {Down}
+  3, $00, $4B, ccLeft,            {Left}
+  3, $00, $4D, ccRight,           {Right}
+
+  3, $00, $51, ccPageDn,          {PgDn}
+  3, $00, $49, ccPageUp,          {PgUp}
+
+  {$IFDEF UseMouse}
+  3, $00, $EF, ccMouseSel,        {Click left}
+  3, $00, $EE, ccQuit,            {Click right}
+  3, $00, $ED, ccHelp,            {Click both}
+  {$ELSE}
+  0, 0, 0, 0, 0,0,0,0,0,0,0,0,
+
+  {$ENDIF}
+           0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+);
+
+const
+  TerminalCfgEnd : Byte = 0;

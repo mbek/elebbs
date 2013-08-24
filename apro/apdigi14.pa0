@@ -1,0 +1,122 @@
+const
+  {---- Digi14 options ----}
+  ptReadWriteWait     = $8000; {Set to use "wait" PutChar/GetChar}
+  ptClearFlow         = $4000; {Set to clear flow control on startup}
+  {ptBufferGetChar     = $1000; {Set to use buffered reads}     {!!.02}{!!.03}
+
+  {---- Default options ----}
+  DefDigi14OptionsSimple  = ptBufferGetChar;
+  DefDigi14Options : Word = DefDigi14OptionsSimple;
+
+  DigBufferMax : Word = 1024;       {Max size of getchar buffer}  {!!.02}{!!.03}
+
+{$IFDEF UsePModeDLL}
+
+procedure dInitPort(var P : PortRecPtr; ComName : ComNameType;
+                    Baud : LongInt;
+                    Parity : ParityType; DataBits : DataBitType;
+                    StopBits : StopBitType;
+                    InSize, OutSize : Word;
+                    Options : Word); Export;
+procedure dInitPortKeep(var P : PortRecPtr; ComName : ComNameType;
+                    InSize, OutSize : Word); Export;
+procedure dDonePort(var P : PortRecPtr); Export;
+procedure dSetUart(ComName : ComNameType; NewBase : Word;
+                   NewIrq, NewVector : Byte); Export;
+procedure dSetLine(P : PortRecPtr; Baud : LongInt; Parity : ParityType;
+                   DataBits : DataBitType; StopBits : StopBitType); Export;
+procedure dGetLine(P : PortRecPtr; var Baud : LongInt;
+                   var Parity : ParityType;
+                   var DataBits : DataBitType;
+                   var StopBits : StopBitType;
+                   FromHardware : Boolean); Export;
+procedure dSetModem(P : PortRecPtr; DTR, RTS : Boolean); Export;
+procedure dGetModem(P : PortRecPtr; var DTR, RTS : Boolean); Export;
+procedure dGetChar(P : PortRecPtr; var C : Char); Export;
+procedure dPeekChar(P : PortRecPtr; var C : Char; PeekAhead : Word); Export;
+procedure dPutChar(P : PortRecPtr; C : Char); Export;
+procedure dStartTransmitter(P : PortRecPtr); Export;
+function dCharReady(P : PortRecPtr) : Boolean; Export;
+function dTransReady(P : PortRecPtr) : Boolean; Export;
+procedure dSendBreak(P : PortRecPtr); Export;
+procedure dActivatePort(P : PortRecPtr; Restore : Boolean); Export;
+procedure dDeactivatePort(P : PortRecPtr; Restore : Boolean); Export;
+procedure dSavePort(P : PortRecPtr; var PSR); Export;
+procedure dRestorePort(P : PortRecPtr; var PSR); Export;
+procedure dGotError(P : PortRecPtr; StatusCode : Word); Export;
+function dUpdateLineStatus(P : PortRecPtr) : Byte; Export;
+function dUpdateModemStatus(P : PortRecPtr) : Byte; Export;
+{$IFDEF UseHWFlow}
+procedure dHWFlowSet(P : PortRecPtr; Enable : Boolean;
+                     BufferFull, BufferResume : Word;
+                     Options : Word); Export;
+function dHWFlowGet(P : PortRecPtr) : FlowState; Export;
+{$ENDIF}
+{$IFDEF UseSWFlow}
+procedure dSWFlowSet(P : PortRecPtr; Enable : Boolean;
+                     BufferFull, BufferResume : Word;
+                     Options : Word); Export;
+function dSWFlowGet(P : PortRecPtr) : FlowState; Export;
+procedure dSWFlowCtl(P : PortRecPtr; OnChar, OffChar : Char;
+                     Resume : Boolean); Export;
+{$ENDIF}
+procedure dBufferStatus(P : PortRecPtr;
+                        var InFree, OutFree, InUsed, OutUsed : Word); Export;
+procedure dBufferFlush(P : PortRecPtr; FlushIn, FlushOut: Boolean); Export;
+procedure ActivateApDigi14; Export;
+{$ELSE}
+
+procedure dInitPort(var P : PortRecPtr; ComName : ComNameType;
+                    Baud : LongInt;
+                    Parity : ParityType; DataBits : DataBitType;
+                    StopBits : StopBitType;
+                    InSize, OutSize : Word;
+                    Options : Word);
+procedure dInitPortKeep(var P : PortRecPtr; ComName : ComNameType;
+                    InSize, OutSize : Word);
+procedure dDonePort(var P : PortRecPtr);
+procedure dSetUart(ComName : ComNameType; NewBase : Word;
+                   NewIrq, NewVector : Byte);
+procedure dSetLine(P : PortRecPtr; Baud : LongInt; Parity : ParityType;
+                   DataBits : DataBitType; StopBits : StopBitType);
+procedure dGetLine(P : PortRecPtr; var Baud : LongInt;
+                   var Parity : ParityType;
+                   var DataBits : DataBitType;
+                   var StopBits : StopBitType;
+                   FromHardware : Boolean);
+procedure dSetModem(P : PortRecPtr; DTR, RTS : Boolean);
+procedure dGetModem(P : PortRecPtr; var DTR, RTS : Boolean);
+procedure dGetChar(P : PortRecPtr; var C : Char);
+procedure dPeekChar(P : PortRecPtr; var C : Char; PeekAhead : Word);
+procedure dPutChar(P : PortRecPtr; C : Char);
+procedure dStartTransmitter(P : PortRecPtr);
+function dCharReady(P : PortRecPtr) : Boolean;
+function dTransReady(P : PortRecPtr) : Boolean;
+procedure dSendBreak(P : PortRecPtr);
+procedure dActivatePort(P : PortRecPtr; Restore : Boolean);
+procedure dDeactivatePort(P : PortRecPtr; Restore : Boolean);
+procedure dSavePort(P : PortRecPtr; var PSR);
+procedure dRestorePort(P : PortRecPtr; var PSR);
+procedure dGotError(P : PortRecPtr; StatusCode : Word);
+function dUpdateLineStatus(P : PortRecPtr) : Byte;
+function dUpdateModemStatus(P : PortRecPtr) : Byte;
+{$IFDEF UseHWFlow}
+procedure dHWFlowSet(P : PortRecPtr; Enable : Boolean;
+                     BufferFull, BufferResume : Word;
+                     Options : Word);
+function dHWFlowGet(P : PortRecPtr) : FlowState;
+{$ENDIF}
+{$IFDEF UseSWFlow}
+procedure dSWFlowSet(P : PortRecPtr; Enable : Boolean;
+                     BufferFull, BufferResume : Word;
+                     Options : Word);
+function dSWFlowGet(P : PortRecPtr) : FlowState;
+procedure dSWFlowCtl(P : PortRecPtr; OnChar, OffChar : Char;
+                     Resume : Boolean);
+{$ENDIF}
+procedure dBufferStatus(P : PortRecPtr;
+                        var InFree, OutFree, InUsed, OutUsed : Word);
+procedure dBufferFlush(P : PortRecPtr; FlushIn, FlushOut: Boolean);
+procedure ActivateApDigi14;
+
+{$ENDIF}

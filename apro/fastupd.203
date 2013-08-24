@@ -1,0 +1,99 @@
+This file summarizes changes made between Async Professional 2.02 and
+2.03. It is of interest primarily to recipients of the APR203.EXE patch
+file from TurboPower Software's Electronic Maintenance System.
+
+New Features
+---------------------------------------------------------------------
+Most of the new features are described in detail in READ.1ST. The
+following is a brief description of them, arranged by unit. Minor
+enhancements to existing programs and routines are listed here only and
+are denoted by asterisks.
+
+General
+  - added AproFileMode constant
+
+APPORT
+  * Add initial CR/LF to trace files when appending
+
+APUART
+  * allow very low baud rates, down to 10 baud
+
+APXMODEM/OOXMODEM
+  * removed "10-char per call to ProtocolReceivePart" limit
+
+APZMODEM/OOZMODEM
+  * handle data after hex headers
+
+APFAXCVT/OOFAXCVT
+  * added more TPRO/OPRO conditional compilation directives
+  * various speed improvements
+  - added convert/unpack support for high width faxes
+
+APFAX12/OOFAX12
+  - added send/receive support for high width faxes
+
+CVT2FAX/CVT2FAXO
+  - added command line switch for wide faxes
+
+SHOWFAX/SHOWFAXO
+  - added option to rotate display 180 degrees
+
+
+Bugs Fixed
+---------------------------------------------------------------------
+
+APUART
+  - GPF possible if uSetUart fails in uInitPort
+
+APCOM/OOCOM
+  - PutBlockDirect could transmit more data than requested
+
+APFOSSIL/APDIGI14
+  - Possible GPF when using ptBufferGetChar option
+  - ecNoDevice error when calling PeekChar
+
+APYMODEM/OOYMODEM
+  - file access error when receiving files
+  - can't open file error when receiving YmodemG from DSZ
+
+APKERMIT/OOKERMIT
+  - header checksum was skipped, behaved as if always correct
+
+APCOMD
+  - AppendTrace/AppendTraceHex missing from DLL declaration list
+  - DLLs won't compiler for certain valid APDEFINE configurations
+
+TERMWIN
+  - click on scroll arrow scrolled two lines instead of one
+  - inadvertent blink in terminal window
+
+APFAXCVT/OOFAXCVT
+  - could lose file handle during some file errors
+  - pad-to-end-of-page option worked only on last page of fax
+
+APFAX12/OOFAX12
+  - if cover page is APF, cover page was sent twice, instead of file
+  - SessionBPS not updated after a class 1 retrain
+  - when cover page is APF file it is always sent in low resolution
+  - received faxes had receiver's station ID instead of sender's
+  - GetModemFeatures could return non-zero AsyncStatus even if okay
+  - would not abort when sending to incompatible device
+  - GPF if class 1 faxmodem returns bad modulations
+  - class 1 receive failures would fail to disconnect with some faxmodems
+
+APFAXPRN/OOFAXPRN
+  - GPF/memory overwrite if physical error during printing
+
+APZIP/OOZIP
+  - Out-of-memory error during compress wasn't treated as fatal
+  - Can't dearchive PKZIP-created archives containing subdirectories
+
+COMTESTO
+  - ignored last command line parameter
+
+RFAX/RFAXO
+  - hangs if fax error occurs when popped up
+
+FAXSRVR/FAXSRVRO
+  - keeps trying to print bad faxes
+

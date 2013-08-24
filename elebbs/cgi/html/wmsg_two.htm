@@ -1,0 +1,113 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML>
+  <HEAD>
+
+  <TITLE> EleWEB - Write new message - </TITLE>
+  <link rel="Stylesheet" TYPE="text/css" HREF="/eleweb.css">
+</HEAD>
+
+<BODY>
+<!-- --------------------------------------------------------------------- -->
+
+ <!-- Design the form -->
+ <FORM ACTION="/cgi-bin/eleweb.exe?action=3&script=readmsg&sub-action=6&msgnum=|YP" METHOD="POST">
+
+ <!-- --------------------------------------------------------------------- -->
+ <TABLE cellSpacing=1 cellPadding=4 width="80%" align=center border=0 class="tab_border">
+   <TBODY>
+     <TR ALIGN=MIDDLE class="tab_header">
+
+       <TD COLSPAN=2>
+         Replying to message
+       </TD>
+     </TR>
+
+     <TR ALIGN=center class="tab_contents2">
+       <TD VALIGN=TOP COLSPAN=2>
+         You are logged in as |FA, posting message in "|YA"
+       </TD>
+     </TR>
+
+
+     <TR class="tab_contents2">
+       <TD ALIGN="LEFT" VALIGN="CENTER" WIDTH="30%">
+         From
+       </TD>
+
+      <TD ALIGN="LEFT" class="tab_header">
+         <INPUT NAME="post_fromwho" TYPE="text" SIZE="100%" value="|YG">
+      </TD>
+     </TR>
+
+
+
+     <TR>
+       <TD ALIGN="LEFT" class="tab_contents2" VALIGN="CENTER">
+         To
+       </TD>
+
+      <TD ALIGN="LEFT" class="tab_header">
+         <INPUT NAME="post_towho" TYPE="text" SIZE="100%" value="|ZA" READONLY>
+      </TD>
+     </TR>
+
+     <TR>
+       <TD ALIGN="LEFT" class="tab_contents2"  VALIGN="CENTER">
+         Subject
+       </TD>
+
+      <TD ALIGN="LEFT" class="tab_header">
+         <INPUT NAME="post_subject" TYPE="text" SIZE="100%" VALUE="|ZC" READONLY  MAXLENGTH="100">
+      </TD>
+     </TR>
+
+
+     <TR>
+       <TD ALIGN="LEFT" class="tab_contents2" VALIGN="CENTER" COLSPAN=2>
+         <INPUT NAME="post_private" TYPE="checkbox" VALUE="TRUE">&nbsp;&nbsp;Private
+       </TD>
+
+     </TR>
+    </TABLE>
+
+   <!-- ------------------------------------------------------------------- -->
+   <TABLE cellSpacing=1 cellPadding=4 width="80%" align=center border=0 class="tab_border">
+     <TBODY>
+         <TR class="tab_contents2">
+           <TD ALIGN="CENTER" VALIGN="CENTER">
+             <TEXTAREA NAME="post_msgtext" WRAP="HARD" COLS="76" ROWS="18">|YH</TEXTAREA>
+           </TD>
+         </TR>
+
+         <TR  class="tab_footer">
+          <TD colspan=2 align=center>
+           <INPUT TYPE="submit" value="Send">
+         </TD>
+
+   </TABLE>
+
+ <!-- --------------------------------------------------------------------- -->
+ </TABLE>
+
+ <!-- End the form -->
+ </FORM>
+
+ </BODY>
+</HTML>
+
+         <!-- Hidden input fields to set an reply address correctly -->
+         <!-- These fields are not necessary but make an reply actually -->
+         <!-- an reply. Those variables used here are only available -->
+         <!-- after processing the mesasge text, hence their all at the -->
+         <!-- end. -->
+         <INPUT NAME="post_reply_replyaddr" TYPE="hidden" VALUE="|YI">
+         <INPUT NAME="post_reply_replyto" TYPE="hidden" VALUE="|YJ">
+         <INPUT NAME="post_reply_replykludge" TYPE="hidden" VALUE="|YK">
+         <INPUT NAME="post_reply_address" TYPE="hidden" VALUE="|YL">
+      </TABLE>
+
+      <!-- End the form -->
+      </FORM>
+
+   </BODY>
+</HTML>

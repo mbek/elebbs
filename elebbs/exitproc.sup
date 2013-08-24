@@ -1,0 +1,271 @@
+(*
+**
+** Copyright (C) 1999-2003 Maarten Bekers. All rights reserved.
+**
+** This file is part of EleBBS, EleXer and EleWEB.
+**
+** This file may be distributed under the terms of the Q Public License
+** as defined by Trolltech AS of Norway and appearing in the file
+** LICENSE.QPL included in the packaging of this file.
+**
+** This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+** WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+**
+*)
+(*
+**
+** EXITPROC.SUP, Exit-procedure routines for EleBBS
+**
+** Copyright (c) 1996 by Maarten Bekers
+**
+** Created : 31-Aug-1996
+** Last update : 31-Aug-1996
+**
+**
+*)
+
+(*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-+-*-*)
+
+procedure NewExitProc; Far;
+
+Function HexWord(W:Word) : String;
+Const Hexchars : Array[0..$F] of Char = '0123456789ABCDEF';
+begin;
+ HexWord := HexChars[Hi(W) SHR 4]  +
+            HexChars[Hi(W) AND $F] +
+            HexChars[Lo(W) SHR 4]  +
+            HexChars[Lo(W) AND $F];
+End; { Func. HexWord }
+
+var T: Array[0..250] of Char;
+begin
+ ExitProc := OldExitProc;
+
+ if Assigned(CloseDown) then
+   CloseDown;
+ RestoreTitle;
+ DoRaBusy(true);
+
+ {$IFNDEF WINGUI}
+   CursorOn;
+ {$ENDIF}
+
+{$I-}
+  DoExitProcedures;
+
+  {$IFNDEF WINGUI}
+    if LineCfg^.Exitinfo <> nil then StatusDisplay(10, false);
+  {$ENDIF}
+
+  if GlobalCfg^.RaConfig <> nil then DoRaBusy(true);
+  if MultiLnObj^.UserOn <> nil then MultiLnObj^.KillFromUseron;
+  CloseComport;
+
+  {$IFDEF WINGUI}
+    if Trim(BatchAtExit) <> '' then
+     begin
+       FillChar(T, SizeOf(T), 00);
+       Move(BatchAtExit[1], T, Length(BatchAtExit));
+
+       RaLog('>', 'Executing batch '+BatchAtExit);
+       WinExecAndWait(T, SW_NORMAL, false);
+     end;
+  {$ENDIF}
+
+   {$IFDEF WITH_DEBUG}
+     DebugObj.DebugLog(logSupport, 'Before killing LangObj');
+   {$ENDIF}
+
+ If OutputObj <> nil then
+    Dispose(OutputObj, Done);                    { DEInitialize screen object }
+ if InputObj <> nil then
+    Dispose(InputObj, Done);                      { DE-initialize input object }
+ if LineCfg^.TagPaths <> nil then
+    Dispose(LineCfg^.TagPaths, Done);
+ if TaggingObj <> nil then
+    Dispose(TaggingObj, Done);
+
+  {$IFDEF WITH_DEBUG}
+    DebugObj.DebugLog(logSupport, 'Objects done-lized');
+  {$ENDIF}
+
+  {$IFDEF WITH_DEBUG}
+    DebugObj.DebugLog(logSupport, 'Closed down RAL file!');
+  {$ENDIF}
+
+ Flush(Crtoutput);
+
+  {$IFDEF WITH_DEBUG}
+    DebugObj.DebugLog(logSupport, 'Closed-down Crtoutput');
+  {$ENDIF}
+
+ Move(CrtOutput, Output, SizeOf(Output));     { !!Never comment this out!! }
+{$IFNDEF ELEUNIX}
+{!!} TextRec(Output).Mode := fmClosed;
+{$ENDIF}
+
+  {$IFDEF WITH_DEBUG}
+    DebugObj.DebugLog(logSupport, 'Moved OldCrt to CurCrt and closed down');
+  {$ENDIF}
+
+ {$IFNDEF WINGUI}
+
+{ !!!  if ClearOnExit then Write('`S:'); }
+  {$IFNDEF ELEUNIX}
+    if ClearOnExit then FillArea(1, 1, mnuScrnWidth, mnuScrnLen, #32, 3);
+  {$ENDIF}
+
+
+ AvtObj^.StatusAdjustXY[1] := 1;
+ AvtObj^.StatusAdjustXY[2] := 1;
+ {$ENDIF}
+
+
+{$ifndef Wingui}
+ {$IFNDEF ELEUNIX}
+   Crt.TextAttr := LightGray;
+   if ClearOnExit then Crt.ClrScr;
+   Crt.TextAttr := LightGray;
+  {$ENDIF}
+{$Endif}
+
+ if OldProgramDir <> '' then
+   begin
+     {$i-} ChDir(NoBackSlash(OldProgramDir)); {$i+}
+     if IoResult > 0 then ;
+   end; { if }
+
+ if LineCfg^.Exitinfo <> nil then
+  with LineCfg^ do
+  begin
+    if Exitinfo^.NetMailEntered then ExitCode := 03;
+    if Exitinfo^.EchoMailEntered then ExitCode := 04;
+    if (Exitinfo^.NetMailEntered) AND (Exitinfo^.EchoMailEntered) then
+         ExitCode := 05;
+    if Exitinfo^.SysOpNext then ExitCode := 02;                   { SysOpNext }
+  end; { if }
+
+{$IFNDEF WINGUI}
+{$IFNDEF ELEUNIX}
+ if (NOT EventStarted) AND (ErrorAddr=NIL) AND (NOT MailerEnd) AND (NOT LineCfg^.ForcedExit) then
+  if ExitCode <> defExitCode then
+    Case ExitCode of
+      01 : if NOT lineCfg^.RalError then begin
+                                  LocalScreenLn(SystemMsgPrefix + 'Initialisation failed, exitting');
+                                  RaLog('!', 'Modem initialisation failure');
+                                end
+            else LocalScreenLn(SystemMsgPrefix + 'Error reading default language definition file '+
+                                LineCfg^.Language^.DefName);
+      02 : LocalScreenLn(SystemMsgPrefix + 'Sysop next; exit at errorlevel 2');
+      03 : LocalScreenLn(SystemMsgPrefix + 'NetMail entered; exit at errorlevel 3');
+      04 : LocalScreenLn(SystemMsgPrefix + 'EchoMail entered; exit at errorlevel 4');
+      05 : LocalScreenLn(SystemMsgPrefix + 'Net and EchoMail entered; exit at errorlevel 5');
+    end; { case }
+
+ if (LineCfg^.ForcedExit) AND (ErrorAddr=nil) then
+    LocalScreenLn(SystemMsgPrefix + 'Forced exit; exit at errorlevel '+ FStr(ExitCode));
+
+ if (MailerEnd) AND (ErrorAddr=nil) then
+    LocalScreenLn(SystemMsgPrefix + 'Returning from front-end shell, errorlevel '+ FStr(ExitCode));
+
+ if (EventStarted) AND (ErrorAddr=nil) then
+   LocalScreenLn(SystemMsgPrefix + 'Executing event; exit at errorlevel '+ FStr(ExitCode));
+
+ if (ExitCode=defExitCode) AND (ErrorAddr=nil) AND (NOT EventStarted)
+     AND (NOT MailerEnd) AND (NOT LineCfg^.ForcedExit) then
+      LocalScreenLn(SystemMsgPrefix + 'Exitting after caller at errorlevel '+ FStr(defExitCode));
+
+  if (ErrorAddr<>nil) then
+    LocalScreenLn(SystemMsgPrefix + 'Runtime error occured in program, errorcode '+ FStr(ExitCode));
+
+  LocalScreenLn(SystemMsgPrefix + FullProgName + ' down at '+ JDates.TimeStr(False, False)+ #32 +
+                LangObj^.RaFormatDate(Jdates.DateStr, 8, y2k_SysDate, 0));
+  LocalScreenLn(SystemMsgPrefix + 'Thanks for using ' + FullProgName + '!');
+{$ENDIF - Linux}
+{$ENDIF - WinGUI}
+
+  {$IFDEF WITH_DEBUG}
+    DebugObj.DebugLog(LogSupport, 'Said farewell, lets clear screen and release memory');
+  {$ENDIF}
+
+ {$IFNDEF WINGUI}
+  {$IFNDEF ELEUNIX}
+     UpdateScreenBuffer(true);
+     Crt.GotoXY(1, OutputObj^.WhereY);
+  {$ENDIF - Linux }
+ {$ENDIF - WinGUI}
+
+ ReleaseMem(LineCfg^.Exitinfo, SizeOf(LineCfg^.Exitinfo^));
+ ReleaseMem(LineCfg^.UserExtension, SizeOf(LineCfg^.UserExtension^));
+ ReleaseMem(LineCfg^.SaveGuestRecord, SizeOf(LineCfg^.SaveGuestRecord^));
+ ReleaseMem(LineCfg^.UploadInfo, SizeOf(UploadsRec));
+ ReleaseMem(GlobalCfg^.RaConfig, SizeOf(GlobalCfg^.Raconfig^));
+ ReleaseMem(LineCfg^.Language, SizeOf(LineCfg^.Language^));
+ ReleaseMem(LineCfg^.Modem, SizeOf(LineCfg^.Modem^));
+ ReleaseMem(LineCfg^.LimitsInfo, SizeOf(LimitsRecord));
+ ReleaseMem(LineCfg^.MarkedMsgArray, SizeOf(LineCfg^.MarkedMsgArray^));
+ ReleaseMem(LineCfg^.MenuContents, SizeOf(LineCfg^.MenuContents^));
+ ReleaseMem(LineCfg^.HeaderList, SizeOf(LineCfg^.HeaderList^));
+ ReleaseMem(LineCfg^.Telnet, SizeOf(TelnetRecord));
+ ReleaseMem(LineCfg^.CurMessageRecord, SizeOf(LineCfg^.CurMessageRecord^));
+ ReleaseMem(LineCfg^.CurFilesRecord, SizeOf(LineCfg^.CurFilesRecord^));
+ ReleaseMem(GlobalCfg^.Elconfig, SizeOf(GlobalCfg^.ElConfig^));
+ ReleaseMem(LineCfg^.Emsi_User, SizeOf(LineCfg^.Emsi_User^));
+ {$IFNDEF MSDOS}
+  ReleaseMem(OldScreen, SizeOf(OldScreen^));
+ {$ENDIF}
+
+ {ReleaseMem(GenInfo, SizeOf(KeyRecord));}{ Release memory claimed by KEY_SYST.PAS }
+ ReleaseMem(LineCfg^.LBarContents, SizeOf(LBarRec));   { Release menu-allocated memory }
+ ReleaseMem(LineCfg^.MenuContents, SizeOf(MenuRec));   { Release menu-allocated memory }
+{$I+}
+
+  {$IFDEF WITH_DEBUG}
+    DebugObj.DebugLog(logSupport, 'Cleared memory, handle any pending errors');
+  {$ENDIF}
+
+ If ErrorAddr<>Nil then
+  begin
+    RaLog('!', 'Fatal error occured in '+FullProgname+' v'+Global.VersionID+':');
+    {$ifndef WinGUI}
+      RaLog('!', 'Runtime error '+FStr(ExitCode)+' at '+HexWord(Seg(ErrorAddr^))+':'+
+             HexWord(Ofs(ErrorAddr^)));
+    {$else}
+      RaLog('!', Format('Runtime error %n at %p.', [Exitcode, ErrorAddr]));
+    {$endif}
+
+    RaLog('!', 'When this error keeps occuring, contact the author.');
+  end; { ErrorAddr }
+
+  ProgTerminated := true;
+
+  {$IFDEF WITH_DEBUG}
+    DebugObj.DebugLog(logSupport, 'Handled pending errors, were through');
+  {$ENDIF}
+
+  {-- Release objects -------------------------------------------------------}
+  Dispose(AvtObj, Done);
+  Dispose(TermObj, Done);
+  Dispose(ContrObj, Done);
+  Dispose(ReadMsgObj, Done);
+  Dispose(OutblockObj, Done);
+  Dispose(MultiLnObj, Done);
+  Dispose(WfcObj, Done);
+  Dispose(UserEditObj, Done);
+  Dispose(ChatObj, Done);
+  ReleaseMem(LangObj^.ralArray, SizeOf(LangObj^.ralArray^));
+  if langObj <> nil then
+      Dispose(LangObj, Done);                    { DeInitialize language object }
+
+  {$IFDEF TCPIP}
+    Dispose(IrcIntObj, Done);
+    Dispose(TelIntObj, Done);
+  {$ENDIF}
+
+  {$IFDEF ELEUNIX}
+    Dispose(SigObj, Done);
+  {$ENDIF}
+
+  Dispose(GlobalCfg);
+  Dispose(LineCfg);
+end; { NewExitProc }

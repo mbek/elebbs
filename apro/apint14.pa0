@@ -1,0 +1,111 @@
+{$IFDEF   UsePModeDLL}
+
+procedure iInitPort(var P : PortRecPtr; ComName : ComNameType;
+                    Baud : LongInt;
+                    Parity : ParityType; DataBits : DataBitType;
+                    StopBits : StopBitType;
+                    InSize, OutSize : Word;
+                    Options : Word); Export;
+procedure iInitPortKeep(var P : PortRecPtr; ComName : ComNameType;
+                    InSize, OutSize : Word); Export;
+procedure iDonePort(var P : PortRecPtr); Export;
+procedure iSetUart(ComName : ComNameType; NewBase : Word;
+                   NewIrq, NewVector : Byte); Export;
+procedure iSetLine(P : PortRecPtr; Baud : LongInt; Parity : ParityType;
+                   DataBits : DataBitType; StopBits : StopBitType); Export;
+procedure iGetLine(P : PortRecPtr; var Baud : LongInt;
+                   var Parity : ParityType;
+                   var DataBits : DataBitType;
+                   var StopBits : StopBitType;
+                   FromHardware : Boolean); Export;
+procedure iSetModem(P : PortRecPtr; DTR, RTS : Boolean); Export;
+procedure iGetModem(P : PortRecPtr; var DTR, RTS : Boolean); Export;
+procedure iGetChar(P : PortRecPtr; var C : Char); Export;
+procedure iPeekChar(P : PortRecPtr; var C : Char; PeekAhead : Word); Export;
+procedure iPutChar(P : PortRecPtr; C : Char); Export;
+procedure iStartTransmitter(P : PortRecPtr); Export;
+function iCharReady(P : PortRecPtr) : Boolean; Export;
+function iTransReady(P : PortRecPtr) : Boolean; Export;
+procedure iSendBreak(P : PortRecPtr); Export;
+procedure iActivatePort(P : PortRecPtr; Restore : Boolean); Export;
+procedure iDeactivatePort(P : PortRecPtr; Restore : Boolean); Export;
+procedure iSavePort(P : PortRecPtr; var PSR); Export;
+procedure iRestorePort(P : PortRecPtr; var PSR); Export;
+procedure iGotError(P : PortRecPtr; StatusCode : Word); Export;
+function iUpdateLineStatus(P : PortRecPtr) : Byte; Export;
+function iUpdateModemStatus(P : PortRecPtr) : Byte; Export;
+{$IFDEF UseHWFlow}
+procedure iHWFlowSet(P : PortRecPtr; Enable : Boolean;
+                     BufferFull, BufferResume : Word;
+                     Options : Word); Export;
+function iHWFlowGet(P : PortRecPtr) : FlowState; Export;
+{$ENDIF}
+{$IFDEF UseSWFlow}
+procedure iSWFlowSet(P : PortRecPtr; Enable : Boolean;
+                     BufferFull, BufferResume : Word;
+                     Options : Word); Export;
+function iSWFlowGet(P : PortRecPtr) : FlowState; Export;
+procedure iSWFlowCtl(P : PortRecPtr; OnChar, OffChar : Char;
+                     Resume : Boolean); Export;
+{$ENDIF}
+procedure iBufferStatus(P : PortRecPtr;
+                        var InFree, OutFree, InUsed, OutUsed : Word); Export;
+procedure iBufferFlush(P : PortRecPtr; FlushIn, FlushOut: Boolean); Export;
+procedure ActivateApInt14; Export;
+
+{$ELSE}
+
+procedure iInitPort(var P : PortRecPtr; ComName : ComNameType;
+                    Baud : LongInt;
+                    Parity : ParityType; DataBits : DataBitType;
+                    StopBits : StopBitType;
+                    InSize, OutSize : Word;
+                    Options : Word);
+procedure iInitPortKeep(var P : PortRecPtr; ComName : ComNameType;
+                    InSize, OutSize : Word);
+procedure iDonePort(var P : PortRecPtr);
+procedure iSetUart(ComName : ComNameType; NewBase : Word;
+                   NewIrq, NewVector : Byte);
+procedure iSetLine(P : PortRecPtr; Baud : LongInt; Parity : ParityType;
+                   DataBits : DataBitType; StopBits : StopBitType);
+procedure iGetLine(P : PortRecPtr; var Baud : LongInt;
+                   var Parity : ParityType;
+                   var DataBits : DataBitType;
+                   var StopBits : StopBitType;
+                   FromHardware : Boolean);
+procedure iSetModem(P : PortRecPtr; DTR, RTS : Boolean);
+procedure iGetModem(P : PortRecPtr; var DTR, RTS : Boolean);
+procedure iGetChar(P : PortRecPtr; var C : Char);
+procedure iPeekChar(P : PortRecPtr; var C : Char; PeekAhead : Word);
+procedure iPutChar(P : PortRecPtr; C : Char);
+procedure iStartTransmitter(P : PortRecPtr);
+function iCharReady(P : PortRecPtr) : Boolean;
+function iTransReady(P : PortRecPtr) : Boolean;
+procedure iSendBreak(P : PortRecPtr);
+procedure iActivatePort(P : PortRecPtr; Restore : Boolean);
+procedure iDeactivatePort(P : PortRecPtr; Restore : Boolean);
+procedure iSavePort(P : PortRecPtr; var PSR);
+procedure iRestorePort(P : PortRecPtr; var PSR);
+procedure iGotError(P : PortRecPtr; StatusCode : Word);
+function iUpdateLineStatus(P : PortRecPtr) : Byte;
+function iUpdateModemStatus(P : PortRecPtr) : Byte;
+{$IFDEF UseHWFlow}
+procedure iHWFlowSet(P : PortRecPtr; Enable : Boolean;
+                     BufferFull, BufferResume : Word;
+                     Options : Word);
+function iHWFlowGet(P : PortRecPtr) : FlowState;
+{$ENDIF}
+{$IFDEF UseSWFlow}
+procedure iSWFlowSet(P : PortRecPtr; Enable : Boolean;
+                     BufferFull, BufferResume : Word;
+                     Options : Word);
+function iSWFlowGet(P : PortRecPtr) : FlowState;
+procedure iSWFlowCtl(P : PortRecPtr; OnChar, OffChar : Char;
+                     Resume : Boolean);
+{$ENDIF}
+procedure iBufferStatus(P : PortRecPtr;
+                        var InFree, OutFree, InUsed, OutUsed : Word);
+procedure iBufferFlush(P : PortRecPtr; FlushIn, FlushOut: Boolean);
+procedure ActivateApInt14;
+
+{$ENDIF}

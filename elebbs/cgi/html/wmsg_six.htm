@@ -1,0 +1,67 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML>
+  <HEAD>
+
+  <TITLE> EleWEB - Write new message - </TITLE>
+  <link rel="Stylesheet" TYPE="text/css" HREF="/eleweb.css">
+</HEAD>
+
+<BODY>
+<!-- --------------------------------------------------------------------- -->
+
+
+ <FORM ACTION="/cgi-bin/eleweb.exe?action=3&script=readmsg&sub-action=6&msgnum=|YP&areanum=|YB" METHOD="POST">
+ <INPUT NAME="threadreply" TYPE="HIDDEN" value="|ZJ">
+ <INPUT NAME="post_fromwho" TYPE="HIDDEN" value="|YG">
+ <INPUT NAME="post_towho" TYPE="HIDDEN" value="All">
+ <INPUT NAME="fpreply" TYPE="HIDDEN" value="|ZR">
+
+
+ <!-- --------------------------------------------------------------------- -->
+ <TABLE cellSpacing=1 cellPadding=4 width="70%" align=center border=0 class="tab_border">
+   <TBODY>
+     <TR ALIGN=MIDDLE class="tab_header">
+
+       <TD COLSPAN=2 class="tab_header">
+         Write a new comment
+       </TD>
+
+     </TR>
+
+
+     <TR ALIGN=center class="tab_contents2">
+       <TD colspan=2>
+        You are logged in as |FA, posting a new comment
+       </TD>
+     </TR>
+
+
+     <TR class="tab_header">
+       <TD ALIGN="LEFT" VALIGN="CENTER" class="tab_contents2">
+         Subject
+       </TD>
+
+      <TD ALIGN="CENTER" class="tab_header">
+         <INPUT NAME="post_subject" TYPE="text" SIZE="100%" MAXLENGTH="100">
+      </TD>
+     </TR>
+
+     <TR class="tab_contents">
+       <TD ALIGN="CENTER" VALIGN="CENTER" COLSPAN=2 CLASS="tab_contents">
+         <TEXTAREA NAME="post_msgtext" WRAP="virtual" ROWS="18" COLS="112"></TEXTAREA>
+       </TD>
+     </TR>
+
+     <TR>
+      <TD ALIGN="CENTER" COLSPAN=2 class="tab_footer">
+         <INPUT TYPE="submit" value="Send">
+      </TD>
+     </TR>
+
+ <!-- --------------------------------------------------------------------- -->
+ </TABLE>
+
+
+
+   </BODY>
+</HTML>

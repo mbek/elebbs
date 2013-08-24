@@ -1,0 +1,55 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML>
+  <HEAD>
+
+  <TITLE> EleWEB - Write new message - </TITLE>
+  <link rel="Stylesheet" TYPE="text/css" HREF="/eleweb.css">
+</HEAD>
+
+<BODY>
+<!-- --------------------------------------------------------------------- -->
+
+ <FORM ACTION="/cgi-bin/eleweb.exe" METHOD="POST">
+ <INPUT NAME="post_fromwho" TYPE="HIDDEN" value="|YG" READONLY>
+ <INPUT NAME="post_towho" TYPE="HIDDEN" value="|ZA" READONLY>
+ <INPUT NAME="post_subject" TYPE=HIDDEN value="|ZC" READONLY>
+ <INPUT NAME="post_private" TYPE="HIDDEN" VALUE="TRUE">
+ <INPUT NAME="sub-action" TYPE="HIDDEN" VALUE="12">
+ <INPUT NAME="script" TYPE="HIDDEN" VALUE="readmsg">
+ <INPUT NAME="msgnum" TYPE="HIDDEN" VALUE="|YP">
+ <INPUT NAME="action" TYPE="HIDDEN" VALUE="3">
+ <INPUT NAME="areanum" TYPE="HIDDEN" VALUE="|YB">
+
+ <!-- --------------------------------------------------------------------- -->
+ <TABLE cellSpacing=1 cellPadding=4 width="70%" align=center border=0 class="tab_border">
+   <TBODY>
+     <TR ALIGN=MIDDLE class="tab_header">
+       <TD COLSPAN=2 class="tab_header">
+         Change message
+       </TD>
+     </TR>
+
+     <TR ALIGN=CENTER class="tab_contents2">
+       <TD COLSPAN=2 >
+         You are logged in as |FA, editting message in "|YA"
+       </TD>
+     </TR>
+
+     <TR>
+       <TD ALIGN="CENTER" CLASS="tab_Contents2" VALIGN="CENTER" COLSPAN=2>
+         <TEXTAREA NAME="post_msgtext" WRAP="HARD" ROWS="18" COLS="112">|YQ</TEXTAREA>
+       </TD>
+     </TR>
+
+     <TR class="tab_footer">
+      <TD COLSPAN=2" align=center>
+         <INPUT TYPE="submit" value="Send">
+      </TD>
+     </TR>
+
+
+ <!-- --------------------------------------------------------------------- -->
+ </TABLE>
+ 
+ </BODY>
+</HTML>

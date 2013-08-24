@@ -1,0 +1,39 @@
+EleWEB hints
+------------
+
+There are several things you can do to enhance this EleWEB further. I'll try
+to list some possibilities below which I hope to implement into EleWEB sooner
+or later. If you implement any of these yourselve please let me know!
+
+
+Personalized menus
+------------------
+By setting cookies or using the user-extension file you can create customized
+menus which are completely skinned or just give the user a color scheme to
+pick from.
+
+
+User information
+----------------
+You could extent the user-list page with a link to the user that contain some
+information about the user. By using the user-extension file you can even
+show a picture of the user which the user should be able to upload himself.
+
+
+Creating user homepages
+-----------------------
+You can dedicate some diskspace to users (in their home directory as specified
+by the user extension file) and let them manage that part themselves. That way
+you could give users the possibility to create their own homepages.
+
+
+Searching for keywords in the filebase
+--------------------------------------
+You could create a script that lets user seach for keywords in the filebase.
+
+
+Dynamic DNS hosting
+-------------------
+You could allow your users to have a dynamic IP address which is linked to
+your domainname. This would require some help of external programs though
+(especially a DNS server ;-)

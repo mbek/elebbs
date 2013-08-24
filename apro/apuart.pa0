@@ -1,0 +1,175 @@
+type
+  {Supported uart types}
+  UartType = (NoUart, U8250B, U8250A, U16550, U16550A);
+
+const
+  {For displaying uart types}
+  UartTypeString : array[UartType] of String[11] =
+    ('No UART', '8250B', '8250A/16450', '16550', '16550A');
+
+  {Standard BaseAddr values}
+  DefBaseAddr : array[Com1..Com8] of Word = (
+    $03F8, $02F8, $03E8, $02E8, $4220, $4228, $5220, $5228);
+
+  {Standard irq numbers}
+  DefIrqNumber : array[Com1..Com8] of Byte = (
+    4, 3, 4, 3, 3, 3, 3, 3);
+
+  {Standard vectors}
+  DefComVector : array[Com1..Com8] of Byte = (
+    $0C, $0B, $0C, $0B, $0B, $0B, $0B, $0B);
+
+  {Com3/Com4 specifics for PS2s}
+  DefPS2Addr : array[Com3..Com4] of Word = ($3220, $3228);
+  DefPS2Irq : array[Com3..Com4] of Byte = (3, 3);
+  DefPS2Vector : array[Com3..Com4] of Byte = ($0B, $0B);
+
+  {Com3/Com4 specifics for defacto standard}
+  DefStdAddr : array[Com3..Com4] of Word = ($03E8, $02E8);
+  DefStdIrq : array[Com3..Com4] of Byte = (4, 3);
+  DefStdVector : array[Com3..Com4] of Byte = ($0C, $0B);
+
+{$IFDEF UsePModeDLL}
+procedure uInitPort(var P : PortRecPtr; ComName : ComNameType; Baud : LongInt;
+                    Parity : ParityType; DataBits : DataBitType;
+                    StopBits : StopBitType; InSize, OutSize : Word;
+                    Options : Word); Export;
+procedure uInitPortKeep(var P : PortRecPtr; ComName : ComNameType;
+                        InSize, OutSize : Word); Export;
+procedure uDonePort(var P : PortRecPtr); Export;
+procedure uSetUart(ComName : ComNameType; NewBase: Word;
+                   NewIrq, NewVector : Byte); Export;
+procedure uSetLine(P : PortRecPtr; Baud : LongInt;
+                   Parity : ParityType; DataBits : DataBitType;
+                   StopBits : StopBitType); Export;
+procedure uGetLine(P : PortRecPtr; var Baud : LongInt;
+                   var Parity : ParityType;
+                   var DataBits : DataBitType;
+                   var StopBits : StopBitType;
+                   FromHardware : Boolean); Export;
+procedure uSetModem(P : PortRecPtr; DTR, RTS : Boolean); Export;
+procedure uGetModem(P : PortRecPtr; var DTR, RTS : Boolean); Export;
+procedure uGetChar(P : PortRecPtr; var C : Char); Export;
+procedure uPeekChar(P : PortRecPtr; var C : Char; PeekAhead : Word); Export;
+procedure uPutChar(P : PortRecPtr; C : Char); Export;
+procedure uStartTransmitter(P : PortRecPtr); Export;
+function uCharReady(P : PortRecPtr) : Boolean; Export;
+function uTransReady(P : PortRecPtr) : Boolean; Export;
+procedure uSendBreak(P : PortRecPtr); Export;
+procedure uActivatePort(P : PortRecPtr; Restore : Boolean); Export;
+procedure uDeactivatePort(P : PortRecPtr; Restore : Boolean); Export;
+procedure uSavePort(P : PortRecPtr; var PSR); Export;
+procedure uRestorePort(P : PortRecPtr; var PSR); Export;
+procedure uGotError(P : PortRecPtr; StatusCode : Word); Export;
+function uUpdateLineStatus(P : PortRecPtr) : Byte; Export;
+function uUpdateModemStatus(P : PortRecPtr) : Byte; Export;
+{$IFDEF UseHWFlow}
+procedure uHWFlowSet(P : PortRecPtr; Enable : Boolean;
+                     BufferFull, BufferResume : Word;
+                     Options : Word); Export;
+function uHWFlowGet(P : PortRecPtr) : FlowState; Export;
+{$ENDIF}
+{$IFDEF UseSWFlow}
+procedure uSWFlowSet(P : PortRecPtr; Enable : Boolean;
+                     BufferFull, BufferResume : Word;
+                     Options : Word); Export;
+function uSWFlowGet(P : PortRecPtr) : FlowState; Export;
+procedure uSWFlowCtl(P : PortRecPtr; OnChar, OffChar : Char;
+                     Resume : Boolean); Export;
+{$ENDIF}
+procedure uBufferStatus(P : PortRecPtr;
+                        var InFree, OutFree, InUsed, OutUsed : Word); Export;
+procedure uBufferFlush(P : PortRecPtr; FlushIn, FlushOut: Boolean); Export;
+procedure ActivateApUart; Export;
+function UartTest1(BaseAddr : Word) : Boolean; Export;
+function UartTest2(BaseAddr : Word) : Boolean; Export;
+function UartTest3(BaseAddr : Word) : Boolean; Export;
+function ClassifyUart(BaseAddr : Word; CheckUart : Boolean) : UartType; Export;
+procedure SetFifoBuffering(BaseAddr : Word; Enable : Boolean; Level : Byte); Export;
+function FifoStatus(BaseAddr : Word) : Boolean; Export;
+procedure SaveUartState(BaseAddr : Word; var PSR : PortSaveRec); Export;
+procedure RestoreUartState(BaseAddr : Word; PSR : PortSaveRec); Export;
+{#F+}
+function GetLineStatusDirect(BaseAddr : Word) : Byte; Export;
+function CheckTEDirect(BaseAddr : Word) : Boolean; Export;
+function GetModemStatusDirect(BaseAddr : Word) : Byte; Export;
+{#F-}
+procedure SendLongBreak(BaseAddr : Word; Count : Byte); Export;
+{$IFDEF EventLogging}
+procedure InitEventLogging(Events : Word); Export;
+procedure DumpEvents(FName : PathStr); Export;
+{$ENDIF}
+
+{$ELSE}
+
+procedure uInitPort(var P : PortRecPtr; ComName : ComNameType; Baud : LongInt;
+                    Parity : ParityType; DataBits : DataBitType;
+                    StopBits : StopBitType; InSize, OutSize : Word;
+                    Options : Word);
+procedure uInitPortKeep(var P : PortRecPtr; ComName : ComNameType;
+                        InSize, OutSize : Word);
+procedure uDonePort(var P : PortRecPtr);
+procedure uSetUart(ComName : ComNameType; NewBase: Word;
+                   NewIrq, NewVector : Byte);
+procedure uSetLine(P : PortRecPtr; Baud : LongInt;
+                   Parity : ParityType; DataBits : DataBitType;
+                   StopBits : StopBitType);
+procedure uGetLine(P : PortRecPtr; var Baud : LongInt;
+                   var Parity : ParityType;
+                   var DataBits : DataBitType;
+                   var StopBits : StopBitType;
+                   FromHardware : Boolean);
+procedure uSetModem(P : PortRecPtr; DTR, RTS : Boolean);
+procedure uGetModem(P : PortRecPtr; var DTR, RTS : Boolean);
+procedure uGetChar(P : PortRecPtr; var C : Char);
+procedure uPeekChar(P : PortRecPtr; var C : Char; PeekAhead : Word);
+procedure uPutChar(P : PortRecPtr; C : Char);
+procedure uStartTransmitter(P : PortRecPtr);
+function uCharReady(P : PortRecPtr) : Boolean;
+function uTransReady(P : PortRecPtr) : Boolean;
+procedure uSendBreak(P : PortRecPtr);
+procedure uActivatePort(P : PortRecPtr; Restore : Boolean);
+procedure uDeactivatePort(P : PortRecPtr; Restore : Boolean);
+procedure uSavePort(P : PortRecPtr; var PSR);
+procedure uRestorePort(P : PortRecPtr; var PSR);
+procedure uGotError(P : PortRecPtr; StatusCode : Word);
+function uUpdateLineStatus(P : PortRecPtr) : Byte;
+function uUpdateModemStatus(P : PortRecPtr) : Byte;
+{$IFDEF UseHWFlow}
+procedure uHWFlowSet(P : PortRecPtr; Enable : Boolean;
+                     BufferFull, BufferResume : Word;
+                     Options : Word);
+function uHWFlowGet(P : PortRecPtr) : FlowState;
+{$ENDIF}
+{$IFDEF UseSWFlow}
+procedure uSWFlowSet(P : PortRecPtr; Enable : Boolean;
+                     BufferFull, BufferResume : Word;
+                     Options : Word);
+function uSWFlowGet(P : PortRecPtr) : FlowState;
+procedure uSWFlowCtl(P : PortRecPtr; OnChar, OffChar : Char;
+                     Resume : Boolean);
+{$ENDIF}
+procedure uBufferStatus(P : PortRecPtr;
+                        var InFree, OutFree, InUsed, OutUsed : Word);
+procedure uBufferFlush(P : PortRecPtr; FlushIn, FlushOut: Boolean);
+procedure ActivateApUart;
+function UartTest1(BaseAddr : Word) : Boolean;
+function UartTest2(BaseAddr : Word) : Boolean;
+function UartTest3(BaseAddr : Word) : Boolean;
+function ClassifyUart(BaseAddr : Word; CheckUart : Boolean) : UartType;
+procedure SetFifoBuffering(BaseAddr : Word; Enable : Boolean; Level : Byte);
+function FifoStatus(BaseAddr : Word) : Boolean;
+procedure SaveUartState(BaseAddr : Word; var PSR : PortSaveRec);
+procedure RestoreUartState(BaseAddr : Word; PSR : PortSaveRec);
+{#F+}
+function GetLineStatusDirect(BaseAddr : Word) : Byte;
+function CheckTEDirect(BaseAddr : Word) : Boolean;
+function GetModemStatusDirect(BaseAddr : Word) : Byte;
+{#F-}
+procedure SendLongBreak(BaseAddr : Word; Count : Byte);
+{$IFDEF EventLogging}
+procedure InitEventLogging(Events : Word);
+procedure DumpEvents(FName : PathStr);
+{$ENDIF}
+
+{$ENDIF}

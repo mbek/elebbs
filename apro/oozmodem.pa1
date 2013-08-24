@@ -1,0 +1,645 @@
+  procedure ZmodemProtocol.zpRawInit;
+    {-Do low-level zmodem inits}
+  begin
+    ProtType := Zmodem;
+    BatchProtocol := True;
+    FileOfs := 0;
+    LastFileOfs := 0;
+    CheckType := bcCrc32;
+    UseCrc32 := True;
+    CanCrc32 := True;
+    SrcFileDate := 0;
+    ReceiverRecover := False;
+    Use8KBlocks := False;
+    BlockLen := ZMaxBlk[Use8KBlocks];
+    FillChar(AttentionStr, MaxAttentionLen, 0);
+    FileMgmtOpts := WriteNewer;
+    FileMgmtOverride := False;
+    FileOpen := False;
+    Overhead := ZmodemOverhead;
+    TurnDelay := ZmodemTurnDelay;
+    HandshakeWait := ZHandshakeWait;
+    TookHit := False;
+    GoodAfterBad := 0;
+    EscapePending := False;
+    HexPending := False;
+    FinishWait := DefFinishWait;
+    FinishRetry := DefFinishRetry;
+    EscapeAll := False;                                                {!!.02}
+  end;
+
+  constructor ZmodemProtocol.Init(APPtr : AbstractPortPtr);
+    {-Allocates and initializes a protocol control block}
+  begin
+    if not ZmodemProtocol.InitCustom(APPtr, DefProtocolOptions) then
+      Fail;
+  end;
+
+  constructor ZmodemProtocol.InitCustom(APPtr : AbstractPortPtr; Options : Word);
+    {-Allocates and initializes a protocol control block with options}
+  begin
+    {Init pointers}
+    DataBlock := nil;
+    WorkBlock := nil;
+
+    {Init ancestor fields}
+    AbstractProtocol.InitCustom(APPtr, Options);
+
+    {Allocate data blocks}
+    Use8KBlocks := FlagIsSet(Options, apZmodem8K);
+    with APPtr^.PR^ do
+      if Buffered then
+        if (OutBuffLen < ZMaxWrk[Use8KBlocks] + 30 ) then begin
+          AsyncStatus := epNonFatal+ecBuffersTooSmall;
+          Fail;
+        end;
+
+    if not GetMemCheck(DataBlock, ZMaxBlk[Use8KBlocks]) or
+       not GetMemCheck(WorkBlock, ZMaxWrk[Use8KBlocks]) then begin
+      Done;
+      APort^.GotError(epFatal+ecOutOfMemory);
+      Fail;
+    end;
+
+    {Do low-level inits}
+    zpRawInit;
+  end;
+
+  destructor ZmodemProtocol.Done;
+    {-Destroy a Zmodem object}
+  begin
+    Use8KBlocks := FlagIsSet(apFlags, apZmodem8K);
+    FreeMemCheck(DataBlock, ZMaxBlk[Use8KBlocks]);
+    FreeMemCheck(WorkBlock, ZMaxWrk[Use8KBlocks]);
+    AbstractProtocol.Done;
+  end;
+
+  procedure ZmodemProtocol.SetFileMgmtOptions(Override,
+                                              SkipNoFile : Boolean;
+                                              FOpt : Byte);
+    {-Set file mgmt options to use when sender doesn't specify}
+  var
+    SkipMask : Byte;
+  begin
+    FileMgmtOverride := Override;
+    if SkipNoFile then
+      SkipMask := $80
+    else
+      SkipMask := 0;
+    FileMgmtOpts := (FOpt and FileMgmtMask) or SkipMask;
+  end;
+
+  procedure ZmodemProtocol.SetRecoverOption(OnOff : Boolean);
+    {-Turn file recovery on (will be ignored if dest file doesn't exist)}
+  begin
+    ReceiverRecover := OnOff;
+  end;
+
+  procedure ZmodemProtocol.SetBigSubpacketOption(UseBig : Boolean);
+    {-Turn on/off 8K subpacket support}
+  begin
+    if FlagIsSet(apFlags, apZmodem8K) then begin
+      Use8KBlocks := UseBig;
+      BlockLen := ZMaxBlk[UseBig];
+    end;
+  end;
+
+  procedure ZModemProtocol.SetFinishWait(NewWait : Word; NewRetry : Byte);
+    {-Set new finish wait and retry values}
+  begin
+    if NewWait <> 0 then
+      FinishWait := NewWait;
+    FinishRetry := NewRetry;
+  end;
+
+  procedure ZmodemProtocol.apUpdateBlockCheck(CurByte: Byte);
+    {-Updates the block check character (whatever it is)}
+  begin
+    if UseCrc32 then
+      BlockCheck := UpdateCrc32(CurByte, BlockCheck)
+    else
+      BlockCheck := UpdateCrc(CurByte, BlockCheck);
+  end;
+
+  procedure ZmodemProtocol.apSendBlockCheck;
+    {-Makes final adjustment and sends the BlockCheck character}
+  type
+    QB = array[1..4] of char;
+  var
+    I : Byte;
+  begin
+    if UseCrc32 then begin
+      {Complete and send a 32 bit CRC}
+      BlockCheck := not BlockCheck;
+      for I := 1 to 4 do
+        zpPutCharEscaped(QB(BlockCheck)[I]);
+    end else begin
+      {Complete and send a 16 bit CRC}
+      apUpdateBlockCheck(0);
+      apUpdateBlockCheck(0);
+      zpPutCharEscaped(Char(Hi(BlockCheck)));
+      zpPutCharEscaped(Char(Lo(BlockCheck)));
+    end;
+  end;
+
+  function ZmodemProtocol.apVerifyBlockCheck : Boolean;
+    {-checks the block check value}
+  begin
+    {Assume a block check error}
+    apVerifyBlockCheck := False;
+
+    if UseCrc32 then begin
+      if BlockCheck <> $DEBB20E3 then
+        Exit
+    end else begin
+      apUpdateBlockCheck(0);
+      apUpdateBlockCheck(0);
+      if BlockCheck <> 0 then
+        Exit;
+    end;
+
+    {If we get here, the block check value is ok}
+    apVerifyBlockCheck := True;
+  end;
+
+  procedure ZmodemProtocol.apCancel;
+    {-Sends the cancel string}
+  const
+    {Cancel string is 8 CANs followed by 8 Backspaces}
+    CancelStr = #24#24#24#24#24#24#24#24#8#8#8#8#8#8#8#8#8#8;
+  var
+    TotalOverhead : Word;
+    OutBuff : Word;
+  begin
+    with APort^ do begin
+      {Flush anything that might be left in the output buffer}
+      OutBuff := OutBuffUsed;
+      if OutBuff > BlockLen then begin
+        TotalOverhead := Overhead * (OutBuff div BlockLen);
+        Dec(BytesTransferred, Outbuff - TotalOverhead);
+      end;
+      FlushOutBuffer;
+
+      {Send the cancel string}
+      PutString(CancelStr);
+      DrainOutBuffer(1);
+      AsyncStatus := ecCancelRequested;
+    end;
+  end;
+
+  procedure ZmodemProtocol.apAbortProtocol;
+    {-Aborts the protocol}
+  begin
+    apCancel;
+    APort^.GotError(epFatal+ecCancelRequested);
+  end;
+
+  procedure ZmodemProtocol.zpGetCharStripped(var C : Char);
+    {-Get next char, strip hibit, discard Xon/Xoff}
+  begin
+    {Get a character, discard Xon and Xoff}
+    repeat
+      with APort^ do
+        if CharReady then
+          GetChar(C)
+        else
+          AsyncStatus := ecBufferIsEmpty
+    until not (C in [cXon, cXoff]) or (AsyncStatus <> ecOk);
+
+    {Strip the high-order bit}
+    C := Char(Ord(C) and Ord(#$7F));
+
+    {Handle cancels}
+    if C = cCan then begin
+      Inc(CanCount);
+      if CanCount >= 5 then
+        APort^.GotError(epFatal+ecCancelRequested)
+    end else
+      CanCount := 0;
+  end;
+
+  procedure ZmodemProtocol.zpPutAttentionString;
+    {-Puts the attention string ($DD = Break, $DE = Pause one sec)}
+  var
+    I : Word;
+    ET : EventTimer;
+  begin
+    I := 1;
+    while AttentionStr[I] <> 0 do begin
+      case AttentionStr[I] of
+        $DD : {Remote wants Break as his attention signal}
+          APort^.SendBreak;
+        $DE : {Remote wants us to pause for one second}
+          begin
+            NewTimer(ET, 18);
+            repeat
+              DoSlice;
+            until TimerExpired(ET);
+          end;
+        else  {Remote wants us to send a normal char}
+          begin
+            APort^.PutChar(Chr(AttentionStr[I]));
+            if AsyncStatus <> ecOk then
+              Exit;
+          end;
+      end;
+      Inc(I);
+    end;
+  end;
+
+  procedure ZmodemProtocol.zpPutCharHex(C : Char);
+    {-Sends C as two hex ascii digits}
+  var
+    B : Byte absolute C;
+  begin
+    APort^.PutChar(HexDigits[B shr 4]);
+    APort^.PutChar(HexDigits[B and $0F]);
+  end;
+
+  procedure ZmodemProtocol.zpPutHexHeader(FrameType : Char);
+    {-Sends a hex header}
+  const
+    HexHeaderStr = ZPad+ZPad+ZDle+ZHex;
+  var
+    Check : Word;
+    I : Byte;
+    C : Char;
+    SaveCrc32 : Boolean;
+  begin
+    {Initialize the BlockCheck value}
+    SaveCrc32 := UseCrc32;
+    UseCrc32 := False;
+    BlockCheck := 0;
+
+    {Send the header and the frame type}
+    APort^.PutString(HexHeaderStr);
+    zpPutCharHex(FrameType);
+    apUpdateBlockCheck(Ord(FrameType));
+
+    {Send the position/flag bytes}
+    for I := 0 to SizeOf(TransHeader)-1 do begin
+      zpPutCharHex(Char(TransHeader[I]));
+      apUpdateBlockCheck(TransHeader[I]);
+    end;
+
+    {Update Crc16 and send it (hex encoded)}
+    apUpdateBlockCheck(0);
+    apUpdateBlockCheck(0);
+    Check := Word(BlockCheck);
+    zpPutCharHex(Char(Hi(Check)));
+    zpPutCharHex(Char(Lo(Check)));
+
+    {End with a carriage return, line feed}
+    APort^.PutChar(cCR);
+    C := Chr(Ord(cLF) or $80);
+    APort^.PutChar(C);
+
+    {Conditionally send Xon}
+    if (FrameType <> ZFin) and (FrameType <> ZAck) then
+      APort^.PutChar(cXon);
+
+    {Note frame type for status}
+    LastFrame := FrameType;
+
+    {Restore crc type}
+    UseCrc32 := SaveCrc32;
+  end;
+
+  procedure ZmodemProtocol.zpGetCharEscaped(var C : Char);
+    {-Get a character (handle data link escaping)}
+  label
+    Escape;
+  begin
+    ControlCharSkip := False;                                          {!!.01}
+
+    {Go get escaped char if we already have the escape}
+    if EscapePending then
+      goto Escape;
+
+    {Get a character}
+    Aport^.GetChar(C);
+
+    {!!.01 modified block}
+    {Process char}
+    case C of
+      cXon,
+      cXoff,
+      cXonHi,
+      cXoffHi : begin
+                  {Unescaped control char, ignore it}
+                  ControlCharSkip := True;
+                  Exit;
+                end;
+      ZDle    : begin
+                  Inc(CanCount);
+                  if CanCount > 5 then begin
+                    APort^.GotError(epFatal+ecCancelRequested);
+                    Exit;
+                  end;
+                end;
+      else begin
+        CanCount := 0;
+        Exit;
+      end;
+    end;
+
+Escape:
+    {Need another character, get it or say we're pending}
+    if APort^.CharReady then begin
+      EscapePending := False;
+      APort^.GetChar(C);
+
+      {If cancelling make sure we get at least 5 of them}
+      if C = cCan then begin
+        {Accumulate cancels and signal quit when we get 5 of them}
+        Inc(CanCount);
+        if CanCount >= 5 then
+          APort^.GotError(epFatal+ecCancelRequested);
+      end else begin
+        {Must be an escaped character}
+        CanCount := 0;
+        case C of
+          ZCrcE : {Last DataSubpacket of file}
+            AsyncStatus := ecGotCrcE;
+          ZCrcG : {Normal DataSubpacket, no response necessary}
+            AsyncStatus := ecGotCrcG;
+          ZCrcQ : {ZAck or ZrPos requested}
+            AsyncStatus := ecGotCrcQ;
+          ZCrcW : {DataSubpacket contains file information}
+            AsyncStatus := ecGotCrcW;
+          ZRub0 :         {Ascii delete}
+            C := #$7F;
+          ZRub1 :         {Hibit Ascii delete}
+            C := #$FF;
+          else            {Normal escaped character}
+            C := Char(Ord(C) xor $40)
+        end;
+      end;
+    end else
+      EscapePending := True;
+  end;
+
+  procedure ZmodemProtocol.zpGetCharHex(var C : Char);
+    {-Return a character that was transmitted in hex}
+  label
+    Hex;
+
+    function NextHexNibble : Byte;
+      {-Gets the next char, returns it as a hex nibble}
+    var
+      B : Byte;
+      C : Char;
+    begin
+      NextHexNibble := 0;
+
+      {Get the next char, assume it's ascii hex character}
+      APort^.GetChar(C);
+
+      {Handle cancels}
+      if C = cCan then begin
+        Inc(CanCount);
+        if CanCount >= 5 then begin
+          APort^.GotError(epFatal+ecCancelRequested);
+          Exit;
+        end;
+      end else
+        CanCount := 0;
+
+      B := Pos(C, HexDigits);
+      if B <> 0 then
+        Dec(B);
+
+      {Return nibble or 0 for error (let protocol handle it)}
+      if B <> 0 then
+        NextHexNibble := B
+      else
+        NextHexNibble := 0;
+    end;
+
+  begin
+    if HexPending then
+      goto Hex;
+    HexByte := NextHexNibble shl 4;
+Hex:
+    if APort^.CharReady then begin
+      HexPending := False;
+      HexByte := HexByte + NextHexNibble;
+      C := Chr(HexByte);
+    end else
+      HexPending := True;
+  end;
+
+  function ZmodemProtocol.zpCollectHexHeader : Boolean;
+    {-Gets the data and trailing portions of a hex header}
+  var
+    C : Char;
+  begin
+    {Assume the header isn't ready}
+    zpCollectHexHeader := False;
+
+    if APort^.CharReady then begin
+      {Get the waiting character}
+
+      zpGetCharHex(C);
+      if HexPending then
+        Exit;
+      if AsyncStatus = ecCancelRequested then
+        Exit;
+
+      {Init block check on startup}
+      if HexHdrState = hhFrame then
+        BlockCheck := 0;
+      UseCrc32 := False;
+
+      {Always update the block check}
+      apUpdateBlockCheck(Ord(C));
+
+      {Process this character}
+      case HexHdrState of
+        hhFrame :
+          RcvFrame := C;
+        hhPos1..hhPos4 :
+          RcvHeader[Ord(HexHdrState)-1] := Ord(C);
+        hhCrc1 :
+          {just keep going} ;
+        hhCrc2 :
+          if not apVerifyBlockCheck then begin
+            APort^.GotError(epNonFatal+ecBlockCheckError);
+            Inc(TotalErrors);
+            HeaderState := hsNone;
+          end else begin
+            {Say we got a good header}
+            zpCollectHexHeader := True;
+          end;
+      end;
+
+      {Goto next state}
+      { Inc(HexHdrState);  !!! }
+      if (HexHdrState < High(HexHdrState)) then
+        Inc(HexHdrState)
+         else HexHdrState := Low(HexHdrState);
+
+    end;
+  end;
+
+  function ZmodemProtocol.zpCollectBinaryHeader(Crc32 : Boolean) : Boolean;
+    {-Collects a binary header, returns True when ready}
+  var
+    C : Char;
+  begin
+    {Assume the header isn't ready}
+    zpCollectBinaryHeader := False;
+
+    if APort^.CharReady then begin
+      {Get the waiting character}
+      zpGetCharEscaped(C);
+      if EscapePending or ControlCharSkip then                         {!!.01}
+        Exit;
+      if AsyncStatus = ecCancelRequested then
+        Exit;
+
+      {Init block check on startup}
+      if BinHdrState = bhFrame then begin
+        UseCrc32 := Crc32;
+        if UseCrc32 then
+          BlockCheck := -1
+        else
+          BlockCheck := 0;
+      end;
+
+      {Always update the block check}
+      apUpdateBlockCheck(Ord(C));
+
+      {Process this character}
+      case BinHdrState of
+        bhFrame :
+          RcvFrame := C;
+        bhPos1..bhPos4 :
+          RcvHeader[Ord(BinHdrState)-1] := Ord(C);
+        bhCrc2 :
+          if not UseCrc32 then begin
+            if not apVerifyBlockCheck then begin
+              APort^.GotError(epNonFatal+ecBlockCheckError);
+              Inc(TotalErrors);
+              HeaderState := hsNone;
+            end else begin
+              {Say we got a good header}
+              zpCollectBinaryHeader := True;
+            end;
+          end;
+        bhCrc4 :
+          {Check the Crc value}
+          if not apVerifyBlockCheck then begin
+            APort^.GotError(epNonFatal+ecBlockCheckError);
+            Inc(TotalErrors);
+            HeaderState := hsNone;
+          end else begin
+            {Say we got a good header}
+            zpCollectBinaryHeader := True;
+          end;
+      end;
+
+      {Go to next state}
+      { Inc(BinHdrState); !!!}
+      if (BinHdrState < High(BinHdrState)) then
+        Inc(BinHdrState)
+         else BinhdrState := Low(BinHdrState);
+    end;
+  end;
+
+  procedure ZmodemProtocol.zpCheckForHeader;
+    {-Samples input stream for start of header}
+  var
+    C : Char;
+  begin
+    {Assume no header ready}
+    AsyncStatus := ecNoHeader;
+
+    {Process potential header characters}
+    while APort^.CharReady do begin
+      {Only get the next char if we don't know the header type yet}
+      case HeaderState of
+        hsNone, hsGotZPad, hsGotZDle :
+          begin
+            zpGetCharStripped(C);
+            if AsyncStatus = ecCancelRequested then
+              Exit;
+          end;
+      end;
+
+      {Try to accumulate the start of a header}
+      AsyncStatus := ecNoHeader;
+      case HeaderState of
+        hsNone :
+          if C = ZPad then
+            HeaderState := hsGotZPad;
+        hsGotZPad :
+          case C of
+            ZPad : ;
+            ZDle : HeaderState := hsGotZDle;
+            else   HeaderState := hsNone;
+          end;
+        hsGotZDle :
+          case C of
+            ZBin   :
+              begin
+                WasHex := False;                                       {!!.03}
+                HeaderState := hsGotZBin;
+                BinHdrState := bhFrame;
+                EscapePending := False;
+                if zpCollectBinaryHeader(False) then
+                  HeaderState := hsGotHeader;
+              end;
+            ZBin32 :
+              begin
+                WasHex := False;                                       {!!.03}
+                HeaderState := hsGotZBin32;
+                BinHdrState := bhFrame;
+                EscapePending := False;
+                if zpCollectBinaryHeader(True) then
+                  HeaderState := hsGotHeader;
+              end;
+            ZHex   :
+              begin
+                WasHex := True;                                        {!!.03}
+                HeaderState := hsGotZHex;
+                HexHdrState := hhFrame;
+                HexPending := False;
+                if zpCollectHexHeader then
+                  HeaderState := hsGotHeader;
+              end;
+            else
+              HeaderState := hsNone;
+          end;
+        hsGotZBin :
+          if zpCollectBinaryHeader(False) then
+            HeaderState := hsGotHeader;
+        hsGotZBin32 :
+          if zpCollectBinaryHeader(True) then
+            HeaderState := hsGotHeader;
+        hsGotZHex :
+          if zpCollectHexHeader then
+            HeaderState := hsGotHeader;
+      end;
+
+      {If we just got a header, note file pos and frame type}
+      if HeaderState = hsGotHeader then begin
+        AsyncStatus := ecGotHeader;
+        case LastFrame of
+          ZrPos, ZAck, ZData, ZEof :
+          {Header contained a reported file position}
+             LastFileOfs := LongInt(RcvHeader);
+        end;
+
+        {Note frame type for status}
+        LastFrame := RcvFrame;
+
+        {...and leave without checking for more chars}
+        Exit;
+      end;
+
+      {Also leave if we got any errors}
+      if (AsyncStatus <> ecOk) and (AsyncStatus <> ecNoHeader) then
+        Exit;
+    end;
+  end;

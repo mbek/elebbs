@@ -1,0 +1,1674 @@
+  function mLong2Str(L : LongInt) : string;
+    {-Convert a long/word/integer/byte/shortint to a string}
+  var
+    S : string;
+  begin
+    Str(L, S);
+    mLong2Str := S;
+  end;
+
+  function mTrim(S : string) : string;
+    {-Return a string with leading and trailing white space removed}
+  var
+    I : Word;
+    SLen : Byte absolute S;
+  begin
+    while (SLen > 0) and (S[SLen] <= ' ') do
+      Dec(SLen);
+
+    I := 1;
+    while (I <= SLen) and (S[I] <= ' ') do
+      Inc(I);
+    Dec(I);
+    if I > 0 then
+      Delete(S, 1, I);
+
+    mTrim := S;
+  end;
+
+  function mBPS(Flags : Word) : Longint;
+    {-Return a longint BPS rate for Flags}
+  begin
+    Flags := Flags and mnBPSMask;
+    case Flags of
+      mn600BPS   : mBPS := 600;
+      mn1200BPS  : mBPS := 1200;
+      mn2400BPS  : mBPS := 2400;
+      mn4800BPS  : mBPS := 4800;
+      mn7200BPS  : mBPS := 7200;
+      mn9600BPS  : mBPS := 9600;
+      mn12000BPS : mBPS := 12000;
+      mn14400BPS : mBPS := 14400;
+      else         mBPS := 0;
+    end;
+  end;
+
+  constructor AbstractModem.Init(AP : AbstractPortPtr);
+    {-Allocates and initializes a modem object}
+  begin
+    Root.Init;
+    AsyncStatus := ecOk;
+
+    {Initialize}
+    APort := AP;
+    Buffer := '';
+    Responses := NumericCodes;
+    SRegs := SRegsInit;
+    HandleResponses := True;
+    CRchar := cCR;
+    LFchar := cLF;
+    SepChar := DefSepChar;
+    Timeout := DefTimeout;
+    DialTimeout := DefDialTimeout;
+    DelayFactor := DefDelayFactor;
+    DialPrefix := '';
+    CmdPrefix := 'AT';
+    CmdSuffix := cCR;
+    ConnectSpeed := 0;
+    mFlags := 0;
+    ECString := '';
+    ErrorControl := False;
+  end;
+
+  destructor AbstractModem.Done;
+    {-Dispose of this modem object}
+  begin
+    {Deallocate the tables}
+    if FlagIsSet(mFlags, mDeallocC) then
+      FreeMemCheck(CmdTable, CmdTableMax+1);
+    if FlagIsSet(mFlags, mDeallocR) then
+      FreeMemCheck(RespTable, RespTableMax+1);
+    if FlagIsSet(mFlags, mDeallocN) then
+      FreeMemCheck(CodeTable, CodeTableMax+1);
+  end;
+
+  function AbstractModem.mSearchCommand(Cmd : Word) : Integer;
+    {-Returns the index for Cmd (or -1 for not found}
+  var
+    Finished : Boolean;
+    Index : Word;
+    Len : Word;
+    CurCmd : Word;
+  begin
+    Finished := False;
+    Index := 0;
+    repeat
+      {Get length byte}
+      Len := CmdTable^[Index];
+
+      {Is this the desired command?}
+      CurCmd := CmdTable^[Index+Len];
+      if CurCmd = Cmd then begin
+        mSearchCommand := Index;
+        Exit;
+      end else begin
+        Inc(Index, Len+1);
+        if CmdTable^[Index] = 0 then begin
+          mSearchCommand := -1;
+          Finished := True;
+        end;
+      end;
+    until Finished;
+  end;
+
+  function AbstractModem.mInsertNewCommand(Cmd : Word; S : String;
+                                           Flags : Word) : Boolean;
+    {-Insert new Cmd in best fit slot}
+  var
+    Finished : Boolean;
+    Index : Word;
+    Len : Word;
+    BestLen : Word;
+    BestIndex : Word;
+  begin
+    Finished := False;
+    Index := 0;
+    BestLen := 65535;
+    BestIndex := 0;
+
+    {Loop through table looking for best fit empty slot}
+    repeat
+      {Get length byte}
+      Len := CmdTable^[Index];
+
+      if Len = 0 then
+        {End-of-table}
+        Finished := True
+      else begin
+        {Is this slot empty?}
+        if CmdTable^[Index+Len] = mcNone then begin
+          if Len = Length(S)+2 then begin
+            {Finished if it's an exact fit}
+            BestLen := Len;
+            BestIndex := Index;
+            Finished := True;
+          end else if Len > Length(S)+1 then
+            {Command fits -- compare against best fit so far}
+            if Len < BestLen then begin
+              BestLen := Len;
+              BestIndex := Index;
+            end;
+        end;
+      end;
+
+      {Increment to next slot}
+      Inc(Index, Len+1);
+    until Finished;
+
+    if BestLen = 65535 then
+      {Couldn't find slot -- try to add at end of table}
+      if Index+Length(S)+2 < CmdTableMax then
+        {There is room -- set BestIndex}
+        BestIndex := Index-1
+      else begin
+        {No room anywhere -- return error}
+        mInsertNewCommand := False;
+        Exit;
+      end;
+
+    {Found slot -- insert command}
+    CmdTable^[BestIndex] := Length(S)+2;
+    CmdTable^[BestIndex+1] := Flags;
+    Move(S[1], CmdTable^[BestIndex+2], Length(S));
+    CmdTable^[BestIndex+Length(S)+2] := Cmd;
+    mInsertNewCommand := True;
+  end;
+
+  procedure AbstractModem.AddModemCommand(S : String; Cmd : Word; Flags : Word);
+    {-Add/change modem command in list}
+  var
+    Index : Integer;
+    Len : Word;
+  begin
+    AsyncStatus := ecOk;
+
+    {Exit immediately if Cmd = mcNone}
+    if Cmd = mrNone then
+      Exit;
+
+    {Search for matching Cmd}
+    Index := mSearchCommand(Cmd);
+
+    if Index <> -1 then begin
+      {Found matching command, replace it or zero it out}
+      Len := CmdTable^[Index];
+      if Len = Length(S)+2 then begin
+        {Same length -- replace old command immediately}
+        CmdTable^[Index+1] := Flags;
+        Move(S[1], CmdTable^[Index+2], Len-2)
+      end else begin
+        {Different length -- zero out old command and find new cmd slot}
+        FillChar(CmdTable^[Index+1], Len, 0);
+        if not mInsertNewCommand(Cmd, S, Flags) then
+          {No slots available -- return error}
+          APort^.GotError(epNonFatal+ecTableFull);
+      end;
+    end else
+      {No matching command, insert new command in best available slot}
+      if not mInsertNewCommand(Cmd, S, Flags) then
+        {No slots available -- return error}
+        APort^.GotError(epNonFatal+ecTableFull);
+  end;
+
+  procedure AbstractModem.RemoveModemCommand(Cmd : Word);
+    {-Remove modem command from list}
+  var
+    Index : Integer;
+    Len : Word;
+  begin
+    {Search for matching Cmd}
+    Index := mSearchCommand(Cmd);
+
+    if Index <> -1 then begin
+      {Found matching command, zero it out}
+      Len := CmdTable^[Index];
+      FillChar(CmdTable^[Index+1], Len, 0);
+    end else
+      APort^.GotError(epNonFatal+ecNullCommand);
+  end;
+
+  procedure AbstractModem.ExecuteModemCommand(Cmd : Word; CmdVal : Integer);
+    {-Execute modem command Cmd with value CmdVal}
+  var
+    Index : Integer;
+    Len : Word;
+  begin
+    {Search for command}
+    Index := mSearchCommand(Cmd);
+    if Index <> -1 then begin
+      Len := CmdTable^[Index];
+      CmdFlags := CmdTable^[Index+1];
+      Move(CmdTable^[Index+2], Buffer[1], Len-2);
+      Buffer[0] := Char(Len-2);
+      if FlagIsSet(CmdFlags, moUsePrefix) then
+        Buffer := CmdPrefix + Buffer;
+      if CmdVal >= 0 then
+        Buffer := Buffer + mLong2Str(CmdVal);
+      PutModemCommand(Buffer);
+    end else
+      APort^.GotError(epNonFatal+ecNullCommand);
+  end;
+
+  function AbstractModem.mSearchCodeIndex(NC : Byte) : Integer;
+    {-Returns index for numeric response NC}
+  const
+    {Length of an entry is always 4 bytes}
+    Len = 4;
+  var
+    Index : Word;
+    CurCode : Word;
+  begin
+    Index := 0;
+    repeat
+      {Get the current code and compare to desired code}
+      CurCode := CodeTable^[Index];
+      if CurCode = NC then begin
+        {Found it}
+        mSearchCodeIndex := Index;
+        Exit;
+      end else begin
+        {Not found, look for next one}
+        Inc(Index, Len);
+        if CodeTable^[Index] = 0 then begin
+          mSearchCodeIndex := -1;
+          Exit;
+        end;
+      end;
+    until False;
+  end;
+
+  function AbstractModem.mSearchCode(NC : Byte; var Flags : Word) : Word;
+    {-Returns mrXxx code for numeric response NC}
+  const
+    {Length of an entry is always 4 bytes}
+    Len = 4;
+  var
+    Index : Integer;
+  begin
+    {Lookup index for this response code}
+    Index := mSearchCodeIndex(NC);
+    if Index >= 0 then begin
+      {Found response code, return mrXxx code}
+      mSearchCode := CodeTable^[Index+Len-1];
+      Flags := CodeTable^[Index+Len-3] shl 8;
+      Flags := Flags + CodeTable^[Index+Len-2];
+    end else begin
+      mSearchCode := mrNone;
+      Flags := 0;
+    end;
+  end;
+
+  procedure AbstractModem.AddModemCode(NC, Code : Byte; Options : Word);
+    {-Inserts new numeric response NC in best fit slot}
+  const
+    {Length of an entry is always 4 bytes}
+    Len = 4;
+  var
+    Finished : Boolean;
+    Index : Word;
+    I : Word;
+  begin
+    AsyncStatus := ecOk;
+
+    {Exit immediately if Code = mrNone}
+    if Code = mrNone then
+      Exit;
+
+    {Loop through table looking for an empty slot}
+    Finished := False;
+    Index := 0;
+    repeat
+      if CodeTable^[Index] = 255 then
+        {End-of-table}
+        Finished := True
+      else begin
+        {Is this slot empty?}
+        if CodeTable^[Index+Len-1] = mrNone then begin
+          {Insert it here}
+          CodeTable^[Index] := NC;
+          CodeTable^[Index+1] := Hi(Options);                          {!!.02}
+          CodeTable^[Index+2] := Lo(Options);                          {!!.02}
+          CodeTable^[Index+3] := Code;
+          Exit;
+        end else
+          {Keep looking}
+          Inc(Index, Len);
+      end;
+    until Finished;
+
+    {Couldn't find slot -- try to add at end of table}
+    if Index+Len+1 < CodeTableMax then begin
+      {There is room -- insert here}
+      CodeTable^[Index] := NC;
+      CodeTable^[Index+1] := Hi(Options);                              {!!.02}
+      CodeTable^[Index+2] := Lo(Options);                              {!!.02}
+      CodeTable^[Index+3] := Code;
+      CodeTable^[Index+4] := 255;
+    end else
+      {No room anywhere -- return error}
+      APort^.GotError(epNonFatal+ecTableFull);
+  end;
+
+  procedure AbstractModem.RemoveModemCode(NC : Byte);
+    {-Remove the modem numeric response NC}
+  const
+    {Length of an entry is always 4 bytes}
+    Len = 4;
+  var
+    Index : Integer;
+  begin
+    Index := mSearchCodeIndex(NC);
+    if Index = -1 then
+      {Not found, return error}
+      APort^.GotError(epNonFatal+ecNullCommand)
+    else
+      {Found matching response code, change associate mrXxx code to mrNone}
+      CodeTable^[Index+Len-1] := mrNone;
+  end;
+
+  function AbstractModem.mSearchResponseIndex(S : String) : Integer;
+    {-Returns index for this response string}
+  var
+    Finished : Boolean;
+    Index : Word;
+    Len : Word;
+    CurResponse : String;
+    Posn : Byte;
+    I : Integer;
+    BestMatch : Integer;
+    BestLen : Word;
+  begin
+    {Upcase the response}
+    for I := 1 to Length(S) do
+      S[I] := Upcase(S[I]);
+
+    Finished := False;
+    BestMatch := -1;
+    BestLen := 0;
+    Index := 0;
+    repeat
+      {Get length byte}
+      Len := RespTable^[Index];
+
+      {Is this the desired response?}
+      Move(RespTable^[Index+1], CurResponse[1], Len-1);
+      CurResponse[0] := Char(Len-1);
+      Posn := Pos(CurResponse, S);
+      if Posn <> 0 then begin
+        {Found at least a subset match}
+        if Length(CurResponse) > BestLen then begin
+          {This is better than the last subset match}
+          BestMatch := Index;
+          BestLen := Length(CurResponse);
+        end;
+        if Length(CurResponse) = Length(S) then
+          {It's an exact match, return now}
+          Finished := True
+        else begin
+          {Look for possible better matches}
+          Inc(Index, Len+1);
+          if RespTable^[Index] = 0 then
+            Finished := True;
+        end;
+      end else begin
+        {This isn't it, keep looking}
+        Inc(Index, Len+1);
+        if RespTable^[Index] = 0 then
+          Finished := True;
+      end;
+    until Finished;
+    mSearchResponseIndex := BestMatch;
+  end;
+
+  function AbstractModem.mSearchResponse(S : String) : Word;
+    {-Returns code for this response string}
+  var
+    Index : Integer;
+    Len : Word;
+  begin
+    {Lookup the index for this response string}
+    Index := mSearchResponseIndex(S);
+    if Index >= 0 then begin
+      {Found response string, return code}
+      Len := RespTable^[Index];
+      mSearchResponse := RespTable^[Index+Len];
+    end else
+      mSearchResponse := mrNone;
+  end;
+
+  procedure AbstractModem.AddModemResponse(S : String; Code : Word);
+    {-Inserts new response in best fit slot (never changes existing resp)}
+  var
+    Finished : Boolean;
+    Index : Word;
+    Len : Word;
+    BestLen : Word;
+    BestIndex : Word;
+    I : Word;
+  begin
+    AsyncStatus := ecOk;
+
+    {Exit immediately if Code = mrNone}
+    if Code = mrNone then
+      Exit;
+
+    Finished := False;
+    Index := 0;
+    BestLen := 65535;
+    BestIndex := 0;
+
+    {Upcase the response}
+    for I := 1 to Length(S) do
+      S[I] := Upcase(S[I]);
+
+    {Loop through table looking for best fit empty slot}
+    repeat
+      {Get length byte}
+      Len := RespTable^[Index];
+
+      if Len = 0 then
+        {End-of-table}
+        Finished := True
+      else begin
+        {Is this slot empty?}
+        if RespTable^[Index+Len] = mrNone then begin
+          if Len = Length(S)+1 then begin
+            {Finished if it's an exact fit}
+            BestLen := Len;
+            BestIndex := Index;
+            Finished := True;
+          end else if Len > Length(S)+1 then
+            {Response fits -- compare against best fit so far}
+            if Len < BestLen then begin
+              BestLen := Len;
+              BestIndex := Index;
+            end;
+        end;
+      end;
+
+      {Increment to next slot}
+      Inc(Index, Len+1);
+    until Finished;
+
+    if BestLen = 65535 then
+      {Couldn't find slot -- try to add at end of table}
+      if Index+Length(S)+2 < RespTableMax then
+        {There is room -- set BestIndex}
+        BestIndex := Index-1
+      else begin
+        {No room anywhere -- return error}
+        APort^.GotError(epNonFatal+ecTableFull);
+        Exit;
+      end;
+
+    {Found slot -- insert response}
+    RespTable^[BestIndex] := Length(S)+1;
+    Move(S[1], RespTable^[BestIndex+1], Length(S));
+    RespTable^[BestIndex+Length(S)+1] := Code;
+  end;
+
+  procedure AbstractModem.RemoveModemResponse(S : String);
+    {-Remove the modem response S}
+  var
+    Index : Integer;
+    Len : Word;
+  begin
+    Index := mSearchResponseIndex(S);
+    if Index = -1 then
+      {Not found, return error}
+      APort^.GotError(epNonFatal+ecNullCommand)
+    else begin
+      {Found matching response string, clear it out}
+      Len := RespTable^[Index];
+      FillChar(RespTable^[Index+1], Len, 0);
+      RespTable^[Index+Len] := mrNone;
+    end;
+  end;
+
+  function AbstractModem.mExtractConnectSpeed(S : String) : LongInt;
+    {-Extracts connect speed from S (assumed to be a response string}
+  var
+    Cpos : Byte;
+    BStr : String;
+    B : LongInt;
+    Code : Word;
+    I : Byte;
+  begin
+    mExtractConnectSpeed := 0;
+
+    {Upcase the string (just in case)}
+    S := StUpcase(S);
+
+    {Verify this is a connect string and find where connect starts}
+    Cpos := Pos('CONNECT', S);
+    if Cpos = 0 then
+      Exit;
+
+    {Try to extract a connect rate}
+    Inc(Cpos, 7);
+    I := 1;
+    while (Cpos <= Length(S)) and
+          (S[Cpos] <> CRchar) and
+          (S[Cpos] <> SepChar) do begin
+      BStr[I] := S[Cpos];
+      Inc(Cpos);
+      Inc(I);
+    end;
+    BStr[0] := Char(I-1);
+    BStr := mTrim(BStr);
+    Val(BStr, B, Code);
+    if Code <> 0 then
+      Exit;
+
+    {Return the extracted connect rate}
+    mExtractConnectSpeed := B;
+  end;
+
+  function AbstractModem.mExtractEC(S : String) : Boolean;
+    {-Look for the ECString anywhere in the response buffer}
+  begin
+    mExtractEC := (Pos(ECString, S) <> 0) and (ECString <> '');
+  end;
+
+  {!!.02 modified}
+  procedure AbstractModem.mGetResponse(var SResponse : String;
+                                       var IResponse : Integer;
+                                       RegValue : Boolean;
+                                       CurTimeout : Integer);
+    {-Wait for the result code from the last modem command. Handles both
+      WordCodes and NumericCodes responses (and command echoes if echoing
+      happens to be on).
+
+      Echoes will be first in the buffer and are of the form:
+        AT<commands><CR>
+
+      WordCodes responses will be of the form:
+        <CR><LF><word response><CR><LF>
+
+      NumericCodes responses will be of the form:
+        <numeric response><CR>
+
+      Sx? responses will always be numeric strings like:
+        <CR><LF><numeric string><CR><LF> for word responses}
+
+  label
+    GotCR;
+  const
+    Digits = '0123456789';
+  var
+    Result, Code : Integer;
+    C : Char;
+    Finished : Boolean;
+  begin
+    {Inits}
+    SResponse := '';
+    IResponse := -1;
+
+    {Wait until all chars have gone out}
+    APort^.DrainOutBuffer(CurTimeout);
+    if AsyncStatus <> ecOk then
+      Exit;
+
+    {Repeat until response is processed}
+    Finished := False;
+    repeat
+      {Peek at the first received character}
+      APort^.PeekCharTimeout(C, 1, CurTimeout);
+      if AsyncStatus <> ecOk then
+        Exit;
+
+      if (C = CmdPrefix[1]) then begin
+        {Modem command echo, just discard}
+        APort^.GetStringTimeout(Buffer, 0, [CRchar], CurTimeout);
+        if AsyncStatus <> ecOk then
+          Exit;
+      end else if (C = CRchar) then begin
+        Finished := True;
+        Responses := WordCodes;
+
+        {Get and discard first <CR><LF>}
+        APort^.GetStringTimeout(Buffer, 0, [LFchar], CurTimeout);
+        if AsyncStatus <> ecOk then
+          Exit;
+
+        {Get the response string (discard trailing <CR><LF>)}
+        APort^.GetStringTimeout(Buffer, 0, [LFchar], CurTimeout);
+        if AsyncStatus <> ecOk then
+          Exit;
+
+        {Empty means we found an extra <CR><LF>, ignore it}
+        if Buffer = cCR then begin
+          APort^.GetStringTimeout(Buffer, 0, [LFchar], CurTimeout);
+          if AsyncStatus <> ecOk then
+            Exit;
+        end;
+        SResponse := mTrim(Buffer);
+
+      end else if (Pos(C, Digits) <> 0) then begin
+
+        {Digit means modem is using NumericCodes}
+        Finished := True;
+        Responses := NumericCodes;
+        {Get entire response string}
+        APort^.GetStringTimeout(Buffer, 0, [CRchar], CurTimeout);
+        if AsyncStatus <> ecOk then
+          Exit;
+        Buffer := mTrim(Buffer);
+
+        {Make sure it's a numeric code}
+        Val(Buffer, IResponse, Code);
+        if Code <> 0 then begin
+          APort^.GotError(epNonFatal+ecUnknownModemResult);
+          Exit;
+        end;
+      end else begin
+
+        {Error, unexpected char back from modem}
+        APort^.GotError(epNonFatal+ecUnknownModemResult);
+        APort^.FlushInBuffer;
+        Exit;
+      end;
+    until Finished;
+  end;
+
+  procedure AbstractModem.GetModemResponse(CurTimeout : Integer);
+    {-Get and process modem response}
+  var
+    SResult : String;
+    IResult : Integer;
+    Code : Integer;
+    C : Char;
+    Flags : Word;
+
+    function MapToAsyncStatus(Code : Byte) : Word;
+      {-Convert the modem result Code into an AsyncStatus value}
+    begin
+      case Code of
+        mrOk         : MapToAsyncStatus := ecOk;
+        mrConnect    : MapToAsyncStatus := ecConnect;
+        mrNoCarrier  : MapToAsyncStatus := ecNoCarrier;
+        mrError      : MapToAsyncStatus := ecError;
+        mrNoDialtone : MapToAsyncStatus := ecNoDialtone;
+        mrBusy       : MapToAsyncStatus := ecBusy;
+        mrNoAnswer   : MapToAsyncStatus := ecNoAnswer;
+        mrRing       : MapToAsyncStatus := ecRing;
+        else begin
+          MapToAsyncStatus := ecUnknownModemResult;
+          APort^.GotError(epNonFatal+ecUnknownModemResult);
+        end;
+      end;
+    end;
+
+  begin
+    {Clear old values (in case of early exit)}
+    LastText := '';
+    LastCode := -1;
+
+    {Get the modem response}
+    mGetResponse(SResult, IResult, False, CurTimeout);
+    if AsyncStatus <> ecOk then
+      Exit;
+
+    {Process the modem response}
+    if Responses = WordCodes then begin
+      {Using word codes, set numeric result}
+      if Length(SResult) > MaxWordLen then
+        SResult[0] := Char(MaxWordLen);
+      IResult := mSearchResponse(SResult);
+      if IResult = mrConnect then begin
+        ConnectSpeed := mExtractConnectSpeed(SResult);
+        ErrorControl := mExtractEC(SResult);
+      end;
+      LastText := mTrim(SResult);
+    end else begin
+      {Using numeric codes - return actual result}
+      LastCode := IResult;
+      {Change result into mrXxx code}
+      IResult := mSearchCode(IResult, Flags);
+      if IResult = mrConnect then begin
+        ConnectSpeed := mBPS(Flags);
+        ErrorControl := FlagIsSet(Flags, mnErrorControl);
+      end;
+    end;
+
+    {Convert mrXxx code to an AsyncStatus value}
+    AsyncStatus := MapToAsyncStatus(IResult);
+
+    {Call GotError for error-like responses}
+    if (AsyncStatus = ecError) or
+       (AsyncStatus = ecBusy) or
+       (AsyncStatus = ecNoDialTone) or
+       (AsyncStatus = ecNoCarrier) or
+       (AsyncStatus = ecNoAnswer) then
+      APort^.GotError(epNonFatal+AsyncStatus);
+  end;
+
+  procedure AbstractModem.PutModemCommand(Cmd : String);
+    {-Sends Cmd string to the modem and handles the response}
+  begin
+    APort^.FlushInBuffer;
+    mPutStringDelay(Cmd);
+    if AsyncStatus <> ecOk then
+      Exit;
+
+    {Process the response (results returned in AsyncStatus)}
+    if HandleResponses then
+      if FlagIsSet(CmdFlags, moDialTimeout) then
+        GetModemResponse(DialTimeout)
+      else
+        GetModemResponse(Timeout);
+
+    {Reset command flags}
+    CmdFlags := 0;
+  end;
+
+  function AbstractModem.GetLastText : String;
+    {-Returns text of last modem response}
+  begin
+    GetLastText := LastText;
+  end;
+
+  function AbstractModem.GetLastCode : Integer;
+    {-Returns code of last modem response}
+  begin
+    GetLastCode := LastCode;
+  end;
+
+  function AbstractModem.GetConnectSpeed : LongInt;
+    {-Returns the current connect speed of the modem}
+  begin
+    GetConnectSpeed := ConnectSpeed;
+  end;
+
+  function AbstractModem.GetLastErrorMode : Boolean;
+    {-Returns True if the last connection was an error correcting one}
+  begin
+    GetLastErrorMode := ErrorControl;
+  end;
+
+  procedure AbstractModem.SetModemDelay(DF : Word);
+    {-Time (in tics) to delay before sending a modem command}
+  begin
+    DelayFactor := DF;
+  end;
+
+  procedure AbstractModem.SetHandleResponses(State : Boolean);
+    {-Turns automatic response handling on/off}
+  begin
+    HandleResponses := State;
+  end;
+
+  procedure AbstractModem.SetDialPrefix(Prefix : PrefixStr);
+    {-Sets a dialing prefix (do _not_ include ATD)}
+  begin
+    DialPrefix := Prefix;
+  end;
+
+  procedure AbstractModem.SetModemTimeouts(Normal, Dialing : Integer);
+    {-Sets timeout values for normal commands and dialing}
+  begin
+    if Normal >= 0 then
+      Timeout := Normal;
+    if Dialing >= 0 then
+      DialTimeout := Dialing;
+  end;
+
+  procedure AbstractModem.SetModemPort(AP : AbstractPortPtr);
+    {Change modem to use port object AP}
+  begin
+    APort := AP;
+  end;
+
+  procedure AbstractModem.SetModemCmdTable(P : Pointer; Max : Word);
+    {Change modem to use command table pointed to by P}
+  begin
+    CmdTable := P;
+    CmdTableMax := Max;
+  end;
+
+  procedure AbstractModem.SetModemRespTable(P : Pointer; Max : Word);
+    {Change modem to use response string table pointed to by P}
+  begin
+    RespTable := P;
+    RespTableMax := Max;
+  end;
+
+  procedure AbstractModem.SetModemCodeTable(P : Pointer; Max : Word);
+    {Change modem to use response code table pointed to by P}
+  begin
+    CodeTable := P;
+    CodeTableMax := Max;
+  end;
+
+  procedure AbstractModem.SetModemErrorString(EC : ModemErrorString);
+    {-Change modem error string to EC}
+  begin
+    ECString := EC;
+  end;
+
+  procedure AbstractModem.AnswerModem;
+    {-Answer modem immediately}
+  begin
+    ExecuteModemCommand(mcAnswer, -1);
+
+    {If we get a ring result, discard it and check for another result}
+    if AsyncStatus mod 10000 = ecRing then
+      GetModemResponse(Timeout);
+  end;
+
+  procedure AbstractModem.AutoAnswerModem;
+    {-Loops waiting to detect a RING when modem in auto answer mode}
+    { This assumes values in SRegs are correct for current modem settings.}
+  var
+    CarrierWait : word;
+    SaveStatus : word;
+    NrRings : byte;
+    Number : byte;
+    ET : EventTimer;
+    JustStatus : Word;
+  begin
+    AsyncStatus := ecOk;
+    NrRings := SRegs[0].Def;
+
+    {Programmer error if SRegs[0] not 0}
+    if (NrRings = 0) or (not HandleResponses) then begin
+      APort^.GotError(epNonFatal+ecInvalidArgument);
+      Exit;
+    end;
+
+    {Loop for ecRing or ecUserAbort}
+    repeat
+      GetModemResponse(DialTimeOut);
+      JustStatus := AsyncStatus mod 10000;
+    until (JustStatus = ecRing) or (JustStatus = ecUserAbort);
+    if JustStatus = ecUserAbort then begin
+      APort^.GotError(epNonFatal+ecUserAbort);
+      Exit;
+    end;
+
+    {Got ecRing, wait for the specified number of rings}
+    Number := 1;
+    if NrRings > 1 then begin
+      NewTimerSecs(ET, 7*NrRings);  {about 5 secs per ring}
+      repeat
+        GetModemResponse(TimeOut);
+        JustStatus := AsyncStatus mod 10000;
+        if JustStatus = ecRing then
+          Inc(Number);
+
+      until (Number = NrRings) or
+            (JustStatus = ecNoCarrier) or
+            APort^.ptWaitComplete(ET);
+      if Number <> NrRings then begin
+        AsyncStatus := ecNoCarrier;
+        APort^.FlushInBuffer;
+        Exit;
+      end;
+    end;
+
+    {Modem has picked up the phone, wait for carrier}
+    CarrierWait := 19 * SRegs[7].Def;
+    GetModemResponse(CarrierWait);
+
+    {if not connected make sure of modem state and clear buffer}
+    if AsyncStatus <> ecConnect then begin
+      SaveStatus := AsyncStatus;
+      PutModemCommand(CmdPrefix+CmdSuffix);
+      APort^.FlushInBuffer;
+      AsyncStatus := SaveStatus;
+    end;
+  end;
+
+  procedure AbstractModem.RepeatModemCommand;
+    {-Repeats last modem command}
+  begin
+    ExecuteModemCommand(mcRepeat, -1);
+  end;
+
+  procedure AbstractModem.SetCarrierTrans(Opt : Word);
+    {-Turns carrier transmiter on/off}
+  begin
+    ExecuteModemCommand(mcSetCarrierTrans, Opt);
+  end;
+
+  procedure AbstractModem.DialModem(TelNo : NumberStr);
+    {-Dials TelNo}
+  var
+    Index : Integer;
+    Len : Word;
+  begin
+    {Lookup modem dial command}
+    Index := mSearchCommand(mcDial);
+    if Index <> -1 then begin
+      Len := CmdTable^[Index];
+      CmdFlags := CmdTable^[Index+1];
+      Move(CmdTable^[Index+2], Buffer[1], Len-2);
+      Buffer[0] := Char(Len-2);
+    end else
+      APort^.GotError(epNonFatal+ecNullCommand);
+
+    {Add command prefix}
+    if FlagIsSet(CmdFlags, moUsePrefix) then
+      Buffer := CmdPrefix + Buffer;
+
+    {Add dial prefix and telephone number}
+    Buffer := Buffer + DialPrefix + TelNo;
+
+    {Send it}
+    PutModemCommand(Buffer);
+
+    {If user aborted send a <CR> to the modem to cancel the dial}
+    if AsyncStatus mod 10000 = ecUserAbort then begin
+      {APort^.PutChar(cLF);}
+      APort^.PutString(CmdPrefix+CmdSuffix);
+      AsyncStatus := epNonFatal+ecUserAbort;
+    end;
+  end;
+
+  procedure AbstractModem.SetModemEcho(Opt : Word);
+    {-Turn modem echoing on/off}
+  begin
+    ExecuteModemCommand(mcEcho, Opt);
+  end;
+
+  procedure AbstractModem.SetModemOnlineEcho(Opt : Word);
+    {-Turn modem echoing on/off}
+  begin
+    ExecuteModemCommand(mcOnlineEcho, Opt);
+  end;
+
+  procedure AbstractModem.SetDialPulse;
+    {-Sets dialing to pulse mode}
+  begin
+    ExecuteModemCommand(mcPulse, -1);
+  end;
+
+  procedure AbstractModem.HangupModem(Opt : Word; DropDTR : Boolean);
+    {-Send hangup string or drop DTR to hangup modem}
+  begin
+    AsyncStatus := ecOk;
+    if DropDTR then begin
+      {Just drop the DTR line}
+      APort^.SetDTR(False);
+      DelayTics(DTRDropHold);
+      APort^.SetDTR(True);
+    end else begin
+      {Issue the registered hangup command}
+      SetModemCmdMode;
+      ExecuteModemCommand(mcHook, Opt);
+    end;
+    ConnectSpeed := 0;
+  end;
+
+  procedure AbstractModem.SetModemSpeaker(Opt : Word);
+    {-Sets the speaker mode}
+  begin
+    ExecuteModemCommand(mcSpeaker, Opt);
+  end;
+
+  procedure AbstractModem.SetModemOnline;
+    {-Switches modem from command mode to terminal mode}
+  begin
+    ExecuteModemCommand(mcOnline, -1);
+  end;
+
+  procedure AbstractModem.SetModemCmdMode;
+    {-Switches modem from terminal mode to command mode}
+  const
+    GuardTime = 27;
+  var
+    SaveHandleResponses : Boolean;
+    Finished : Boolean;                                                {!!.02}
+    Index : Integer;
+    Len : Byte;
+    C : Char;                                                          {!!.02}
+  begin
+    SaveHandleResponses := HandleResponses;
+    HandleResponses := False;
+
+    {Lookup the command ourselves}
+    Index := mSearchCommand(mcCmdMode);
+    if Index <> -1 then begin
+      Len := CmdTable^[Index];
+      Move(CmdTable^[Index+2], Buffer[1], Len-2);
+      Buffer[0] := Char(Len-2);
+    end else begin
+      APort^.GotError(epNonFatal+ecNullCommand);
+      HandleResponses := SaveHandleResponses;
+      Exit;
+    end;
+
+    {Allow for 1.5 second guard time, then send escape sequence}
+    DelayTics(GuardTime);
+    PutModemCommand(Buffer);
+
+    {Wait for guard time again}
+    DelayTics(GuardTime);
+
+    {Discard +++ echo, if there is one}
+    APort^.WaitForString(Buffer, DelayFactor);
+    {!!.02 removed
+    if AsyncStatus <> ecOk then begin
+      HandleResponses := SaveHandleResponses;
+      Exit;
+    end;}
+
+    {Get the response}
+    GetModemResponse(DelayFactor);
+
+    HandleResponses := SaveHandleResponses
+  end;
+
+  procedure AbstractModem.SetModemQuiet(Opt : Word);
+    {-Set modem response mode (quite/normal)}
+  begin
+    ExecuteModemCommand(mcQuiet, Opt);
+  end;
+
+  procedure AbstractModem.SetModemRegister(Reg, Value : Integer);
+    {-Sets the S register Reg to Value}
+  var
+    S : string[5];
+    Index : Integer;
+    Len : Word;
+  begin
+    AsyncStatus := ecOk;
+
+    {If default requested, set default value}
+    if Value = -1 then
+      if Reg <= MaxStdSRegs then
+        Value := SRegs[Reg].Def
+      else
+        Value := 0;
+
+    {Limit check Value}
+    if Reg <= MaxStdSRegs then
+      with SRegs[Reg] do
+        if (Value < Lo) or (Value > Hi) then begin
+          APort^.GotError(epNonFatal+ecOutOfRange);
+          AsyncStatus := ecOutOfRange;
+          Exit;
+        end;
+
+    {Build a command like: ATS<Reg>=<Value><CR>}
+    {(really: <CmdPrefix><registeredcmd>=<Value><CR>)}
+    Index := mSearchCommand(mcSetRegister);
+    if Index <> -1 then begin
+      Len := CmdTable^[Index];
+      CmdFlags := CmdTable^[Index+1];
+      Move(CmdTable^[Index+2], Buffer[1], Len-2);
+      Buffer[0] := Char(Len-2);
+    end else begin
+      APort^.GotError(epNonFatal+ecNullCommand);
+      Exit;
+    end;
+
+    {Add command prefix}
+    Buffer := CmdPrefix + Buffer;
+    Str(Reg, S);
+    Buffer := Buffer + S + '=';
+    Str(Value, S);
+    Buffer := Buffer + S + CmdSuffix;
+
+    {Send it}
+    PutModemCommand(Buffer);
+    if AsyncStatus <> ecOk then
+      Exit;
+
+    {Make some internal adjustments based on the reg being modified}
+    case Reg of
+      2 : {Escape char}
+        begin
+          RemoveModemCommand(mcCmdMode);
+          Buffer[0] := #3;
+          for Index := 1 to 3 do
+            Buffer[Index] := Char(Value);
+          AddModemCommand(Buffer, mcCmdMode, 0);
+        end;
+      3 : CRChar := Char(Value);
+      4 : LFChar := Char(Value);
+    end;
+
+    {Update SRegs}
+    if Reg <= MaxStdSRegs then
+      SRegs[Reg].Def := Value;
+  end;
+
+  function AbstractModem.GetModemRegister(Reg : Integer) : Byte;
+    {-Returns string result from S-register Reg}
+  var
+    S : string[5];
+    Index : Word;
+    Len : Word;
+    Code : Word;
+    SResponse : String;
+    IResponse : Integer;
+  begin
+    GetModemRegister := 0;
+    AsyncStatus := ecOk;
+
+    {Build a command like: ATS<Reg>?<CR>}
+    {(really: <CmdPrefix><registeredcmd><Reg>?<CR>)}
+    Index := mSearchCommand(mcReadRegister);
+    if Index <> -1 then begin
+      Len := CmdTable^[Index];
+      CmdFlags := CmdTable^[Index+1];
+      Move(CmdTable^[Index+2], Buffer[1], Len-2);
+      Buffer[0] := Char(Len-2);
+    end else begin
+      APort^.GotError(epNonFatal+ecNullCommand);
+      Exit;
+    end;
+
+    {Add command prefix}
+    Buffer := CmdPrefix + Buffer;
+    Str(Reg, S);
+    Buffer := Buffer + S + '?' + CmdSuffix;
+
+    {Send it}
+    APort^.FlushInBuffer;
+    mPutStringDelay(Buffer);
+    if AsyncStatus <> ecOk then
+      Exit;
+
+    {Get the register response}
+    mGetResponse(SResponse, IResponse, True, Timeout);
+    if AsyncStatus <> ecOk then
+      Exit;
+
+    {Set the function result}
+    if SResponse <> '' then begin
+      Val(SResponse, IResponse, Code);
+      if Code <> 0 then
+        IResponse := 0;
+    end;
+    GetModemRegister := IResponse;
+
+    {Update SRegs}
+    if Reg <= MaxStdSRegs then
+      SRegs[Reg].Def := IResponse;
+
+    {Get rest of modem response string}
+    GetModemResponse(Timeout);
+  end;
+
+  procedure AbstractModem.SetDialTone;
+    {-Sets dial mode to tone}
+  begin
+    ExecuteModemCommand(mcTone, -1);
+  end;
+
+  procedure AbstractModem.SetDCDControl(Opt : Word);
+    {-Sets DCD behavior (mDCDAlwaysOn or mDCDFollowConnect)}
+  begin
+    ExecuteModemCommand(mcDCDControl, Opt);
+  end;
+
+  procedure AbstractModem.SetDTRControl(Opt : Word);
+    {-Sets DTR behavior (mDTRAlwaysOn or mDTRTerminateCall)}
+  begin
+    ExecuteModemCommand(mcDTRControl, Opt);
+  end;
+
+  procedure AbstractModem.SetModemResults(Opt : Word);
+    {-Set modem response codes to numerics or words}
+  begin
+    if Opt = 0 then
+      Responses := NumericCodes
+    else
+      Responses := WordCodes;
+
+    APort^.FlushInBuffer;
+    ExecuteModemCommand(mcResultCodes, Opt);
+  end;
+
+  procedure AbstractModem.SetModemCodeSet(Opt : Word);
+    {-Sets the modem response code set}
+  begin
+    ExecuteModemCommand(mcCodeSet, Opt);
+  end;
+
+  procedure AbstractModem.ResetModem;
+    {-Issues ATZ command to reset modem to power-on defaults}
+  begin
+    ExecuteModemCommand(mcReset, -1);
+  end;
+
+  procedure AbstractModem.SetModemVolume(Opt : Word);
+    {-Sets the speaker volume}
+  begin
+    ExecuteModemCommand(mcVolume, Opt);
+  end;
+
+  procedure AbstractModem.SetFlowControl(FlowOpts : Word);
+    {-Set flow control options}
+  begin
+    {Return error if not overridden}
+    APort^.GotError(epNonFatal+ecNullCommand);
+  end;
+
+  procedure AbstractModem.SetErrorControl(ErrorOpt : ErrorStates);
+    {-Turn error control on/off}
+  var
+    Cmd : Word;
+  begin
+    case ErrorOpt of
+      eCheckOff  : Cmd := mcErrorControlOff;
+      eCheckOn   : Cmd := mcErrorControlOn;
+      eCheckAuto : Cmd := mcErrorControlAuto;
+    end;
+    ExecuteModemCommand(Cmd, -1);
+  end;
+
+  procedure AbstractModem.SetLinkLocked(Locked : Boolean);
+    {-Lock the link rate or follow connection?}
+  var
+    Cmd : Word;
+  begin
+    if Locked then
+      Cmd := mcLinkLockedOn
+    else
+      Cmd := mcLinkLockedOff;
+    ExecuteModemCommand(Cmd, -1);
+  end;
+
+  procedure AbstractModem.SetModemSpeed(BPS : LongInt);
+    {-Set the DCE/DCE data rate}
+  begin
+    {Return error if not overridden}
+    APort^.GotError(epNonFatal+ecNullCommand);
+  end;
+
+  procedure AbstractModem.SetSpeedMatching;
+    {-Answering DCE matches speed with originating DCE}
+  begin
+    APort^.GotError(epNonFatal+ecNullCommand);
+  end;
+
+  procedure AbstractModem.SetDataCompression(State : Boolean);
+    {-Turn data compression on/off}
+  begin
+    ExecuteModemCommand(mcDataCompression, Ord(State));
+  end;
+
+  procedure AbstractModem.mPutStringDelay(var S : String);
+    {-Delays DelayFactor tics before sending out modem string}
+  var
+    I : Word;
+    ET : EventTimer;
+    S1 : String;
+    Len : Byte absolute S1;
+  begin
+    if DelayFactor <> 0 then begin
+      {Give modem a chance to recover from last command}
+      NewTimer(ET, DelayFactor);
+      while not APort^.ptWaitComplete(ET) do ;
+      if AsyncStatus = ecUserAbort then begin
+        APort^.GotError(epNonFatal+ecUserAbort);
+        Exit;
+      end;
+    end;
+
+    {Add <CR> if one is required but isn't there already}
+    S1 := S;
+    if (FlagIsSet(CmdFlags, moUseSuffix)) and (S1[Len]<>CmdSuffix) then
+      if Len < 255 then begin
+        Inc(Len);
+        S1[Len] := CmdSuffix;
+      end;
+
+    {Put string slowly}
+    for I := 1 to Len do begin
+      Delay(ModemCharDelay);
+      APort^.PutChar(S1[I]);
+    end;
+  end;
+
+  {$IFDEF UseStreams}
+  constructor AbstractModem.Load(var S : IdStream);
+    {-Abstract Load for a modem object}
+  begin
+    mFlags := 0;
+    ConnectSpeed := 0;
+
+    {Load the AbstractPort pointer}
+    APort := S.ReadPointer;
+    if APort = nil then begin
+      APort := AbstractPortPtr(S.GetPtr);
+      if S.PeekStatus <> 0 then begin
+        Done;
+        Fail;
+      end;
+    end;
+
+    {Load the modem fields}
+    S.ReadRange(Responses, CmdTable);
+    S.Read(CmdTableMax, SizeOf(CmdTableMax));
+    S.Read(RespTableMax, SizeOf(RespTableMax));
+    S.Read(CodeTableMax, SizeOf(CodeTableMax));
+
+    {Load the command table}
+    CmdTable := S.ReadPointer;
+    if CmdTable <> nil then
+      ClearFlag(mFlags, mDeallocC)
+    else if GetMemCheck(CmdTable, CmdTableMax+1) then begin
+      SetFlag(mFlags, mDeallocC);
+      S.Read(CmdTable^, CmdTableMax+1);
+      if S.PeekStatus <> 0 then begin
+        Done;
+        Fail;
+      end;
+    end else begin
+      AsyncStatus := epFatal+ecOutOfMemory;
+      Done;
+      Fail;
+    end;
+
+    {Load the response table}
+    RespTable := S.ReadPointer;
+    if RespTable <> nil then
+      ClearFlag(mFlags, mDeallocR)
+    else if GetMemCheck(RespTable, RespTableMax+1) then begin
+      SetFlag(mFlags, mDeallocR);
+      S.Read(RespTable^, RespTableMax+1);
+      if S.PeekStatus <> 0 then begin
+        Done;
+        Fail;
+      end;
+    end else begin
+      AsyncStatus := epFatal+ecOutOfMemory;
+      Done;
+      Fail;
+    end;
+
+    {Load the code table}
+    CodeTable := S.ReadPointer;
+    if CodeTable <> nil then
+      ClearFlag(mFlags, mDeallocN)
+    else if GetMemCheck(CodeTable, CodeTableMax+1) then begin
+      SetFlag(mFlags, mDeallocN);
+      S.Read(CodeTable^, CodeTableMax+1);
+      if S.PeekStatus <> 0 then begin
+        Done;
+        Fail;
+      end;
+    end else begin
+      AsyncStatus := epFatal+ecOutOfMemory;
+      Done;
+      Fail;
+    end;
+  end;
+
+  procedure AbstractModem.Store(var S : IdStream);
+    {-Abstract Store for a modem object}
+  begin
+    {Store the AbstractPort pointer}
+    S.WriteUserPointer(APort, ptNil);
+    if not S.PointerRegistered(APort) then
+      S.PutPtr(APort);
+
+    {Write the modem fields}
+    S.WriteRange(Responses, CmdTable);
+    S.Write(CmdTableMax, SizeOf(CmdTableMax));
+    S.Write(RespTableMax, SizeOf(RespTableMax));
+    S.Write(CodeTableMax, SizeOf(CodeTableMax));
+
+    {Store the command table}
+    S.WriteUserPointer(CmdTable, ptNil);
+    if not S.PointerRegistered(CmdTable) then
+      S.Write(CmdTable^, CmdTableMax+1);
+
+    {Store the response table}
+    S.WriteUserPointer(RespTable, ptNil);
+    if not S.PointerRegistered(RespTable) then
+      S.Write(RespTable^, RespTableMax+1);
+
+    {Store the code table}
+    S.WriteUserPointer(CodeTable, ptNil);
+    if not S.PointerRegistered(CodeTable) then
+      S.Write(CodeTable^, CodeTableMax+1);
+  end;
+  {$ENDIF}
+
+  constructor HayesModem.Init(AP : AbstractPortPtr);
+    {-Allocates and initializes a modem object}
+  begin
+    AbstractModem.Init(AP);
+    CmdTable := @HayesCommandSet;
+    CmdTableMax := HayesCommandMax;
+    RespTable := @HayesResponseSet;
+    RespTableMax := HayesResponseMax;
+    CodeTable := @HayesCodeSet;
+    CodeTableMax := HayesCodeMax;
+  end;
+
+  constructor CourierModem.Init(AP : AbstractPortPtr);
+    {-Allocates and initializes a modem object}
+  begin
+    AbstractModem.Init(AP);
+    CmdTable := @CourierCommandSet;
+    CmdTableMax := CourierCommandMax;
+    RespTable := @HayesResponseSet;
+    RespTableMax := HayesResponseMax;
+    CodeTable := @CourierCodeSet;
+    CodeTableMax := CourierCodeMax;
+    ECString := 'ARQ';
+  end;
+
+  procedure CourierModem.SetFlowControl(FlowOpts : Word);
+    {-Set flow control options}
+  var
+    Hval : Byte;
+    Ival : Byte;
+    Rval : Byte;
+  begin
+    {Save FlowOpts}
+    FlowOptions := FlowOpts;
+
+    {Set the "n" values}
+    Hval := 0;
+    Ival := 0;
+    Rval := 1;
+    if FlagIsSet(FlowOpts, fSWTrans) then
+      HVal := 2;
+    if FlagIsSet(FlowOpts, fHWTrans) then
+      Inc(Hval);
+    if FlagIsSet(FlowOpts, fSWRec) then
+      Ival := 2;
+    if FlagIsSet(FlowOpts, fHWRec) then
+      Rval := 2;
+
+    {Build the command string}
+    Buffer := CmdPrefix + '&H' + mLong2Str(Hval) +
+                          '&I' + mLong2Str(Ival) +
+                          '&R' + mLong2Str(Rval) + CmdSuffix;
+
+    {Execute the command and handle the response}
+    PutModemCommand(Buffer);
+  end;
+
+  procedure CourierModem.SetModemSpeed(BPS : LongInt);
+    {-Set the DCE/DCE data rate}
+  var
+    C : Char;
+    S : Word;
+  begin
+    S := BPS div 10;
+    case S of
+      30    : C := '1';
+      120   : C := '2';
+      240   : C := '3';
+      480   : C := '4';
+      720   : C := '5';
+      960   : C := '6';
+      1200  : C := '7';
+      1440  : C := '8';
+    end;
+    PutModemCommand(CmdPrefix+'&N'+C+CmdSuffix);
+  end;
+
+  procedure CourierModem.SetSpeedMatching;
+    {-Answering DCE matches speed with originating DCE}
+  begin
+    PutModemCommand(CmdPrefix+'&N0'+CmdSuffix);
+  end;
+
+  constructor MicrocomModem.Init(AP : AbstractPortPtr);
+    {-Allocates and initializes a modem object}
+  begin
+    AbstractModem.Init(AP);
+    CmdTable := @MicrocomCommandSet;
+    CmdTableMax := MicrocomCommandMax;
+    RespTable := @HayesResponseSet;
+    RespTableMax := HayesResponseMax;
+    CodeTable := @MicrocomCodeSet;
+    CodeTableMax := MicrocomCodeMax;
+    ECString := 'REL';
+  end;
+
+  procedure MicrocomModem.SetFlowControl(FlowOpts : Word);
+    {-Set flow control options}
+  var
+    Qval : Byte;
+  label
+    ErrorExit;
+  begin
+    {Save FlowOpts}
+    FlowOptions := FlowOpts;
+
+    {Check for unsupported requests}
+    if (FlagIsSet(FlowOpts, fSWTrans) or FlagIsSet(FlowOpts, fSWRec)) and
+       (FlagIsSet(FlowOpts, fHWTrans) or FlagIsSet(FlowOpts, fHWRec)) then
+      {Error - can't have both hw and sw flow control}
+      goto ErrorExit;
+
+    if FlagIsSet(FlowOpts, fHWRec) and not FlagIsSet(FlowOpts, fHWTrans) then
+      {Error - can't have only hardware receive}
+      goto ErrorExit;
+
+    if FlagIsSet(FlowOpts, fSWTrans) and not FlagIsSet(FlowOpts, fSWRec) then
+      {Error - can't have only software transmit}
+      goto ErrorExit;
+
+    {If we get here we have a valid request, set Q accordingly}
+    Qval := 0;
+    if FlagIsSet(FlowOpts, fSWTrans) and FlagIsSet(FlowOpts, fSWRec) then
+      QVal := 1;
+    if FlagIsSet(FlowOpts, fHWTrans) and not FlagIsSet(FlowOpts, fHWRec) then
+      QVal := 2;
+    if FlagIsSet(FlowOpts, fHWTrans) and FlagIsSet(FlowOpts, fHWRec) then
+      QVal := 3;
+    if not FlagIsSet(FlowOpts, fSWTrans) and FlagIsSet(FlowOpts, fSWRec) then
+      QVal := 4;
+
+    {Build the command string}
+    if FlagIsSet(FlowOpts, fRmtXoff) then
+      Buffer := CmdPrefix + '\X1'
+    else
+      Buffer := CmdPrefix + '\X0';
+    Buffer := CmdPrefix + '\Q' + mLong2Str(Qval) + CmdSuffix;
+
+    {Execute the command and handle the response}
+    PutModemCommand(Buffer);
+    Exit;
+
+ErrorExit:
+    APort^.GotError(epNonFatal+ecNullCommand);
+  end;
+
+  procedure MicrocomModem.SetModemSpeed(BPS : LongInt);
+    {-Set the DCE/DCE data rate}
+  begin
+    PutModemCommand(CmdPrefix+'%G1%U%B'+mLong2Str(BPS)+CmdSuffix);
+  end;
+
+  procedure MicrocomModem.SetSpeedMatching;
+    {-Answering DCE matches speed with originating DCE}
+  begin
+    PutModemCommand(CmdPrefix+'%L1'+CmdSuffix);
+  end;
+
+  procedure NullModem.DialModem(TelNo : NumberStr);
+    {-Dials TelNo (prefixes 'ATD' + DialPrefixStr)}
+  begin
+    with APort^ do begin
+      if CheckDSR then begin
+        AsyncStatus := ecConnect;
+        ConnectSpeed := PR^.CurBaud;
+        LastText := 'CONNECT';
+        LastCode := 1;
+      end else begin
+        AsyncStatus := ecNoAnswer;
+        LastText := 'NO ANSWER';
+        LastCode := 8;
+      end;
+    end;
+  end;
+
+  procedure NullModem.GetModemResponse(CurTimeout : Integer);
+    {-Wait for the result code from the last modem command}
+  begin
+    AsyncStatus := ecOk;
+  end;
+
+  procedure NullModem.PutModemCommand(Cmd : String);
+    {-Sends Cmd string to the modem and handles the response}
+  begin
+    AsyncStatus := ecOk;
+  end;
+
+  {$IFDEF UseStreams}
+  procedure AbstractModemStream(SPtr : IdStreamPtr);
+    {-Register all types needed for streams containing modem objects}
+  begin
+    SPtr^.RegisterType(otAbstractModem, veAbstractModem,
+                       TypeOf(AbstractModem),
+                       @AbstractModem.Store, @AbstractModem.Load);
+  end;
+
+  procedure HayesModemStream(SPtr : IdStreamPtr);
+    {-Register all types needed for streams containing modem objects}
+  begin
+    AbstractModemStream(SPtr);
+    SPtr^.RegisterType(otHayesModem, veHayesModem,
+                       TypeOf(HayesModem),
+                       @HayesModem.Store, @HayesModem.Load);
+  end;
+
+  procedure CourierModemStream(SPtr : IdStreamPtr);
+    {-Register all types needed for streams containing modem objects}
+  begin
+    AbstractModemStream(SPtr);
+    SPtr^.RegisterType(otCourierModem, veCourierModem,
+                       TypeOf(CourierModem),
+                       @CourierModem.Store, @CourierModem.Load);
+  end;
+
+  procedure MicrocomModemStream(SPtr : IdStreamPtr);
+    {-Register all types needed for streams containing modem objects}
+  begin
+    AbstractModemStream(SPtr);
+    SPtr^.RegisterType(otMicrocomModem, veMicrocomModem,
+                       TypeOf(MicrocomModem),
+                       @MicrocomModem.Store, @MicrocomModem.Load);
+  end;
+
+  procedure NullModemStream(SPtr : IdStreamPtr);
+    {-Register all types needed for streams containing modem objects}
+  begin
+    AbstractModemStream(SPtr);
+    SPtr^.RegisterType(otNullModem, veNullModem,
+                       TypeOf(NullModem),
+                       @NullModem.Store, @NullModem.Load);
+  end;
+
+  procedure AllModemStream(SPtr : IdStreamPtr);
+    {-Register all types needed for streams containing modem objects}
+  begin
+    AbstractModemStream(SPtr);
+    HayesModemStream(SPtr);
+    CourierModemStream(SPtr);
+    MicrocomModemStream(SPtr);
+    NullModemStream(SPtr);
+  end;
+  {$ENDIF}

@@ -1,0 +1,35 @@
+
+
+     <TR class="tab_footer">
+       <TD class="tab_footer" colSpan=5>
+         <A HREF="/cgi-bin/eleweb.exe?action=3&script=readmsg&sub-action=3&areanum=|YB">Post new!</A>
+       </TD>
+     </TR>
+
+
+   </TBODY>
+ </TABLE>
+ <!-- --------------------------------------------------------------------- -->
+
+ <FORM ACTION="/cgi-bin/eleweb.exe" METHOD="GET">
+ <INPUT TYPE="HIDDEN" NAME="action" VALUE="3">
+ <INPUT TYPE="HIDDEN" NAME="script" VALUE="readmsg">
+ <INPUT TYPE="HIDDEN" NAME="sub-action" VALUE="14">
+ <INPUT TYPE="HIDDEN" NAME="areanum" VALUE="|YB">
+ <SELECT NAME="daysprune">
+     <OPTION value="1"   |ZU001>Show topics from last day
+     <OPTION value="2"   |ZU002>Show topics from last 2 days
+     <OPTION value="5"   |ZU005>Show topics from last 5 days
+     <OPTION value="10"  |ZU010>Show topics from last 10 days
+     <OPTION value="20"  |ZU020>Show topics from last 20 days
+     <OPTION value="30"  |ZU030>Show topics from last 30 days
+     <OPTION value="45"  |ZU045>Show topics from last 45 days
+     <OPTION value="60"  |ZU060>Show topics from last 60 days
+     <OPTION value="75"  |ZU075>Show topics from last 75 days
+     <OPTION value="100" |ZU100>Show topics from last 100 days
+     <OPTION value="365" |ZU365>Show topics from the last year
+     <OPTION value=""    |ZU000>Show all topics
+   </SELECT>
+ <INPUT TYPE="SUBMIT" Value="Show">
+ </FORM>
+

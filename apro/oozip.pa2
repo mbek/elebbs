@@ -1,0 +1,1896 @@
+var
+  Crc              : LongInt;
+  UpdateCrcAddr    : Pointer;
+
+  constructor Zip.Init(FName : PathStr);
+    {-Initialize the archive and open the input file}
+  begin
+    if not UnZip.Init(FName) then
+      Fail;
+    @zOKToCompress := nil;
+    @zSuccess := nil;
+    @zFileComment := nil;
+    zNewFilePending := False;
+    zFreshening := False;
+
+    zCompressMode := cmBestMethod;   {Default to best method}
+    zMaxStringMatch := 4;            {Default to fast implode}
+    zMaxChainLength := 4;            {Default to fast implode}
+    zDeflateLevel := 5;              {Default to medium speed}         {!!.01}
+  end;
+
+  constructor Zip.Create(FName : PathStr);
+    {-Initialize the archive and create a new ZIP file}
+  begin
+    arError := 0;                                                      {!!.01}
+    ArchiveStatus := 0;                                                {!!.01}
+    FName := DefaultExtension(FName, 'ZIP');
+    uzSaveMode := FileMode;                                            {!!.02}
+    FileMode := AproFileMode;                                   {!!.02}{!!.03}
+    Assign(arFile, FName);
+    Reset(arFile, 1);
+    FileMode := uzSaveMode;                                            {!!.02}
+    if IOResult = 0 then begin
+      {Error if specified file already exists}
+      Close(arFile);
+      if IOResult <> 0 then ;
+      ArchiveStatus := ecCannotCreate;
+      Fail;
+    end;
+
+    {Save the name of the file for later updates}
+    arName := FName;
+
+    {Create an empty file}
+    Assign(arFile, FName);
+    Rewrite(arFile, 1);
+    ArchiveStatus := IOResult;
+    if ArchiveStatus <> ecOk then
+      Fail;
+
+    {Init parent's procedure pointers}
+    @uzOK         := nil;
+    @uzShowZip    := nil;
+    @uzShowMethod := nil;
+    @uzSuccess    := nil;
+    @uzProgress   := nil;
+
+    {Init parent's options}
+    arOptions := DefArchiveOptions;
+
+    @zOkToCompress := nil;
+    @zSuccess := nil;
+    @zFileComment := nil;
+    zNewFilePending := True;
+    zFreshening := False;
+
+    zCompressMode := cmBestMethod;   {Deafult to best method}
+    zMaxStringMatch := 4;            {Default to fast implode}
+    zMaxChainLength := 4;            {Default to fast implode}
+    zDeflateLevel := 5;              {Defalut to medium speed}         {!!.01}
+  end;
+
+  function Zip.SkipNewZip(N : LongInt) : Word;
+    {-Skip the next N bytes of data in NewZip}
+  var
+    Regs : Registers;
+    Handle : Word absolute NewZip;
+  begin
+    SkipNewZip := 0;
+    if N > 0 then
+      with Regs do begin
+        AX := $4201;         {move file pointer function, relative to current pos}
+        BX := Handle;        {file handle}
+        CX := LH(N).H;       {CX has high word of delta}
+        DX := LH(N).L;       {DX has low word}
+        MsDos(Regs);
+        if Odd(Flags) then
+          SkipNewZip := AX;
+      end;
+  end;
+
+  function Zip.CheckForText : Boolean;
+    {-Return False if file has any non-text chars in first 100 bytes}
+  const
+    MaxTextCheck = 100;
+  var
+    I : Integer;
+  begin
+    CheckForText := False;
+    for I := 1 to MaxTextCheck do begin
+      {Exit if character isn't text}
+      if InBuf^[I] > 127 then
+        Exit;
+
+      {Exit with True if we reach eof}
+      if InEof and (InPos > InCnt) then begin
+        CheckForText := True;
+        Exit;
+      end;
+
+      {No text chars if we get here}
+      CheckForText := True;
+    end;
+  end;
+
+  function Zip.WriteZip(var Block; Size : Word) : Boolean;
+    {-Check IOResult and set arError, return False on errors}
+  var
+    BytesWritten : Word;
+  begin
+    arError := ecOk;
+    if Size <> 0 then begin
+      BlockWrite(NewZip, Block, Size, BytesWritten);
+      arError := IOResult;
+      if BytesWritten <> Size then
+        arError := ecDiskFull;
+      Inc(CompressSize, BytesWritten);
+    end;
+    WriteZip := arError = ecOk;
+  end;
+
+  procedure Zip.RestoreArchive;
+    {-Error encountered during update, restore !!! to old}
+  begin
+    Close(NewZip);
+    Erase(NewZip);
+    if IOResult <> 0 then ;
+
+    Close(arFile);
+    Rename(arFile, arName);
+    if IOResult <> 0 then ;
+  end;
+
+  procedure Zip.PrepareForUpdate;
+    {-Rename orginal to !!!}
+  var
+    Dir : DirStr;
+    Name : NameStr;
+    Ext : ExtStr;
+    FName : PathStr;
+  begin
+    {Close existing file and build temp name}
+    Close(arFile);
+    FSplit(arName, Dir, Name, Ext);
+    FName := Dir + Name + '.!!!';
+
+    {Blindly delete an existing temp file}
+    Assign(arFile, FName);
+    Erase(arFile);
+    if IOResult = 0 then ;
+
+    {Rename to !!!}
+    Assign(arFile, arName);
+    Rename(arFile, FName);
+    Reset(arFile, 1);
+    arError := IOResult;
+    if arError <> ecOk then
+      Exit;
+
+    {Create new output file with original name}
+    Assign(NewZip, arName);
+    Rewrite(NewZip, 1);
+    arError := IOResult;
+  end;
+
+  {!!.03 removed FileMode changes that were added in 2.02}
+  procedure Zip.DoneUpdate;
+    {-Update finished successfully, delete !!!}
+  begin
+    Close(arFile);
+    Erase(arFile);
+    if IOResult <> 0 then ;
+
+    Close(NewZip);
+    if IOResult <> 0 then ;
+
+    {Reopen arFile as input}
+    Assign(arFile, arName);
+    Reset(arFile, 1);
+    arError := IOResult;
+    uzTailPos := -1;
+  end;
+
+  function Zip.AdjustName(FName : String) : String;
+    {-Optionally remove dots and/or driver letter}
+  begin
+    if arOptionsAreOn(arRemoveDots) and (Pos('..', FName) = 1) then
+      if (FName[3] = '/') or (FName[3] = '\') then
+        FName := Copy(FName, 4, 255)
+      else
+        FName := Copy(FName, 3, 255);
+
+    if arOptionsAreOn(arNoDriveLetter) and (FName[2] = ':') then
+      if (FName[3] = '/') or (FName[3] = '\') then
+        FName := Copy(FName, 4, 255)
+      else
+        FName := Copy(FName, 3, 255);
+
+    AdjustName := FName;
+  end;
+
+  function FixName(FName : String) : String;
+    {-Change backslashes to forward slashes}
+  var
+    I : Word;
+  begin
+    for I := 1 to Length(FName) do
+      if FName[I] = '\' then
+        FName[I] := '/';
+    FixName := FName;
+  end;
+
+  function UnfixName(FName : String) : String;
+    {-Change slashes to backslashes}
+  var
+    I : Word;
+  begin
+    for I := 1 to Length(FName) do
+      if FName[I] = '/' then
+        FName[I] := '\';
+    UnfixName := FName;
+  end;
+
+  procedure Zip.WriteCentralDir(ZFL : ZipFileList);
+    {-Append the central directory to the end of the ZIP file}
+  var
+    ZNode : ZipNodePtr;
+    Entries : Word;
+    CDSize : Word;
+    StartOfs : LongInt;
+    TempName : PathStr;
+  begin
+    Entries := 0;
+    CDSize := 0;
+
+    {Note the current file offset (which is the start of the central dir)}
+    StartOfs := FilePos(NewZip);
+
+    ZNode := ZFL.zfHead;
+    while ZNode <> nil do
+      with ZNode^ do begin
+        {Write the central directory signature}
+        if not WriteZip(CentralDirHeadSig, SizeOf(CentralDirHeadSig)) then
+          Exit;
+
+        {Write the central directory entry for this node}
+        if not WriteZip(znCDH, SizeOf(CentralDirHead)) then
+          Exit;
+
+        {Write the file name}
+        TempName := FixName(znFName);
+        if not WriteZip(TempName[1], Length(TempName)) then
+          Exit;
+
+        {Conditionally write the extra  field}
+        if not WriteZip(znEP^, znCDH.ExtraLength) then
+          Exit;
+
+        {Conditionally write the comment}
+        if not WriteZip(znCP^, znCDH.CommentLength) then
+          Exit;
+
+        {Tally}
+        Inc(Entries);
+        Inc(CDSize, SizeOf(CentralDirHead)+
+                    znCDH.ExtraLength+
+                    znCDH.CommentLength+
+                    SizeOf(CentralDirHeadSig)+
+                    Length(TempName));
+
+        {Next node}
+        ZNode := znNext;
+      end;
+
+    {Write the central directory tail signature}
+    if not WriteZip(CentralDirTailSig, SizeOf(CentralDirTailSig)) then
+      Exit;
+
+    {Write the central directory tail}
+    with CDT do begin
+      DiskNumber := 0;
+      CentralDirDisk := 0;                                             {!!.01}
+      EntriesThisDisk := Entries;
+      TotalEntries := Entries;
+      CentralDirSize := CDSize;
+      CentralDirOfs := StartOfs;
+    end;
+    if not WriteZip(CDT, SizeOf(CDT)) then
+      Exit;
+
+    {Write out the ZIP file comment}
+    if not zNewFilePending then
+      if not WriteZip(CDTComment^, CDT.CommentLength) then ;
+  end;
+
+  function Zip.GetC(var C : Word) : Boolean;
+    {-Return the next character from the input file}
+  begin
+  Inline(
+    $A1/>INPOS/            {MOV     AX,[>InPos]          ;Reload required?}
+    $3B/$06/>INCNT/        {CMP     AX,[>InCnt]          ;}
+    $7F/$03/               {JG      CheckEof             ;}
+    $E9/$87/$00/           {JMP     GetChar              ;}
+                           {CheckEof:}
+                           {;Need to reload buffer}
+    $80/$3E/>INEOF/$01/    {CMP     BYTE [<InEof],1      ;Eof pending?}
+    $75/$03/               {JNE     Reload}
+    $E9/$A6/$00/           {JMP     Eof                  ;Yes, go handle}
+                           {Reload:}
+                           {;Reload buffer}
+    $C7/$06/>INPOS/$01/$00/ {MOV     WORD [<InPos],1      ;Reset InPos}
+    $1E/                   {PUSH    DS                   ;}
+    $8B/$1E/>INFILE/       {MOV     BX,[>InFile]         ;BX = file handle}
+    $C5/$16/>INBUF/        {LDS     DX,[>InBuf]          ;DS:DX -> Inbuf^}
+    $B9/$00/$10/           {MOV     CX,4096              ;CX = bytes to read}
+    $B8/$00/$3F/           {MOV     AX,$3F00             ;Read file}
+    $CD/$21/               {INT     $21                  ;}
+    $1F/                   {POP     DS}
+    $73/$03/               {JNC     OK}
+    $E9/$89/$00/           {JMP     ReadError}
+                           {OK:}
+    $C6/$06/>INEOF/$01/    {MOV     BYTE [<InEof],1      ;Assume eof}
+    $A3/>INCNT/            {MOV     [>InCnt],AX          ;Number of bytes read}
+    $3D/$00/$00/           {CMP     AX,0                 ;Immediate Eof?}
+    $74/$7C/               {JE      Eof                  ;Yes, go exit}
+    $3D/$00/$10/           {CMP     AX,4096              ;Later eof?}
+    $75/$05/               {JNE     NoEof                ;}
+    $C6/$06/>INEOF/$00/    {MOV     BYTE [<InEof],0      ;Say not eof}
+                           {NoEof:}
+                           {;Update the CRC}
+    $BF/>CRC/              {MOV     DI,>Crc              ;var CRC}
+    $1E/                   {PUSH    DS}
+    $57/                   {PUSH    DI}
+    $C4/$3E/>INBUF/        {LES     DI,[>InBuf]          ;InBuf^}
+    $06/                   {PUSH    ES}
+    $57/                   {PUSH    DI}
+    $50/                   {PUSH    AX                   ;InCnt}
+    $FF/$1E/>UPDATECRCADDR/ {CALL    FAR [>UpdateCrcAddr] ;Call UpdateCrc}
+                           {;Show progress}
+    $80/$3E/>SHOWPROG/$01/ {CMP     BYTE [<ShowProg],1}
+    $75/$32/               {JNE     GetChar}
+    $8E/$46/$08/           {MOV     ES,[BP+8]            ;ES:DI = @Self}
+    $8B/$7E/$06/           {MOV     DI,[BP+6]}
+    $FF/$36/>BYTESOUT+2/   {PUSH    [>BytesOut+2]        ;Push BytesWritten}
+    $FF/$36/>BYTESOUT/     {PUSH    [>BytesOut]}
+    $FF/$36/>ORIGFILESIZE+2/ {PUSH    [>OrigFileSize+2]    ;Push TotalBytes}
+    $FF/$36/>ORIGFILESIZE/ {PUSH    [>OrigFileSize]}
+    $06/                   {PUSH    ES                   ;Push Self}
+    $57/                   {PUSH    DI}
+    $26/                   {ES:}
+    $8B/$BD/$24/$01/       {MOV     DI,[DI+$124]         ;DI = VMT offset}
+    {$IFDEF VER70}
+    $FF/$5D/$1C/           {CALL    FAR [DI+$1C]         ;Call proper ShowProgress method}
+    {$ELSE}
+    $FF/$5D/$18/           {CALL    FAR [DI+$18]         ;Call proper ShowProgress method}
+    {$ENDIF}
+    $08/$C0/               {OR      AL,AL}
+    $75/$0E/               {JNZ     GetChar}
+    $8E/$46/$08/           {MOV     ES,[BP+8]            ;ES:DI = @Self}
+    $8B/$7E/$06/           {MOV     DI,[BP+6]}
+    $26/                   {ES}
+    $C7/$05/>ECUSERABORT/  {MOV     WORD [DI],>ecUserAbort}
+    $E9/$29/$00/           {JMP     ReadError}
+                           {GetChar:}
+                           {;Get the next char from buffer}
+    $C4/$3E/>INBUF/        {LES     DI,[>InBuf]          ;ES:DI -> InBuf^}
+    $03/$3E/>INPOS/        {ADD     DI,[>InPos]          ;ES:DI -> InBuf^[InPos]}
+    $26/                   {ES:                          ;}
+    $8A/$45/$FF/           {MOV     AL,[DI-1]            ;AL gets next char}
+    $30/$E4/               {XOR     AH,AH                ;}
+    $C4/$7E/$0A/           {LES     DI,[BP+$0A]          ;ES:DI -> C}
+    $26/                   {ES:                          ;}
+    $89/$05/               {MOV     [DI],AX              ;C get next char}
+    $FF/$06/>INPOS/        {INC     WORD [>InPos]        ;}
+    $83/$06/>BYTESOUT/$01/ {ADD     WORD [>BytesOut],1   ;}
+    $83/$16/>BYTESOUT+2/$00/ {ADC     WORD [>BytesOut+2],0 ;}
+                           {;Clean up and exit True}
+    $C6/$46/$FF/$01/       {MOV     BYTE [BP-1],1}
+    $E9/$04/$00/           {JMP     Exit}
+                           {Eof:}
+                           {ReadError:}
+    $C6/$46/$FF/$00);      {MOV     BYTE [BP-1],0}
+                           {Exit:}
+    end;
+
+  procedure Zip.PutCode(Code : Integer);
+    {-Manage 32bit buffer for output}
+  var
+    Work : Byte;
+  begin
+    {When starting, always assume BitBuffer has less than 8 bits in it}
+
+    if Code <> - 1 then begin
+      {Move CodeSize bits from Code into BitBuffer}
+      BitBuffer := BitBuffer or (LongInt(Code) shl BitsUsed);
+      Inc(BitsUsed, CodeSize);
+    end else begin
+      OutBuf^[OutPos] := Lo(BitBuffer);
+      Inc(OutPos);
+    end;
+
+    while BitsUsed >= 8 do begin
+      Work := Lo(BitBuffer);
+      OutBuf^[OutPos] := Work;
+      Inc(OutPos);
+      if OutPos = SizeOf(OutBuf^) then begin
+        if WriteZip(OutBuf^, OutPos) then
+          OutPos := 0
+        else
+          Exit;
+      end;
+      BitBuffer := BitBuffer shr 8;
+      Dec(BitsUsed, 8);
+    end;
+  end;
+
+  procedure ClearLeaves(ParentNode : Word);
+    {-Clear leaves from a subtree}
+  var
+    Node : Integer;
+    Next : Integer;
+  begin
+    Node := HeadTable^[ParentNode];
+
+    {Clear chains that don't have any descendants}
+    while (Node <> Unused) and (HeadTable^[Node] = Unused) do begin
+      HeadTable^[ParentNode] := PrefixTable^[Node];
+      PrefixTable^[Node] := Unused;
+
+      {Turn on clearlist bit to indicate a cleared entry}
+      ClearList[Node div 8] := ClearList[Node div 8] or (1 shl (Node mod 8));
+      Node := HeadTable^[ParentNode];
+    end;
+
+    {If there are any children left...}
+    if Node <> Unused then begin
+      ClearLeaves(Node);
+      Next := PrefixTable^[Node];
+      while Next <> Unused do begin
+        if HeadTable^[Next] = Unused then begin
+          PrefixTable^[Node] := PrefixTable^[Next];
+          PrefixTable^[Next] := Unused;
+          {Turn on ClearList bit to indicate a cleared entry}
+          ClearList[Next div 8] := ClearList[Next div 8] or (1 shl (Next mod 8));
+          Next := PrefixTable^[Node];
+        end else begin
+          Node := Next;
+          ClearLeaves(Next);
+          Next := PrefixTable^[Node];
+        end;
+      end;
+    end;
+  end;
+
+  procedure Zip.LzwTableClear;
+    {-Clear the table as part of an adaptive reset}
+  var
+    Node : Integer;
+  begin
+    FillChar(ClearList, SizeOf(ClearList), 0);
+
+    {Remove all leaf nodes by recursively clearing subtrees}
+    For Node := 0 to 255 do
+      ClearLeaves(Node);
+
+    {Reinitialize list of free table entries}
+    NextFree := Succ(TableSize);
+    for Node := TableSize downto FirstFree do begin
+      if (ClearList[Node div 8] and (1 shl (Node mod 8))) <> 0 then begin
+        Dec(NextFree);
+        FreeList^[NextFree] := Node;
+      end;
+    end;
+
+    PendingClear := False;
+  end;
+
+  procedure LzwTableAdd(Prefix, Suffix : Word);
+    {-Add a Prefix:Suffix pair to string table}
+  var
+    Node : Integer;
+  begin
+    Node := FreeList^[NextFree];
+    Inc(NextFree);
+    HeadTable^[Node] := Unused;
+    PrefixTable^[Node] := Unused;
+    SuffixTable^[Node] := Suffix;
+
+    if HeadTable^[Prefix] = Unused then
+      HeadTable^[Prefix] := Node
+    else begin
+      Prefix := HeadTable^[Prefix];
+      while PrefixTable^[Prefix] <> Unused do
+        Prefix := PrefixTable^[Prefix];
+      PrefixTable^[Prefix] := Node;
+    end;
+
+    if NextFree > TableSize then
+      PendingClear := True;
+  end;
+
+  function LzwTableLookup(Suffix : Word) : Word;
+    {-Return location of suffix, zero if not found}
+  inline(
+                         {;Get args}
+    $59/                 {  POP  CX                 ;CX = Suffix}
+    $A1/>PREFIX/         {  MOV  AX,[>Prefix]       ;AX = Prefix}
+                         {;Check for at least one hit}
+    $C4/$3E/>HEADTABLE/  {  LES  DI,[>HeadTable]    ;ES:DI -> HeadTable^}
+    $D1/$E0/             {  SHL  AX,1               ;AX = index into HeadTable}
+    $01/$C7/             {  ADD  DI,AX              ;}
+    $26/                 {  ES:}
+    $8B/$05/             {  MOV  AX,[DI]            ;BX = HeadTable^[Prefix]}
+    $3D/>UNUSED/         {  CMP  AX,>Unused         ;Unused?}
+    $74/$24/             {  JE   NotFound           ;Yes, leave}
+                         {;Follow chain}
+    $1E/                 {  PUSH DS                 ;Save DS}
+    $C4/$3E/>PREFIXTABLE/{  LES  DI,[>PrefixTable]  ;ES:DI -> PrefixTable}
+    $89/$FB/             {  MOV  BX,DI              ;Save offset in BX}
+    $C5/$36/>SUFFIXTABLE/{  LDS  SI,[>SuffixTable]  ;DS:SI -> SuffixTable}
+    $89/$F2/             {  MOV  DX,SI              ;Save offset in DX}
+                         {LoopTop:}
+    $89/$DF/             {  MOV  DI,BX              ;Restore offsets}
+    $89/$D6/             {  MOV  SI,DX              ;}
+    $01/$C6/             {  ADD  SI,AX              ;DS:SI->SuffixTable^[Node]}
+    $38/$0C/             {  CMP  BYTE PTR [SI],CL   ;= Suffix ?}
+    $74/$12/             {  JE   Found              ;Yes, leave}
+    $D1/$E0/             {  SHL  AX,1               ;Make an index}
+    $01/$C7/             {  ADD  DI,AX              ;ES:DI->PrefixTable^[Node]}
+    $26/                 {  ES:}
+    $8B/$05/             {  MOV  AX,[DI]            ;AX = new Node}
+    $3D/>UNUSED/         {  CMP  AX,>Unused         ;Node = Unused?}
+    $75/$EA/             {  JNE  LoopTop            ;No, keep going}
+    $1F/                 {  POP  DS}
+                         {NotFound:}
+    $31/$C0/             {  XOR  AX,AX              ;Say not found}
+    $E9/$01/$00/         {  JMP  Done}
+                         {Found:}
+    $1F);                {  POP  DS}
+                         {Done:}
+
+  procedure Zip.AdaptiveReset(Suffix : Word);
+    {-Perform adaptive reset of LZW string table}
+  begin
+    PutCode(Prefix);
+    PutCode(Special);
+    PutCode(ClearCode);
+    LzwTableClear;
+    LzwTableAdd(Prefix, Suffix);
+    Prefix := Suffix;
+  end;
+
+  procedure Zip.ShrinkFile;
+    {-Shrink file (LZW compression with adaptive reset of string table)}
+  var
+    Suffix : Word;
+    Finished : Boolean;
+    I : Word;
+  label
+    ExitPoint;
+  begin
+    {Miscellaneous inits}
+    BitBuffer := 0;
+    BitsUsed := 0;
+    CodeSize := MinCodeBits;
+    MaxCode := (1 shl MinCodeBits)-1;
+    NextFree := FirstFree;
+    CompressSize := 0;
+    Crc := -1;
+    PendingClear := False;
+    BytesOut := 0;
+    ShowProg := @uzProgress <> nil;
+    zCompressionUsed := cmcShrunk;
+
+    {Say structures not allocated}
+    SuffixTable := nil;
+    HeadTable := nil;
+    FreeList := nil;
+
+    {Allocate structures for LZW string table}
+    if not (
+      GetMemCheck(PrefixTable, SizeOf(PrefixTable^)) and
+      GetMemCheck(SuffixTable, SizeOf(SuffixTable^)) and
+      GetMemCheck(HeadTable, SizeOf(HeadTable^)) and
+      GetMemCheck(FreeList, Sizeof(FreeList^))) then begin
+        arError := epFatal+ecOutOfMemory;
+        Exit;
+    end;
+
+    {Init string table}
+    FillChar(PrefixTable^, SizeOf(PrefixTable^), $FF);
+    for I := 255 downto 0 do begin
+      PrefixTable^[I] := 0;
+      SuffixTable^[I] := I;
+    end;
+
+    {Init heads of linked lists}
+    FillChar(HeadTable^, SizeOf(HeadTable^), $FF);
+
+    {Init free list}
+    for I := 257 to TableSize do
+      FreeList^[I] := I;
+
+    {Init buffer indexes to force an immediate read}
+    InPos := 1;
+    InCnt := 0;
+    OutPos := 0;
+    InEof := False;
+
+    {Get first character}
+    if not GetC(Prefix) then ;
+
+    {Check the first 100 characters for non-text}
+    zFileIsText := CheckForText;
+
+    {Compress loop}
+    Finished := False;
+    repeat
+      {Get a character from the input stream}
+      if GetC(Suffix) then begin
+        if arError = ecUserAbort then                                  {!!.01}
+          goto ExitPoint;
+        if PendingClear then
+          AdaptiveReset(Suffix)
+        else begin
+          I := LzwTableLookUp(Suffix);
+          if I <> 0 then
+            Prefix := I
+          else begin
+            {Not found, write prefix and go add it to table}
+            PutCode(Prefix);
+            LzwTableAdd(Prefix, Suffix);
+            Prefix := Suffix;
+
+            if (FreeList^[NextFree] > MaxCode) and (CodeSize < MaxCodeBits) then begin
+              {Time to increase the code size and change the max code}
+              PutCode(Special);
+              PutCode(CodeIncSize);
+              Inc(CodeSize);
+              MaxCode := (1 shl CodeSize) -1;
+            end;
+          end
+        end
+      end else
+        Finished := True;
+    until Finished or (arError <> ecOk);
+
+    {End of file - write last prefix and flush bit buffer}
+    if arError = ecOk then begin
+      PutCode(Prefix);
+      PutCode(-1);
+
+      {Flush byte buffer}
+      if OutPos > 0 then
+        if not WriteZip(OutBuf^, OutPos) then ;
+    end;
+
+ExitPoint:
+    FreeMemCheck(PrefixTable, SizeOf(PrefixTable^));
+    FreeMemCheck(SuffixTable, SizeOf(SuffixTable^));
+    FreeMemCheck(HeadTable, SizeOf(HeadTable^));
+    FreeMemCheck(FreeList, Sizeof(FreeList^));
+  end;
+
+  procedure Zip.StoreFile;
+    {-Store file in archive}
+  var
+    W : Word;
+    Finished : Boolean;
+  begin
+    {Reset input file}
+    Seek(InFile, 0);
+    arError := IOResult;
+    if arError <> ecOk then
+      Exit;
+
+    {Copy file into archive}
+    Crc := -1;
+    InPos := SizeOf(InBuf^) + 1;
+    InEof := False;
+    Finished := False;
+    CompressSize := 0;
+    BytesOut := 0;                                                     {!!.01}
+    ShowProg := @uzProgress <> nil;                                    {!!.01}
+    repeat
+      {Force a buffer load}
+      if not GetC(W) then
+        Finished := True
+      else begin
+        Inc(BytesOut, InCnt-1);                                        {!!.01}
+        {Write the entire input buffer}
+        if not WriteZip(InBuf^, InCnt) then
+          Exit;
+        InPos := SizeOf(InBuf^) + 1;
+      end;
+    until Finished;
+    zCompressionUsed := cmcStored;
+    {Truncate file at current file position}
+    Truncate(NewZip);
+  end;
+
+  procedure Zip.CompressFile(ZNode : ZipNodePtr);
+    {-Compress ZNode into NewZip}
+  type
+    DW = record
+      Lo : Word;
+      Hi : Word;
+    end;
+  var
+    SaveStart,
+    SaveEnd : LongInt;
+    DateTime : LongInt;
+    CLen : Word;
+    NameLen : Word;
+    TempName : PathStr;
+  begin
+    {Strip path name if requested}
+    if arOptionsAreOn(arStripPath) then
+      ZNode^.znFName := JustFileName(ZNode^.znFName);
+
+    with ZNode^ do
+      NameLen := Length(znFName);
+
+    {Note current filepos and skip beyond header area}
+    SaveStart := FilePos(NewZip);
+    arError := SkipNewZip(SizeOf(LocalHeader)+NameLen+4);
+    if arError <> ecOk then
+      Exit;
+
+    {Note original file size}
+    OrigFileSize := FileSize(InFile);
+
+    {Fill in those parts of CDH we can}
+    with ZNode^ do begin
+      znCDH.VersionNeeded := 10;
+      znCDH.BitFlag := 0;
+      znCDH.Method := 0;
+      GetFTime(InFile, DateTime);
+      znCDH.LastModTime := DW(DateTime).Lo;
+      znCDH.LastModDate := DW(DateTime).Hi;
+      znCDH.Crc := 0;
+      znCDH.NewSize := 0;
+      znCDH.OrigSize := OrigFileSize;
+      znCDH.NameLength := NameLen;
+      znCDH.ExtraLength := 0;
+      znCDH.LocalHeaderOfs := 0;
+    end;
+
+    {Show the filename to compress}
+    {if ShowProg then}                                                 {!!.02}
+    ShowMethod(ZNode, ZNode^.znFName);                                 {!!.02}
+    case zCompressionUsed of
+      cmcStored   : StoreFile;
+      cmcShrunk   : ShrinkFile;
+      cmcImploded : ImplodeFile;
+      cmcDeflated : DeflateFile(zDeflateLevel);                        {!!.01}
+    end;
+
+    if arError <> ecOk then
+      Exit;
+
+    {If it didn't get smaller than back up and copy it}
+    if (CompressSize >= OrigFileSize) and                              {!!.01}
+       (zCompressionUsed <> cmcStored) then begin                      {!!.01}
+      Seek(NewZip, SaveStart);
+      arError := SkipNewZip(SizeOf(LocalHeader)+NameLen+4);
+      if arError <> ecOk then
+        Exit;
+      StoreFile;
+      {StoreFile sets CompressSize}                                    {!!.01}
+    end;
+
+    {Note current filepos, then go back and update header}
+    SaveEnd := FilePos(NewZip);
+    Seek(NewZip, SaveStart);
+
+    {Fill in rest of header and write it}
+    with ZNode^ do begin
+      if zCompressionUsed = cmcDeflated then begin                     {!!.01}
+        znCDH.VersionNeeded := 20;                                     {!!.01}
+        znCDH.BitFlag := zOptionFlags;                                 {!!.01}
+      end else if zCompressionUsed = cmcImploded then                  {!!.01}
+        znCDH.BitFlag := zOptionFlags                                  {!!.01}
+      else
+        znCDH.BitFlag := 0;
+
+      if OrigFileSize = CompressSize then
+        znCDH.Method := cmcStored
+      else
+        znCDH.Method := zCompressionUsed;
+      znCDH.Crc := not Crc;
+      znCDH.NewSize := CompressSize;
+      znCDH.ExtraLength := 0;
+      znCDH.LocalHeaderOfs := SaveStart;
+      if not WriteZip(LocalHeaderSig, SizeOf(LocalHeaderSig)) then
+        Exit;
+      if not WriteZip(znCDH.VersionNeeded, SizeOf(LocalHeader)) then
+        Exit;
+      TempName := FixName(znFName);
+      if not WriteZip(TempName[1], Length(TempName)) then
+        Exit;
+
+      {Restore file pointer to end of this file}
+      Seek(NewZip, SaveEnd);
+    end;
+  end;
+
+  function Zip.CopyBlockPrim(Len : LongInt) : Boolean;
+    {-Copy Len bytes from SaveZip to arFile, return False on I/O errors}
+  var
+    BufCnt : Word;
+    BufMax : Word;
+    BytesRead : Word;
+    BytesRemaining : LongInt;
+  begin
+    {Assume failure}
+    CopyBlockPrim := False;
+
+    {Prepare for read/write loop}
+    BufMax := SizeOf(ByteArray4K);
+    BytesRemaining := Len;
+
+    {Loop as required to copy contents (just use the existing input buffer)}
+    repeat
+      {Set number of bytes to read}
+      if BytesRemaining < BufMax then
+        BufCnt := BytesRemaining
+      else
+        BufCnt := BufMax;
+
+      {Fill a buffer}
+      BlockRead(arFile, InBuf^, BufCnt, BytesRead);
+      arError := IOResult;
+      if arError <> ecOk then
+        Exit;
+
+      {Write a buffer}
+      if not WriteZip(InBuf^, BytesRead) then
+        Exit;
+
+      {Adjust bytes remaining}
+      Dec(BytesRemaining, BufCnt);
+    until (BytesRemaining <= 0);
+
+    CopyBlockPrim := True;
+  end;
+
+  procedure Zip.CopyFile(ZNode : ZipNodePtr);
+    {-Copy file from the old archive to the new archive}
+  begin
+    with ZNode^ do begin
+      {Stuff start of local header into CDH}
+      znCDH.LocalHeaderOfs := FilePos(NewZip);
+
+      {Write local header signature to output file}
+      if not WriteZip(LocalHeaderSig, SizeOf(LocalHeaderSig)) then
+        Exit;
+
+      {Write fixed portion of local header}
+      if not WriteZip(znCDH.VersionNeeded, SizeOf(LocalHeader)) then
+        Exit;
+
+      {Write the file name}
+      if not WriteZip(znFName[1], Length(ZNode^.znFName)) then
+        Exit;
+
+      {Adjust arFile file position accordingly}
+      uzSkipData(SizeOf(LocalHeaderSig) +
+                 SizeOf(LocalHeader)+
+                 Length(znFName));
+      if arError <> ecOk then
+        Exit;
+
+      {Conditionally copy extra field}
+      if znCDH.ExtraLength <> 0 then
+        if not CopyBlockPrim(znCDH.ExtraLength) then
+          Exit;
+
+      {Copy file}
+      if not CopyBlockPrim(znCDH.NewSize) then
+        Exit;
+    end;
+  end;
+
+  function Zip.AddFileToZip(var ZFL : ZipFileList; FNode : FileMaskNodePtr;
+                            var ZNode : ZipNodePtr) : Boolean;
+    {-Return True if file can be added, False otherwise}
+  var
+    Node : ZipNodePtr;
+    NewName : PathStr;
+    CDH : CentralDirHead;
+    CP : CommentPtr;
+  begin
+    {Setup}
+    AddFileToZip := False;
+    Node := ZFL.zfHead;
+
+    {Form the name}
+    with FNode^ do
+      if arOptionsAreOn(arStripPath) then                              {!!.02}
+        NewName := fmnName + '.' + fmnExt                              {!!.02}
+      else                                                             {!!.02}
+        NewName := fmnDirPtr^ + fmnName + '.' + fmnExt;
+    {Optionally remove dots and drive letter}                          {!!.02}
+    NewName := AdjustName(NewName);                                    {!!.02}
+
+    {Loop through list looking for FNode}
+    while Node <> nil do begin
+      if UnfixName(Node^.znFName) = NewName then
+        Exit;
+      Node := Node^.znNext;
+    end;
+
+    {File is new, add to ZipFileList and return ZNode pointer}
+    AddFileToZip := True;
+    CP := nil;
+    if not ZFL.Append(CDH, CP, NewName) then
+      arError := epFatal+ecOutOfMemory
+    else
+      ZNode := ZFL.zfTail;
+  end;
+
+  procedure Zip.RemoveFileFromZip(var ZFL : ZipFileList; var ZNode : ZipNodePtr);
+    {-Remove ZNode from ZFL (file wasn't added to archive}
+  var
+    Node : ZipNodePtr;
+    PrevNode : ZipNodePtr;
+  begin
+    {Setup}
+    Node := ZFL.zfHead;
+    PrevNode := ZFL.zfHead;
+
+    {Loop through list looking for FNode}
+    while Node <> nil do begin
+      if Node = ZNode then begin
+        {Unlink it}
+        if Node = ZFL.zfHead then
+          ZFL.zfHead := Node^.znNext
+        else begin
+          PrevNode^.znNext := Node^.znNext;
+          Dec(ZFL.zfCount);
+        end;
+        if Node = ZFL.zfTail then
+          ZFL.zfTail := PrevNode;
+
+        {Dispose it}
+        Dispose(Node, Done);
+        Exit;
+
+      end else begin
+        PrevNode := Node;
+        Node := Node^.znNext;
+      end;
+    end;
+  end;
+
+  procedure Zip.CompressFileMaskList(var FML : FileMaskList);
+    {-Compress all files that match the file mask list}
+  var
+    SaveOptions : Word;
+    ZFL : ZipFileList;
+    ZNode : ZipNodePtr;
+    FNode : FileMaskNodePtr;
+    AllFML : FileMaskList;
+    FName : PathStr;
+    SaveZNode : ZipNodePtr;
+    FAttr : Word;
+    Dir : DirStr;
+    Name : NameStr;
+    Ext : ExtStr;
+    TempName : PathStr;
+
+  procedure Cleanup(Error : Boolean);
+    {-Clean up and exit}
+  begin
+    FreeMemCheck(OutBuf, SizeOf(OutBuf^));
+    FreeMemCheck(InBuf, SizeOf(InBuf^));
+    ZFL.Done;
+    AllFML.Done;
+    if Error then
+      RestoreArchive
+    else
+      DoneUpdate;
+  end;
+
+  procedure UpdateZipArchive;
+    {-Local procedure to update all files in archive}
+  var
+    FName : PathStr;
+    OldSize : LongInt;
+  begin
+    {Make a file mask list of all files}
+    if not AllFML.Append('*.*') then begin
+      arError := ecOutOfMemory;
+      Exit;
+    end;
+
+    {Force, temporarily, reading of ExtraField and Comment}
+    SaveOptions := DefArchiveOptions;
+    arOptionsOn(arReadFileComments+arReadExtraField);
+
+    {Build a zip file list of all files in the archive}
+    BuildZipFileList(ZFL, AllFML);
+    DefArchiveOptions := SaveOptions;
+    if arError <> ecOk then
+      Exit;
+
+    {Reset input file back to start of first file's header}
+    Seek(arFile, 0);
+    arError := IOResult;
+    if arError <> ecOk then
+      Exit;
+
+    {Loop through all files in list, copying or updating as required}
+    ZNode := ZFL.zfHead;
+    while ZNode <> nil do begin
+      {Open on disk and handle errors}
+      FName := UnfixName(ZNode^.znFName);
+      uzSaveMode := FileMode;                                          {!!.02}
+      FileMode := AproFileMode;                                 {!!.02}{!!.03}
+      Assign(InFile, FName);
+      Reset(InFile, 1);
+      FileMode := uzSaveMode;                                          {!!.02}
+      arError := IOResult;
+      case arError of
+        ecOk,
+        ecFileNotFound,
+        ecPathNotFound,
+        ecAccessDenied,
+        ecInvalidDrive :
+          {Acceptable errors (or no error)}
+        else
+          {Unacceptable errors}
+          Exit;
+      end;
+
+      {Note original file size}
+      OrigFileSize := FileSize(InFile);
+      if IoResult <> 0 then ;  {Ignore}
+      case zCompressMode of
+        cmStore      : zCompressionUsed := cmcStored;
+        cmShrink     : zCompressionUsed := cmcShrunk;
+        cmImplode    : zCompressionUsed := cmcImploded;
+        cmDeflate    : zCompressionUsed := cmcDeflated;                {!!.01}
+        cmBestMethod : zCompressionUsed := cmcDeflated;                {!!.01}
+      end;
+
+      {Copy or compress, as required}
+      if (arError = ecOK) and  zFreshening and                         {!!.01}
+         (OkToCompress(FName, FName, ZNode^.znCDH)) then begin
+        OldSize := ZNode^.znCDH.NewSize;
+        CompressFile(ZNode);
+
+        {Show compression results}
+        if CompressSuccess(ZNode) then
+          if ((arError < 100) or (arError > 163)) and                  {!!.03}
+             (arError <> 8) then begin                                 {!!.03}
+            arError := ecOk;
+
+            {Advance beyond the just skipped file in arFile}
+            uzSkipData(SizeOf(LocalHeaderSig)+
+                       SizeOf(LocalHeader)+
+                       ZNode^.znCDH.NameLength+
+                       ZNode^.znCDH.ExtraLength+
+                       OldSize);
+          end;
+      end else
+        CopyFile(ZNode);
+
+      Close(InFile);
+      if IOResult <> 0 then ;
+
+      {Restore and exit if any errors during copy or compress}
+      if arError <> ecOk then
+        Exit;
+
+      {Process next file in archive}
+      ZNode := ZNode^.znNext;
+    end;
+  end;
+
+  function Excluded(FNode : FileMaskNodePtr) : Boolean;
+    {-Return True if FNode is the name of the ZIP file or its temporary}
+  var
+    FName : PathStr;
+  begin
+    with FNode^ do
+      FName := AddBackSlash(UnfixName(fmnDirPtr^)) + fmnName + '.' + fmnExt;
+    Excluded := (FName = arName) or (FName = TempName);
+  end;
+
+  procedure AddFilesToZipArchive;
+    {-Local procedure to add new files to archive}
+  var
+    CP : CommentPtr;
+    CLen : Word;
+  begin
+    {Expand file mask list to file name list}
+    FML.ExpandFileMaskList;
+    if arError <> ecOk then
+      Exit;
+
+    {Note the name of the temporary file}
+    FSplit(arName, Dir, Name, Ext);
+    TempName := Dir + Name + '.!!!';
+
+    FNode := FML.fmlHead;
+    while FNode <> nil do begin
+      {Make sure file shouldn't be excluded}
+      if not Excluded(FNode) then
+        if AddFileToZip(ZFL, FNode, SaveZNode) then begin
+          {Handle OutOfMemory error}
+          if arError <> ecOk then
+            Exit;
+
+          {Prepare to compress file}
+          with FNode^ do begin
+            {Find file to compress}
+            FName := UnfixName(fmnDirPtr^) + fmnName + '.' + fmnExt;
+            uzSaveMode := FileMode;                                    {!!.02}
+            FileMode := AproFileMode;                           {!!.02}{!!.03}
+            Assign(InFile, FName);
+            Reset(InFile, 1);
+            FileMode := uzSaveMode;                                    {!!.02}
+            arError := IOResult;
+            if arError <> ecOk then
+              Exit;
+
+            {Note original file size}
+            OrigFileSize := FileSize(InFile);
+            if IoResult <> 0 then ;  {Ignore}
+            case zCompressMode of
+              cmStore      : zCompressionUsed := cmcStored;
+              cmShrink     : zCompressionUsed := cmcShrunk;
+              cmImplode    : zCompressionUsed := cmcImploded;
+              cmDeflate    : zCompressionUsed := cmcDeflated;          {!!.01}
+              cmBestMethod : zCompressionUsed := cmcDeflated;          {!!.01}
+            end;
+
+            {Compress the file}
+            if OkToCompress(FName, '', SaveZNode^.znCDH) then begin
+              SaveZNode^.znFName := AdjustName(FName);
+              CompressFile(SaveZNode);
+
+              {Update the header associated with the just-added file}
+              with SaveZNode^ do begin
+                znCDH.VersionMade := 20;                               {!!.01}
+                znCDH.CommentLength := 0;
+                znCDH.DiskNumberStart := 0;
+                znCDH.InternalAttrs := Byte(zFileIsText);
+              end;
+
+              Close(InFile);
+              if IOResult <> 0 then ;
+
+              {Now get the file's attributes}
+              GetFAttr(InFile, FAttr);
+              SaveZNode^.znCDH.ExternalAttrs := FAttr;
+
+              {Show compression results}
+              if CompressSuccess(SaveZNode) then
+                if ((arError < 100) or (arError > 163)) and            {!!.03}
+                   (arError <> 8) then                                 {!!.03}
+                  arError := ecOk;
+
+              {Get and store the optional file comment}
+              CP := nil;
+              if SetFileComment(SaveZNode, CP, CLen) then
+                with SaveZNode^ do begin
+                  {New comment is desired, get rid of old}
+                  if znCP <> nil then begin
+                    FreeMemCheck(znCP, znCDH.CommentLength);
+                    znCDH.CommentLength := 0;
+                  end;
+                  {Add new comment if length is non-zero}
+                  if CLen <> 0 then begin
+                    znCP := CP;
+                    znCDH.CommentLength := CLen;
+                  end;
+                end;
+
+              {Restore and exit if any errors during copy or compress}
+              if arError <> ecOk then
+                Exit;
+
+            end else begin                                             {!!.02}
+              {Close opened file}                                      {!!.02}
+              Close(InFile);                                           {!!.02}
+              if IoResult <> 0 then {};                                {!!.02}
+              {Remove file from zip list}
+              RemoveFileFromZip(ZFL, SaveZNode);
+            end;                                                       {!!.02}
+          end;
+        end;
+
+      {Process next file in list}
+      FNode := FNode^.fmnNext;
+    end;
+  end;
+
+  begin
+    arError := ecOk;
+
+    {Show user hooks what we are doing}
+    arOptionsOn(arCompressing);
+    arOptionsOff(arDeleting);
+
+    {Allocate all required buffers}
+    InBuf := nil;
+    OutBuf := nil;
+    if not ( GetMemCheck(OutBuf, SizeOf(OutBuf^)) and
+             GetMemCheck(InBuf, SizeOf(InBuf^)) ) then begin
+      arError := epFatal+ecOutOfMemory;
+      Exit;
+    end;
+
+    {Init the two local lists}
+    AllFML.Init;
+    ZFL.Init;
+
+    {Rename file in preparation for updates}
+    PrepareForUpdate;
+    if arError <> ecOk then begin
+      Cleanup(True);
+      Exit;
+    end;
+
+    {Update all files already in archive}
+    if not zNewFilePending {and zFreshening} then begin                {!!.01}
+      UpdateZipArchive;
+      if arError <> ecOk then begin
+        Cleanup(True);
+        Exit;
+      end
+    end else begin
+      ShowComments(nil, 0);
+      CDTComment := nil;
+      CDT.CommentLength := 0;
+    end;
+
+    {Add new files to archive}
+    if not zFreshening then begin
+      AddFilesToZipArchive;
+      if arError <> ecOk then begin
+        Cleanup(True);
+        Exit;
+      end;
+    end;
+
+    {Write central directory}
+    WriteCentralDir(ZFL);
+    Cleanup(arError <> ecOk);
+  end;
+
+  procedure Zip.Compress(Mask : PathStr);
+    {-Compress all files that match Mask}
+  var
+    FML : FileMaskList;
+  begin
+    FML.Init;
+    if not FML.Append(Mask) then
+      arError := epFatal+ecOutOfMemory
+    else
+      CompressFileMaskList(FML);
+    FML.Done;
+  end;
+
+  procedure Zip.FreshenArchive;
+    {-Freshen all files in archive}
+  var
+    FML : FileMaskList;
+  begin
+    zFreshening := True;
+    FML.Init;
+    CompressFileMaskList(FML);
+    zFreshening := False;
+  end;
+
+  procedure Zip.DeleteFileMaskList(var FML : FileMaskList);
+    {-Delete files in archive that match any mask in FML}
+  var
+    SaveOptions : Word;
+    ZFL : ZipFileList;
+    ZNode : ZipNodePtr;
+    SaveZNode : ZipNodePtr;
+    AllFML : FileMaskList;
+
+  procedure Cleanup(Error : Boolean);
+    {-Clean up and exit}
+  begin
+    FreeMemCheck(InBuf, SizeOf(InBuf^));
+    ZFL.Done;
+    AllFML.Done;
+    if Error then
+      RestoreArchive
+    else
+      DoneUpdate;
+  end;
+
+  begin
+    arError := ecOk;
+
+    {Show user hooks what we are doing}
+    arOptionsOff(arCompressing);
+    arOptionsOn(arDeleting);
+
+    {Allocate all required buffers}
+    InBuf := nil;
+    if not GetMemCheck(InBuf, SizeOf(InBuf^)) then begin
+      arError := epFatal+ecOutOfMemory;
+      Exit;
+    end;
+
+    {Init required lists now}
+    ZFL.Init;
+    AllFML.Init;
+
+    {Rename file in preparation for updates}
+    PrepareForUpdate;
+    if arError <> ecOk then begin
+      Cleanup(True);
+      Exit;
+    end;
+
+    {Make a file mask list of all files}
+    if not AllFML.Append('*.*') then begin
+      Cleanup(True);
+      Exit;
+    end;
+
+    {Force, temporarily, reading of ExtraField and Comment}
+    SaveOptions := DefArchiveOptions;
+    arOptionsOn(arReadFileComments+arReadExtraField);
+
+    {Build a zip file list of all files in the archive}
+    BuildZipFileList(ZFL, AllFML);
+    DefArchiveOptions := SaveOptions;
+    if arError <> ecOk then begin
+      Cleanup(True);
+      Exit;
+    end;
+
+    {Reset input file back to start of first file's header}
+    Seek(arFile, 0);
+    arError := IOResult;
+    if arError <> ecOk then begin
+      Cleanup(True);
+      Exit;
+    end;
+
+    {Loop through all files in list, copying or ignoring as required}
+    ZNode := ZFL.zfHead;
+    while ZNode <> nil do begin
+      if not FML.Match(ZNode^.znFName) then begin
+        {No match - copy this file}
+        CopyFile(ZNode);
+        ZNode := ZNode^.znNext;
+      end else begin
+        {Match - delete (don't copy) this file)}
+        ShowMethod(ZNode, ZNode^.znFName);
+        uzSkipData(SizeOf(LocalHeaderSig)+
+                          SizeOf(LocalHeader)+
+                          ZNode^.znCDH.NameLength+
+                          ZNode^.znCDH.ExtraLength+
+                          ZNode^.znCDH.NewSize);
+
+        SaveZNode := ZNode;
+        ZNode := ZNode^.znNext;
+        RemoveFileFromZip(ZFL, SaveZNode);
+      end;
+
+      {Restore and exit if any errors during copy}
+      if arError <> ecOk then begin
+        Cleanup(True);
+        Exit;
+      end;
+    end;
+
+    {Write central directory}
+    WriteCentralDir(ZFL);
+    Cleanup(arError <> ecOk);
+  end;
+
+  procedure Zip.DeleteFiles(Mask : PathStr);
+    {-Delete files in archive that match any mask in FML}
+  var
+    FML : FileMaskList;
+  begin
+    FML.Init;
+    if not FML.Append(Mask) then begin
+      arError := ecOutOfMemory;
+      Exit;
+    end;
+
+    DeleteFileMaskList(FML);
+
+    FML.Done;
+  end;
+
+  procedure Zip.SetZipComment(var Comment; Len : Word);
+    {-Make Comment the current Zip file comment (Len = 0 deletes)}
+  var
+    SaveOptions : Word;
+    BytesWritten : Word;
+  label
+    ErrorExit;
+  begin
+    arError := ecOk;
+
+    {Position file pointer to CDT}
+    uzFindCentralDirTail;
+    if arError <> ecOk then
+      goto ErrorExit;
+
+    {Read CDT}
+    SaveOptions := arOptions;
+    arOptionsOff(arReadExtraField + arReadFileComments);
+    uzReadCentralDirTail(CDT, CDTComment);
+    arOptions := SaveOptions;
+    if arError <> ecOk then
+      goto ErrorExit;
+
+    {Dispose of old comment, if any}                                   {!!.02}
+    if CDT.CommentLength > 0 then                                      {!!.02}
+      FreeMemCheck(CDTComment, CDT.CommentLength);                     {!!.02}
+
+    {Update CDT with new comment}
+    CDT.CommentLength := Len;
+
+    {Rewrite the CDT (write directly to old file)}
+    uzFindCentralDirTail;
+    if arError <> ecOk then
+      goto ErrorExit;
+    BlockWrite(arFile, CDT, SizeOf(CDT), BytesWritten);
+    arError := IOResult;
+    if BytesWritten <> SizeOf(CDT) then
+      arError := ecDiskFull;
+    if arError <> ecOk then
+      goto ErrorExit;
+
+    {Write the comment}
+    BlockWrite(arFile, Comment, Len, BytesWritten);
+    arError := IOResult;
+    if BytesWritten <> Len then
+      arError := ecDiskFull;
+
+ErrorExit:
+    {close file as is on error -- may require ZIPFIX to restore}
+    Close(arFile);
+    if IOResult <> 0 then ;
+  end;
+
+  procedure Zip.UpdateCommentsFileMaskList(var FML : FileMaskList);
+    {-Call FileComment hook for every that matches FML}
+  var
+    SaveOptions : Word;
+    ZFL : ZipFileList;
+    AllFML : FileMaskList;
+    ZNode : ZipNodePtr;
+    SaveZNode : ZipNodePtr;
+    NewCP : CommentPtr;
+    NewLen : Word;
+
+  procedure Cleanup(Error : Boolean);
+    {-Clean up and exit}
+  begin
+    FreeMemCheck(InBuf, SizeOf(InBuf^));
+    ZFL.Done;
+    AllFML.Done;
+    if Error then
+      RestoreArchive
+    else
+      DoneUpdate;
+  end;
+
+  begin
+    arError := ecOk;
+
+    {Exit if no FileComment hook provided}
+    if @zFileComment = nil then
+      Exit;
+
+    {Allocate all required buffers}
+    InBuf := nil;
+    if not GetMemCheck(InBuf, SizeOf(InBuf^)) then begin
+      arError := epFatal+ecOutOfMemory;
+      Exit;
+    end;
+
+    {Init required lists now}
+    ZFL.Init;
+    AllFML.Init;
+
+    {Rename file in preparation for updates}
+    PrepareForUpdate;
+    if arError <> ecOk then begin
+      Cleanup(True);
+      Exit;
+    end;
+
+    {Make a file mask list of all files}
+    if not AllFML.Append('*.*') then begin
+      Cleanup(True);
+      Exit;
+    end;
+
+    {Force, temporarily, reading of ExtraField and Comment}
+    SaveOptions := DefArchiveOptions;
+    arOptionsOn(arReadFileComments+arReadExtraField);
+
+    {Build a zip file list of all files in the archive}
+    BuildZipFileList(ZFL, AllFML);
+    DefArchiveOptions := SaveOptions;
+    if arError <> ecOk then begin
+      Cleanup(True);
+      Exit;
+    end;
+
+    {Reset input file back to start of first file's header}
+    Seek(arFile, 0);
+    arError := IOResult;
+    if arError <> ecOk then begin
+      Cleanup(True);
+      Exit;
+    end;
+
+    {Loop through all files in list, copying and calling FileComment proc}
+    ZNode := ZFL.zfHead;
+    while ZNode <> nil do begin
+      with ZNode^ do begin
+        if FML.Match(znFName) then begin
+          {Get a file comment}
+          NewCP := znCP;
+          NewLen := znCDH.CommentLength;
+          if SetFileComment(ZNode, NewCP, NewLen) then begin
+            {New comment is desired, get rid of old}
+            if znCP <> nil then begin
+              FreeMemCheck(znCP, znCDH.CommentLength);
+              znCDH.CommentLength := 0;
+            end;
+            {Add new comment if length is non-zero}
+            if NewLen <> 0 then begin
+              znCP := NewCP;
+              znCDH.CommentLength := NewLen;
+            end;
+          end;
+        end;
+        CopyFile(ZNode);
+        ZNode := znNext;
+      end;
+
+      {Restore and exit if any errors during copy}
+      if arError <> ecOk then begin
+        Cleanup(True);
+        Exit;
+      end;
+    end;
+
+    {Write central directory}
+    WriteCentralDir(ZFL);
+    Cleanup(arError <> ecOk);
+  end;
+
+  function Zip.OkToCompress(NewFile, OldFile: PathStr;
+                             var CDH : CentralDirHead) : Boolean;
+    {-Returns True if OK to compress NewFile}
+  begin
+    if @zOkToCompress <> nil then
+      OkToCompress := zOkToCompress(NewFile, OldFile, CDH, @Self)
+    else
+      OkToCompress := True;
+  end;
+
+  function Zip.CompressSuccess(ZNode : ZipNodePtr) : Boolean;
+    {-Called after file assoc. with ZNP has been unzipped}
+  var
+    SaveError : Word;
+  begin
+    SaveError := arError;
+    if @zSuccess <> nil then
+      CompressSuccess := zSuccess(ZNode, @Self)
+    else
+      CompressSuccess := True;
+    arError := SaveError;
+  end;
+
+  function Zip.SetFileComment(ZNode : ZipNodePtr;
+                              var CP : CommentPtr;
+                              var Len : Word) : Boolean;
+    {-Called to after compression to add a file comment}
+  begin
+    if @zFileComment <> nil then
+      SetFileComment := zFileComment(ZNode, CP, Len, @Self)
+    else begin
+      CP := nil;
+      Len := 0;
+      SetFileComment := False;
+    end;
+  end;
+
+  procedure Zip.SetOkToCompressFunc(OKC : OkToCompressFunc);
+    {-Set an OktoCompress function}
+  begin
+    zOkToCompress := OKC;
+  end;
+
+  procedure Zip.SetCompressSuccessFunc(CSF : CompressSuccessFunc);
+    {-Set a CompressSuccess function}
+  begin
+    zSuccess := CSF;
+  end;
+
+  procedure Zip.SetFileCommentFunc(FCF : FileCommentFunc);
+    {-Set a FileComment function}
+  begin
+    zFileComment := FCF;
+  end;
+
+  procedure Zip.SetCompressionMode(Mode : CompressionMode);
+    {-Set the mode of compression}
+  begin
+    zCompressMode := Mode;
+  end;
+
+  procedure Zip.SetImplodeFactors(MatchLength, Reps : Integer);
+    {-Set factors that affect speed and compression}
+  begin
+    {Default values are (4,4) - larger values increase compression}
+    {and also increase the time needed to do the compression.}
+    {A setting of (48,16) results in about the same compression as}
+    {PkZip.  Larger values can achieve slightly better ratios with a}
+    {speed penalty.}
+    {MatchLength can be set between 4 and about 90% of the size of}
+    {MaxMatchLen. Increase this value if the data you are compressing has}
+    {runs of matching bytes larger than the current setting. Increase the}
+    {Reps setting if the data you are compressing has widely spaced matches.}
+
+    if MatchLength < 4 then
+      MatchLength := 4
+    else if MatchLength > 9 * ImpMaxMatchLen div 100 then
+      MatchLength := 9 * ImpMaxMatchLen div 100;
+    zMaxStringMatch := MatchLength;
+
+    if Reps < 4 then
+      Reps := 4
+    else if Reps > 3 * ImpMaxMatchLen then
+      Reps := 3 * ImpMaxMatchLen;
+    zMaxChainLength := Reps;
+  end;
+
+  {!!.01}
+  procedure Zip.SetDeflateLevel(Level : Byte);
+    {-Set factors that affect speed and compression (deflate)}
+  begin
+    {Default values is 5 - larger values increase compression}
+    {and also increase the time needed to do the compression.}
+    if Level In[1..9] then
+      zDeflateLevel := Level;
+  end;
+
+  procedure DefShowMethodProc(ZNP : ZipNodePtr; FName : PathStr; UP : UnZipPtr);
+    {-Default ShowMethod procedure}
+  var
+    St : string[11];
+  begin
+    {show what we're doing (only if decompressing or deleting)}
+    if UP^.arOptionsAreOn(arDeleting) then
+      WriteLn('Deleting: ', JustFileName(FName))
+    else if not UP^.arOptionsAreOn(arCompressing) then begin
+      case ZNP^.znCDH.Method of
+        cmcStored :
+          St := ' Extracting';
+        cmcShrunk :
+          St := 'UnShrinking';
+        cmcReduced1..cmcReduced4 :
+          St := '  Expanding';
+        cmcImploded :
+          St := '  Exploding';
+        cmcDeflated :                                                  {!!.01}
+          St := '  Inflating';                                         {!!.01}
+        else
+          St := '';
+      end;
+      if St <> '' then
+        Write(St, ': ', FName, '  ');
+    end;
+  end;
+
+  function DefExtractSuccessFunc(ZNP : ZipNodePtr; FName : PathStr;
+                                 UP : UnZipPtr) : Boolean;
+    {-Default ExtractSuccess procedure}
+  begin
+    DefExtractSuccessFunc := True;
+
+    with UP^, ZNP^ do
+      case GetLastError mod 10000 of
+        ecOK :
+          {ok} ;
+        ecUnknownMethod :
+          Write('Unknown compression method used');
+        ecFileEncrypted :
+          Write('Cannot extract encrypted file');
+        ecCannotCreate :
+          Write('Cannot create output file');
+        ecBadFileCRC :
+          Write('CRC error: Is ', HexL(uzCrc), ', should be ', HexL(znCDH.Crc));
+        else
+          DefExtractSuccessFunc := False;
+      end;
+
+    WriteLn;
+  end;
+
+  function DefOkToWriteFunc(ZNP : ZipNodePtr; var FName : PathStr;
+                            UP : UnZipPtr) : Boolean;
+    {-Default OkToWrite function}
+  begin
+    DefOkToWriteFunc := True;
+  end;
+
+  procedure DefShowCommentsProc(CP : CommentPtr; CLen : Word; UP : UnZipPtr);
+    {-Default ShowComments procedure}
+  var
+    I : Word;
+  begin
+    if UP^.arOptionsAreOn(arCompressing) or
+       UP^.arOptionsAreOn(arDeleting) then
+      Write('Updating ', UP^.GetFileName)
+    else
+      Write('Searching ', UP^.GetFileName);
+
+    {display the comment, if any}
+    if CP <> nil then begin
+      Write(' - ');
+      for I := 1 to CLen do
+        Write(CP^[I]);
+    end;
+
+    WriteLn;
+  end;
+
+  function DefShowProgressFunc(UP : UnZipPtr; BytesWritten, TotalBytes : LongInt) : Boolean;
+    {-Default function to show progress}
+  const                                                                {!!.01}
+    OldRatio : Byte = 101;                                             {!!.01}
+  var
+    Ratio : Byte;
+  begin
+    DefShowProgressFunc := True;
+    if UP^.arOptionsAreOn(arCompressing) then begin
+      Ratio := Percentage(BytesWritten, TotalBytes);                   {!!.01}
+      if Ratio <> OldRatio then begin                                  {!!.01}
+        Write(^H^H^H^H, Ratio:3, '%');                                 {!!.01}
+        OldRatio := Ratio;                                             {!!.01}
+      end;                                                             {!!.01}
+    end else
+      Write('.');
+  end;
+
+  function DefCompressSuccessFunc(ZNode : ZipNodePtr;
+                                  ZP : ZipPtr) : Boolean;
+    {-Default CompressSuccess function}
+  var
+    Ratio    : Byte;
+    I        : Byte;
+  begin
+    DefCompressSuccessFunc := True;
+    case ZP^.GetLastError mod 10000 of
+      ecOK :
+        begin
+          Ratio := Percentage(ZNode^.znCDH.NewSize, ZNode^.znCDH.OrigSize);{!!.01}
+          if ZNode^.znCDH.Method = cmcStored then begin
+            for I := 1 to 15 do
+              Write(^H);
+            Write('storing    ');
+          end else
+            Write(^H^H^H^H);
+          WriteLn('(', Ratio:3, '%), done');
+        end;
+      else
+        DefCompressSuccessFunc := False;
+    end;
+  end;
+
+  function DefOkToCompressFunc(NewFile, OldFile: PathStr;
+                               var CDH : CentralDirHead;
+                               ZP : ZipPtr) : Boolean;
+    {-Default function to say OK to compress NewFile}
+    {-Also displays filename}
+  type
+    DT = record
+      Time : Word;
+      Date : Word;
+    end;
+  var
+    NewF : File;
+    NTime : DT;
+    DoIt : Boolean;
+    Action : String[10];
+    S : string[12];
+    SaveMode : Byte;                                                   {!!.02}
+  begin
+    if NewFile <> OldFile then begin
+      {NewFile is new for this archive, compress it}
+      DoIt := True;
+      Action := '  Adding: ';
+    end else begin
+      {NewFile is same as OldFile, only compress if newer}
+      SaveMode := FileMode;                                            {!!.02}
+      FileMode := AproFileMode;                                 {!!.02}{!!.03}
+      Assign(NewF, NewFile);
+      Reset(NewF);
+      FileMode := SaveMode;                                            {!!.02}
+      GetFTime(NewF, LongInt(NTime));
+      if IOResult <> 0 then
+        DoIt := True
+      else begin
+        if DT(NTime).Date > CDH.LastModDate then
+          DoIt := True
+        else if (DT(NTime).Date = CDH.LastModDate) and
+                (DT(NTime).Time > CDH.LastModTime) then
+          DoIt := True
+        else
+          DoIt := False;
+      end;
+      Close(NewF);
+      if IOResult <> 0 then ;
+      Action := 'Updating: ';
+    end;
+
+    {Show the file name if we're compressing}
+    if DoIt then begin
+      S := JustFilename(NewFile) + '           ';
+      Write(Action, S);
+      case ZP^.zCompressionUsed of
+       cmcStored   : Write('  storing        ');
+       cmcShrunk   : Write('  shrinking      ');
+       cmcImploded : Write('  imploding      ');
+       cmcDeflated : Write('  deflating      ');                       {!!.01}
+      end;
+    end;
+
+    DefOkToCompressFunc := DoIt;
+  end;
+
+  function DefFileCommentFunc(ZNode : ZipNodePtr;
+                              var CP : CommentPtr;
+                              var Len : Word;
+                              ZP : ZipPtr) : Boolean;
+    {-Default FileComment procedure}
+  var
+    S : String[127];
+    I : Word;
+  begin
+    if not ZP^.arOptionsAreOn(arCompressing) then
+      WriteLn(JustFileName(ZNode^.znFName), ':');
+    {Show old comment}
+    if CP <> nil then begin
+      Write('Old comment - ');
+      for I := 1 to Len do
+        Write(CP^[I]);
+      WriteLn;
+    end;
+
+    {Get new comment}
+    CP := nil;
+    Len := 0;
+    DefFileCommentFunc := False;
+    Write('New comment - ');
+    S := Char(0);
+    ReadLn(S);
+    if S[1] <> Char(0) then begin
+      if S = ' ' then begin
+        S := '';
+        Len := 0;
+        DefFileCommentFunc := True;
+      end else begin
+        Len := Length(S);
+        if GetMemCheck(CP, Len) then begin
+          Move(S[1], CP^, Len);
+          DefFileCommentFunc := True;
+        end;
+      end;
+    end;
+  end;
+

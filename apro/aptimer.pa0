@@ -1,0 +1,39 @@
+type
+  {For calculating timeouts}
+  EventTimer = record
+    StartTics : LongInt;
+    ExpireTics : LongInt;
+  end;
+
+{$IFDEF UsePModeDLL}
+function Tics2Secs(Tics : LongInt) : LongInt; Export;
+function Secs2Tics(Secs : LongInt) : LongInt; Export;
+procedure NewTimer(var ET : EventTimer; Tics : LongInt); Export;
+procedure NewTimerSecs(var ET : EventTimer; Secs : LongInt); Export;
+function TimerExpired(ET : EventTimer) : Boolean; Export;
+function ElapsedTime(ET : EventTimer) : LongInt; Export;
+function ElapsedTimeInSecs(ET : EventTimer) : LongInt; Export;
+function ElapsedTimeInMSecs(ET : EventTimer) : LongInt; Export;
+function RemainingTime(ET : EventTimer) : LongInt; Export;
+function RemainingTimeInSecs(ET : EventTimer) : LongInt; Export;
+function RemainingTimeInMSecs(ET : EventTimer) : LongInt; Export;
+procedure DelayTics(Tics : LongInt); Export;
+procedure Delay(Ms : Word); Export;
+procedure CalibrateDelay; Export;
+{$ELSE}
+function GetBiosTics: Longint;
+function Tics2Secs(Tics : LongInt) : LongInt;
+function Secs2Tics(Secs : LongInt) : LongInt;
+procedure NewTimer(var ET : EventTimer; Tics : LongInt);
+procedure NewTimerSecs(var ET : EventTimer; Secs : LongInt);
+function TimerExpired(ET : EventTimer) : Boolean;
+function ElapsedTime(ET : EventTimer) : LongInt;
+function ElapsedTimeInSecs(ET : EventTimer) : LongInt;
+function ElapsedTimeInMSecs(ET : EventTimer) : LongInt;
+function RemainingTime(ET : EventTimer) : LongInt;
+function RemainingTimeInSecs(ET : EventTimer) : LongInt;
+function RemainingTimeInMSecs(ET : EventTimer) : LongInt;
+procedure DelayTics(Tics : LongInt);
+procedure Delay(Ms : Word);
+procedure CalibrateDelay;
+{$ENDIF}
